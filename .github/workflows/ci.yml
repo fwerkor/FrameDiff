@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - ".github/workflows/**"
+      - "lm_fullnet/**"
+      - "README.md"
+      - "LICENSE"
+      - "cyh任务.md"
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - "lm_fullnet/**"
+      - "README.md"
+      - "LICENSE"
+      - "cyh任务.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python checks (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: lm_fullnet/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r lm_fullnet/requirements.txt pytest
+
+      - name: Compile Python sources
+        run: python -m compileall -q lm_fullnet
+
+      - name: Validate JSON and YAML assets
+        working-directory: lm_fullnet
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          from pathlib import Path
+
+          import yaml
+
+          for path in sorted(Path(".").rglob("*.json")):
+              with path.open("r", encoding="utf-8") as handle:
+                  json.load(handle)
+
+          for path in sorted(Path(".").rglob("*.yaml")):
+              with path.open("r", encoding="utf-8") as handle:
+                  yaml.safe_load(handle)
+          PY
+
+      - name: Run unit tests
+        working-directory: lm_fullnet
+        run: python -m pytest tests -q
+
+  shell:
+    name: Shell checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes shellcheck
+
+      - name: Check shell syntax
+        run: |
+          while IFS= read -r script; do
+            bash -n "$script"
+          done < <(find lm_fullnet -type f -name '*.sh' -print)
+
+      - name: Run ShellCheck
+        run: find lm_fullnet -type f -name '*.sh' -print0 | xargs -0 shellcheck --shell=bash --severity=error
