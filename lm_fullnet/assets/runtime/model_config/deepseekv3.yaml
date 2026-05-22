@@ -1,0 +1,137 @@
+# DeepSeekV3-671B 模型配置文件
+# 基于 pretrain_deepseekv3_671b_ptd.sh 参数和 test_deepseekv3_complete_config.py
+
+# MLATransformerConfig - DeepSeekV3使用MLA配置
+MLATransformerConfig:
+  # ===== 基础模型架构 =====
+  num_layers: 8                        # 64 -> 8 (8倍缩小，适合测试)
+  hidden_size: 1024                    # 7168 -> 1024 (7倍缩小)
+  num_attention_heads: 16              # 128 -> 16 (8倍缩小)
+  ffn_hidden_size: 2624               # 18432 -> 2624 (保持1.8倍比例，且能被8整除)
+
+  # ===== 并行配置 =====
+  tensor_model_parallel_size: 1        # 简化为单卡
+  pipeline_model_parallel_size: 1      # 简化为单卡
+
+  # ===== MLA (Multi-Latent Attention) 配置 - 暂时禁用以避免DotProductAttention兼容性问题 =====
+  # multi_latent_attention: False        # 暂时禁用MLA
+  # q_lora_rank: 192                   # 1536 -> 192 (8倍缩小) - 禁用MLA时不需要
+  # kv_lora_rank: 64                   # 512 -> 64 (8倍缩小) - 禁用MLA时不需要
+  # qk_head_dim: 64                    # 保持不变 - 禁用MLA时不需要
+  # qk_pos_emb_head_dim: 64           # 保持不变 - 禁用MLA时不需要
+  # v_head_dim: 128                    # 保持不变 - 禁用MLA时不需要
+  # qk_l2_norm: False                  # 移除，MLATransformerConfig不支持此参数
+
+  # ===== RoPE 配置 =====
+  # rope-scaling-type: "yarn"                    # Yarn RoPE变体
+  # rotary_base: 10000
+  # rotary_scaling_factor: 40            # 高扩展因子支持长上下文
+  # max_position_embeddings: 4096        # 缩小的位置编码
+  # beta_fast: 32
+  # beta_slow: 1
+  # mscale: 1.0
+  # mscale_all_dim: 1.0
+
+  # ===== MoE 配置 =====
+  num_moe_experts: 32                  # 256 -> 32 (8倍缩小)
+  moe_router_topk: 8                   # 保持不变
+  # moe_ffn_hidden_size: 256            # 2048 -> 256 (8倍缩小)
+  moe_router_load_balancing_type: "aux_loss"
+  moe_router_pre_softmax: True
+  # moe_router_score_function: "sigmoid"
+  # moe_router_enable_expert_bias: True
+  moe_aux_loss_coeff: 0.0001
+  # moe_grouped_gemm: False              # 禁用以简化
+  moe_router_num_groups: 1             # 新增参数，设置路由器组数
+  # ===== 基础配置 =====
+  normalization: "RMSNorm"
+  layernorm_epsilon: 0.000001
+  attention_dropout: 0.0
+  hidden_dropout: 0.0
+  add_bias_linear: False
+  gated_linear_unit: True              # SwiGLU激活
+  attention_softmax_in_fp32: True
+  masked_softmax_fusion: False
+
+  # ===== 数据类型配置 =====
+  bf16: False                          # 暂时禁用以避免dtype问题
+  params_dtype: torch.float32
+  pipeline_dtype: torch.float32
+
+  # ===== 训练配置 =====
+  init_method_std: 0.01
+  sequence_parallel: False             # 简化配置
+
+  moe_grouped_gemm: False
+
+# 额外配置 - 不在 MLATransformerConfig 中的参数
+extra_config:
+  # ===== 序列和位置编码 =====
+  seq_length: 4096                     # 序列长度
+  position_embedding_type: "rope"      # RoPE位置编码
+  
+  # ===== 批次配置 =====
+  micro_batch_size: 1
+  global_batch_size: 8                 # 适配单机8卡整网变异默认world_size，避免DP=8时Megatron整除断言失败
+  
+  # ===== 优化器配置 =====
+  lr: 3e-6
+  min_lr: 3e-7
+  weight_decay: 1e-1
+  clip_grad: 1.0
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  adam_eps: 1.0e-8
+  
+  # ===== DeepSeekV3特有配置 =====
+  expert_model_parallel_size: 1        # 移动到这里
+  untie_embeddings_and_output_weights: True
+  make_vocab_size_divisible_by: 64
+  vocab_size: 129280
+
+# GPT层规格配置
+get_gpt_layer_local_spec:
+  num_experts: 32                      # 对应MoE专家数
+  moe_grouped_gemm: False
+  qk_layernorm: False                  # 暂时禁用以简化配置
+  multi_latent_attention: False        # 暂时禁用MLA
+  fp8: None
+  moe_use_legacy_grouped_gemm: False
+  normalization: "RMSNorm"
+  qk_l2_norm: False                     # DeepSeekV3特有的L2归一化
+
+# 输入配置
+input:
+  shape: [256, 1, 1024]               # 对应hidden_size
+  dtype: torch.float32                # 统一使用float32
+  device: "cuda"
+
+# 注意力掩码配置
+attention_mask: default
+
+# 生产环境配置 (671B 原始规模) - 仅作参考
+production_config:
+  MLATransformerConfig:
+    num_layers: 64
+    hidden_size: 7168
+    num_attention_heads: 128
+    ffn_hidden_size: 18432
+    tensor_model_parallel_size: 4
+    pipeline_model_parallel_size: 8
+    expert_model_parallel_size: 8
+    q_lora_rank: 1536
+    kv_lora_rank: 512
+    num_moe_experts: 256
+    moe_ffn_hidden_size: 2048
+  
+  extra_config:
+    seq_length: 4096
+    max_position_embeddings: 163840
+    micro_batch_size: 2
+    global_batch_size: 2048
+    vocab_size: 129280
+  
+  get_gpt_layer_local_spec:
+    num_experts: 256
+    moe_grouped_gemm: True
+    multi_latent_attention: True

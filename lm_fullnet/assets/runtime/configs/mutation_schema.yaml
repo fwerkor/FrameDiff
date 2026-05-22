@@ -1,0 +1,132 @@
+model_structure_args:
+  # 直接决定模型形状/大小的关键参数
+  - num_layers
+  - hidden_size
+  - ffn_hidden_size
+  - num_attention_heads
+  - num_query_groups
+  - max_position_embeddings
+  - q_lora_rank
+  - kv_lora_rank
+  - qk_rope_head_dim
+  - qk_nope_head_dim
+  - v_head_dim
+  - moe_intermediate_size
+  - group_query_attention
+  - multi_latent_attention
+  - rotary_percent
+  - num_moe_experts
+  - n_shared_experts
+  - moe_router_topk
+  - topk_group
+  - kv_channels
+
+mutable_params:
+  # 数值区间约束类：提供缩放因子(min_factor/max_factor)与绝对边界(min_val/max_val)
+  num_layers: { min_factor: 0.5, max_factor: 2.0, min_val: 4, max_val: 16 }
+  hidden_size: { min_factor: 0.5, max_factor: 2.0, min_val: 512, max_val: 4096 }
+  ffn_hidden_size: { min_factor: 0.5, max_factor: 2.0, min_val: 1024, max_val: 4096 }
+  num_attention_heads: { min_factor: 0.5, max_factor: 2.0, min_val: 4, max_val: 16 }
+  num_query_groups: { min_factor: 0.5, max_factor: 2.0, min_val: 1, max_val: 16 }
+  max_position_embeddings: { min_factor: 0.5, max_factor: 2.0, min_val: 1024, max_val: 40960 }
+  moe_ffn_hidden_size: { min_factor: 0.5, max_factor: 2.0, min_val: 512, max_val: 8192 }
+
+  # 枚举集合约束类：enums 列出可选值
+  q_lora_rank: { enums: [768, 1536] }
+  kv_lora_rank: { enums: [256, 512] }
+  moe_router_load_balancing_type: { enums: [aux_loss, group_limited_greedy] }
+  rope_scaling_type: { enums: [yarn, llama3, longrope, plm] }
+  rope_scaling_factor: { enums: [1, 2, 4, 8, 16] }
+  rope_scaling_original_max_position_embeddings: { enums: [1024, 2048, 4096, 8192] }
+  sequence_parallel: { enums: [true, false] }
+  normalization: { enums: [RMSNorm, LayerNorm] }
+  layernorm_epsilon: { enums: [1.0e-5, 1.0e-6, 1.0e-7] }
+  gated_linear_unit: { enums: [true, false] }
+  attention_dropout: { enums: [0.0] }
+  hidden_dropout: { enums: [0.0] }
+  weight_decay: { enums: [0.01, 0.001, 0.0001, 0.0] }
+  add_qkv_bias: { enums: [true, false] }
+  drop_path_rate: { enums: [0.0, 0.3] }
+  group_query_attention: { enums: [true, false] }
+  position_embedding_type: { enums: [rope, learned_absolute] }
+  rotary_percent: { enums: [0.0, 1.0] }
+  rotary_base: { enums: [100000.0, 5000000.0] }
+  multi_latent_attention: { enums: [true, false] }
+  qk_rope_head_dim: { enums: [64, 128] }
+  qk_nope_head_dim: { enums: [64, 128] }
+  v_head_dim: { enums: [64, 128] }
+  kv_channels: { enums: [64, 128] }
+  qk_layernorm: { enums: [true, false] }
+  use_flash_attn: { enums: [true, false] }
+  attention_softmax_in_fp32: { enums: [true, false] }
+  no_masked_softmax_fusion: { enums: [true, false] }
+  moe_grouped_gemm: { enums: [true, false] }
+  num_moe_experts: { enums: [2, 4, 8, 16, 32, 64] }
+  moe_aux_loss_coeff: { enums: [0.003, 0.01] }
+  moe_router_topk: { enums: [1, 2, 4, 8] }
+  moe_router_pre_softmax: { enums: [true, false] }
+  moe_permutation_async_comm: { enums: [true, false] }
+  use_fused_moe_token_permute_and_unpermute: { enums: [true, false] }
+  moe_token_dispatcher_type: { enums: [alltoall] }
+  embedding_multiplier_scale: { enums: [0.0, 78.38] }
+  output_multiplier_scale: { enums: [0.0, 0.57] }
+  first_k_dense_replace: { enums: [1, 0] }
+  moe_layer_freq: { enums: [1, 2, 4] }
+  n_shared_experts: { enums: [0, 1, 2, 4] }
+  untie_embeddings_and_output_weights: { enums: [true, false] }
+  disable_bias_linear: { enums: [true, false] }
+  swiglu: { enums: [true, false] }
+  no_gradient_accumulation_fusion: { enums: [true, false] }
+  moe_intermediate_size: { enums: [768, 1536] }
+  topk_group: { enums: [3, 6] }
+  moe_device_level_aux_loss_coeff: { enums: [0.05, 0.03] }
+  moe_comm_aux_loss_coeff: { enums: [0.02, 0.01] }
+  routed_scaling_factor: { enums: [16.0, 8.0] }
+  seq_aux: { enums: [true, false] }
+  input_jitter: { enums: [true, false] }
+  use_cp_send_recv_overlap: { enums: [true, false] }
+
+script_constraints:
+  # 优化手段参数
+  position_embedding_type: { enums: [rope] }
+  overlap_grad_reduce: { enums: [true, false] }
+  use_fused_rotary_pos_emb: { enums: [true, false] }
+  recompute_granularity: { enums: [full] }
+  recompute_method: { enums: [uniform, block] }
+  recompute_num_layers: { enums: [1, 42] }
+  recompute_activation_function: { enums: [true, false] }
+  use_distributed_optimizer: { enums: [true, false] }
+  reuse_fp32_param: { enums: [true, false] }
+  sequence_parallel: { enums: [true, false] }
+  disable_bias_linear: { enums: [true, false] }
+  untie_embeddings_and_output_weights: { enums: [true, false] }
+  use_flash_attn: { enums: [true, false] }
+  use_fused_rmsnorm: { enums: [true, false] }
+  use_fused_swiglu: { enums: [true, false] }
+  use_rotary_position_embeddings: { enums: [true, false] }
+  swiglu: { enums: [true, false] }
+  group_query_attention: { enums: [true, false] }
+  no_masked_softmax_fusion: { enums: [true, false] }
+  no_gradient_accumulation_fusion: { enums: [true, false] }
+  attention_softmax_in_fp32: { enums: [true, false] }
+  overlap_param_gather: { enums: [true, false] }
+  distributed_backend: { enums: [nccl] }
+  use_mcore_models: { enums: [true, false] }
+  normalization: { enums: [RMSNorm, LayerNorm] }
+  make_vocab_size_divisible_by: { enums: [1] }
+  add_bias_linear: { enums: [true, false] }
+  num_query_groups: { enums: [2, 4, 8, 16] }
+  init_method_std: { enums: [0.01, 0.02] }
+  layernorm_epsilon: { enums: [1.0e-5, 1.0e-6] }
+  moe_aux_loss_coeff: { enums: [0.003, 0.01] }
+  rotary_base: { enums: [10000, 1000000] }
+  add_qkv_bias: { enums: [true, false] }
+  cuda_device_max_connections: { enums: [1] }
+  pytorch_npu_alloc_conf: { enums: ["expandable_segments:True"] }
+
+  # 并行策略参数
+  pipeline_parallel_size: { enums: [1, 2, 4, 8, 16] }
+  expert_parallel_size: { enums: [1, 2, 4, 8, 16] }
+  tensor_parallel_size: { enums: [1, 2, 4, 8, 16] }
+  data_parallel_size: { enums: [1, 2, 4, 8, 16] }
+  context_parallel_size: { enums: [1, 2, 4, 8, 16] }

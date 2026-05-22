@@ -1,0 +1,76 @@
+# ChatGLM 模型配置文件
+# 基于 ChatGLM 架构
+
+# TransformerConfig - 只包含 Megatron-Core 原生支持的模型架构参数
+TransformerConfig:
+  # ===== 基础模型架构 =====
+  num_layers: 28
+  hidden_size: 4096
+  ffn_hidden_size: 13696
+  num_attention_heads: 32
+  num_query_groups: 2
+  
+  # ===== 并行配置 =====
+  tensor_model_parallel_size: 1        # 简化为单卡测试
+  pipeline_model_parallel_size: 1      # 简化为单卡测试
+  # pipeline_dtype: torch.float16      # 单卡时不需要
+  
+  # ===== 基础配置 =====
+  normalization: "RMSNorm"
+  layernorm_epsilon: 0.00001
+  attention_dropout: 0.0
+  hidden_dropout: 0.0
+  add_bias_linear: False               # 禁用线性层偏置
+  init_method_std: 0.01
+  add_qkv_bias: True                  # GLM特有：QKV偏置
+
+# 额外配置 - 不在 TransformerConfig 中的参数
+extra_config:
+  # ===== 序列和位置编码 =====
+  seq_length: 8192
+  position_embedding_type: "rope"
+  max_position_embeddings: 8192
+  use_glm_rope: True                  # GLM特有的RoPE实现
+  rotary_percent: 0.5                 # GLM特有：50%旋转
+  
+  # ===== 批次配置 =====
+  micro_batch_size: 1
+  global_batch_size: 32
+  
+  # ===== 优化器配置 =====
+  lr: 1.0e-6
+  min_lr: 1.0e-8
+  weight_decay: 1e-1
+  clip_grad: 1.0
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  lr_warmup_fraction: 0.01
+  lr_decay_style: "cosine"
+  initial_loss_scale: 4096
+  
+  # ===== ChatGLM特有配置 =====
+  padded_vocab_size: 65024
+  use_distributed_optimizer: True
+  use_fused_rmsnorm: True
+  use_fused_swiglu: True
+  use_flash_attn: True
+
+# GPT层规格配置
+get_gpt_layer_local_spec:
+  num_experts: None                   # ChatGLM不使用MoE
+  moe_grouped_gemm: False
+  qk_layernorm: False
+  multi_latent_attention: False
+  fp8: None
+  moe_use_legacy_grouped_gemm: False
+  normalization: "RMSNorm"
+  qk_l2_norm: False
+
+# 输入配置
+input:
+  shape: [32, 1, 4096]               # 对应hidden_size
+  dtype: torch.float32               # 统一使用float32
+  device: "cuda"
+
+# 注意力掩码配置
+attention_mask: default

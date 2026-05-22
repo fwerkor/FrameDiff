@@ -1,0 +1,69 @@
+# LLaMA-7B 模型配置文件
+# 基于 LLaMA 7B 架构
+
+# TransformerConfig - 只包含 Megatron-Core 原生支持的模型架构参数
+TransformerConfig:
+  # ===== 基础模型架构 =====
+  num_layers: 32
+  hidden_size: 4096
+  ffn_hidden_size: 11008
+  num_attention_heads: 32
+  num_query_groups: 1
+  
+  # ===== 并行配置 =====
+  tensor_model_parallel_size: 1
+  pipeline_model_parallel_size: 1      # 简化为单卡测试，避免pipeline问题
+  # pipeline_dtype: torch.float16      # 单卡时不需要
+  
+  # ===== 基础配置 =====
+  normalization: "RMSNorm"
+  layernorm_epsilon: 0.00001
+  attention_dropout: 0.0
+  hidden_dropout: 0.0
+  add_bias_linear: False               # 禁用线性层偏置
+  init_method_std: 0.01
+
+# 额外配置 - 不在 TransformerConfig 中的参数
+extra_config:
+  # ===== 序列和位置编码 =====
+  seq_length: 2048
+  position_embedding_type: "rope"
+  max_position_embeddings: 2048
+  
+  # ===== 批次配置 =====
+  micro_batch_size: 4
+  global_batch_size: 256
+  
+  # ===== 优化器配置 =====
+  lr: 1.0e-6
+  min_lr: 1.0e-7
+  weight_decay: 1e-1
+  clip_grad: 1.0
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  lr_warmup_fraction: 0.01
+  initial_loss_scale: 65536
+  
+  # ===== LLaMA特有配置 =====
+  use_fused_rmsnorm: True
+  use_flash_attn: True
+
+# GPT层规格配置
+get_gpt_layer_local_spec:
+  num_experts: None                   # LLaMA不使用MoE
+  moe_grouped_gemm: False
+  qk_layernorm: False
+  multi_latent_attention: False
+  fp8: None
+  moe_use_legacy_grouped_gemm: False
+  normalization: "RMSNorm"
+  qk_l2_norm: False
+
+# 输入配置
+input:
+  shape: [32, 1, 4096]               # 对应hidden_size
+  dtype: torch.float32               # 统一使用float32
+  device: "cuda"
+
+# 注意力掩码配置
+attention_mask: default

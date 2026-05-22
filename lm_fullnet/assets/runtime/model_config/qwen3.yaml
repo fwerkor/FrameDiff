@@ -1,0 +1,76 @@
+# Qwen3-1.7B model config
+# Derived from pretrain_mutated_qwen3.sh
+
+# TransformerConfig - Megatron-Core native model args
+TransformerConfig:
+  # Base architecture
+  num_layers: 28
+  hidden_size: 2048
+  ffn_hidden_size: 6144
+  num_attention_heads: 16
+  num_query_groups: 8
+
+  # Parallel config
+  tensor_model_parallel_size: 1
+  pipeline_model_parallel_size: 1
+
+  # Base config
+  normalization: "RMSNorm"
+  layernorm_epsilon: 0.000001
+  attention_dropout: 0.0
+  hidden_dropout: 0.0
+  add_bias_linear: False
+  init_method_std: 0.01
+
+# Extra config - args outside TransformerConfig
+extra_config:
+  # Sequence and position
+  seq_length: 4096
+  position_embedding_type: "rope"
+  max_position_embeddings: 4096
+  rotary_base: 1000000
+  use_rotary_position_embeddings: True
+
+  # Batch config
+  micro_batch_size: 1
+  global_batch_size: 32
+
+  # Optimizer config
+  lr: 1.25e-6
+  min_lr: 1.25e-7
+  weight_decay: 0.1
+  clip_grad: 1.0
+  lr_warmup_fraction: 0.01
+  lr_decay_style: "cosine"
+  train_iters: 2000
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  initial_loss_scale: 4096
+
+  # Qwen3-specific
+  padded_vocab_size: 151936
+  use_distributed_optimizer: True
+  use_fused_rmsnorm: True
+  use_fused_rotary_pos_emb: True
+  use_fused_swiglu: True
+  use_flash_attn: True
+
+# GPT layer spec
+get_gpt_layer_local_spec:
+  num_experts: None
+  moe_grouped_gemm: False
+  qk_layernorm: True
+  multi_latent_attention: False
+  fp8: None
+  moe_use_legacy_grouped_gemm: False
+  normalization: "RMSNorm"
+  qk_l2_norm: False
+
+# Input config
+input:
+  shape: [32, 1, 2048]
+  dtype: torch.float32
+  device: "cuda"
+
+# Attention mask config
+attention_mask: default

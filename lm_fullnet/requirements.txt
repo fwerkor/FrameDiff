@@ -1,0 +1,7 @@
+numpy>=1.24
+pandas>=2.0
+PyYAML>=6.0
+ruamel.yaml>=0.17
+
+# Optional terminal colors. The logger falls back cleanly when absent.
+# colorama>=0.4.6

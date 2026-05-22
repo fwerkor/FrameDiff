@@ -1,0 +1,23 @@
+config:
+  init_method: torch.nn.init.xavier_uniform_
+  sequence_parallel: false
+  perform_initialization: true
+  hidden_dropout: 0.0
+  fp32_residual_connection: false
+  clone_scatter_output_in_embedding: true
+  _cpu_offloading_context: None
+  wgrad_deferral_limit: 0
+  num_attention_heads: 16
+  hidden_size: 896
+  num_layers: 24
+  rotary_interleaved: 1.0
+  defer_embedding_wgrad_compute: false
+  tensor_model_parallel_size: 1
+  pipeline_model_parallel_size: 1
+  pipeline_dtype: torch.bfloat16
+
+vocab_size: 50304
+max_sequence_length: 2560
+position_embedding_type: learned_absolute
+seq_len_interpolation_factor: None
+rotary_base: 10000
