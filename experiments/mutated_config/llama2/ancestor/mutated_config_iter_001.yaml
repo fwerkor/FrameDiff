@@ -1,0 +1,54 @@
+base_config:
+  config:
+    num_layers: 32
+    hidden_size: 4096
+    ffn_hidden_size: 11008
+    num_attention_heads: 32
+    num_query_groups: 1
+    tensor_model_parallel_size: 1
+    pipeline_model_parallel_size: 1
+    normalization: RMSNorm
+    layernorm_epsilon: 1.0e-05
+    attention_dropout: 0.0
+    hidden_dropout: 0.0
+    add_bias_linear: false
+    init_method_std: 0.01
+  vocab_size: 50304
+  max_sequence_length: 2048
+  position_embedding_type: rope
+  seq_len_interpolation_factor: null
+  rotary_base: 10000
+  rotary_percent: 1.0
+  rope_scaling: null
+  rope_scaling_factor: 1
+graph_structure:
+  LayerConfig:
+    1:
+      name: Embedding
+      params: {}
+      state: src
+      layer_limits:
+      - embedding
+      to:
+      - 2
+      from: []
+      layer_nums: 1
+    2:
+      name: Decoderlayer1
+      params: {}
+      state: none
+      layer_limits:
+      - Qwen2DecoderLayer
+      to: []
+      from:
+      - 1
+      layer_nums: 1
+metadata:
+  iteration: 1
+  mutation_rate: 0
+  timestamp: '2026-05-22T14:25:06'
+  generated_by: ChatGPT baseline generator
+  source_model: llama2
+  source_path: lmsv_rec/assets/runtime/model_config/llama2.yaml
+  note: Original baseline Task3 load product; no automatic mutation; mutating-1.json
+    has before == after.

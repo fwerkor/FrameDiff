@@ -1,0 +1,152 @@
+{
+    "0": {
+        "mutated": false,
+        "before": {},
+        "after": {},
+        "diff": {
+            "created": {},
+            "deleted": [],
+            "modified": {}
+        }
+    },
+    "1": {
+        "mutated": false,
+        "before": {
+            "TransformerConfig": {
+                "num_layers": 4,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 2048,
+                "num_attention_heads": 8,
+                "num_query_groups": 2,
+                "tensor_model_parallel_size": 1,
+                "pipeline_model_parallel_size": 1,
+                "num_moe_experts": 4,
+                "moe_router_topk": 2,
+                "moe_router_load_balancing_type": "aux_loss",
+                "moe_aux_loss_coeff": 0.02,
+                "normalization": "RMSNorm",
+                "layernorm_epsilon": 1e-05,
+                "attention_dropout": 0.0,
+                "hidden_dropout": 0.0,
+                "add_bias_linear": false,
+                "init_method_std": 0.02
+            },
+            "extra_config": {
+                "seq_length": 1024,
+                "position_embedding_type": "rope",
+                "max_position_embeddings": 1024,
+                "rotary_base": 10000,
+                "micro_batch_size": 1,
+                "global_batch_size": 32,
+                "lr": 1e-05,
+                "min_lr": 1e-06,
+                "weight_decay": 0.1,
+                "clip_grad": 1.0,
+                "lr_warmup_iters": 2,
+                "lr_decay_style": "cosine",
+                "train_iters": 2000,
+                "expert_model_parallel_size": 1,
+                "vocab_size": 131072,
+                "use_distributed_optimizer": true,
+                "use_fused_rmsnorm": true,
+                "use_fused_rotary_pos_emb": true,
+                "use_fused_swiglu": true,
+                "use_flash_attn": true
+            },
+            "get_gpt_layer_local_spec": {
+                "num_experts": 4,
+                "moe_grouped_gemm": false,
+                "qk_layernorm": false,
+                "multi_latent_attention": false,
+                "fp8": null,
+                "moe_use_legacy_grouped_gemm": true,
+                "normalization": "RMSNorm",
+                "qk_l2_norm": false
+            },
+            "input": {
+                "shape": [
+                    4,
+                    1,
+                    1024
+                ],
+                "dtype": "torch.float32",
+                "device": "cuda"
+            },
+            "attention_mask": "default"
+        },
+        "after": {
+            "TransformerConfig": {
+                "num_layers": 4,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 2048,
+                "num_attention_heads": 8,
+                "num_query_groups": 2,
+                "tensor_model_parallel_size": 1,
+                "pipeline_model_parallel_size": 1,
+                "num_moe_experts": 4,
+                "moe_router_topk": 2,
+                "moe_router_load_balancing_type": "aux_loss",
+                "moe_aux_loss_coeff": 0.02,
+                "normalization": "RMSNorm",
+                "layernorm_epsilon": 1e-05,
+                "attention_dropout": 0.0,
+                "hidden_dropout": 0.0,
+                "add_bias_linear": false,
+                "init_method_std": 0.02
+            },
+            "extra_config": {
+                "seq_length": 1024,
+                "position_embedding_type": "rope",
+                "max_position_embeddings": 1024,
+                "rotary_base": 10000,
+                "micro_batch_size": 1,
+                "global_batch_size": 32,
+                "lr": 1e-05,
+                "min_lr": 1e-06,
+                "weight_decay": 0.1,
+                "clip_grad": 1.0,
+                "lr_warmup_iters": 2,
+                "lr_decay_style": "cosine",
+                "train_iters": 2000,
+                "expert_model_parallel_size": 1,
+                "vocab_size": 131072,
+                "use_distributed_optimizer": true,
+                "use_fused_rmsnorm": true,
+                "use_fused_rotary_pos_emb": true,
+                "use_fused_swiglu": true,
+                "use_flash_attn": true
+            },
+            "get_gpt_layer_local_spec": {
+                "num_experts": 4,
+                "moe_grouped_gemm": false,
+                "qk_layernorm": false,
+                "multi_latent_attention": false,
+                "fp8": null,
+                "moe_use_legacy_grouped_gemm": true,
+                "normalization": "RMSNorm",
+                "qk_l2_norm": false
+            },
+            "input": {
+                "shape": [
+                    4,
+                    1,
+                    1024
+                ],
+                "dtype": "torch.float32",
+                "device": "cuda"
+            },
+            "attention_mask": "default"
+        },
+        "diff": {
+            "created": {},
+            "deleted": [],
+            "modified": {}
+        },
+        "source_file": "grok1.yaml"
+    },
+    "success": true,
+    "forward_skipped": false,
+    "baseline": true,
+    "mutation_num": 0,
+    "note": "No mutation: decoder node before == after."
+}

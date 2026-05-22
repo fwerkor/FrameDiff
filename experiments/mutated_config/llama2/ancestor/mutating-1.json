@@ -1,0 +1,134 @@
+{
+    "0": {
+        "mutated": false,
+        "before": {},
+        "after": {},
+        "diff": {
+            "created": {},
+            "deleted": [],
+            "modified": {}
+        }
+    },
+    "1": {
+        "mutated": false,
+        "before": {
+            "TransformerConfig": {
+                "num_layers": 32,
+                "hidden_size": 4096,
+                "ffn_hidden_size": 11008,
+                "num_attention_heads": 32,
+                "num_query_groups": 1,
+                "tensor_model_parallel_size": 1,
+                "pipeline_model_parallel_size": 1,
+                "normalization": "RMSNorm",
+                "layernorm_epsilon": 1e-05,
+                "attention_dropout": 0.0,
+                "hidden_dropout": 0.0,
+                "add_bias_linear": false,
+                "init_method_std": 0.01
+            },
+            "extra_config": {
+                "seq_length": 2048,
+                "position_embedding_type": "rope",
+                "max_position_embeddings": 2048,
+                "micro_batch_size": 4,
+                "global_batch_size": 256,
+                "lr": 1e-06,
+                "min_lr": 1e-07,
+                "weight_decay": 0.1,
+                "clip_grad": 1.0,
+                "adam_beta1": 0.9,
+                "adam_beta2": 0.95,
+                "lr_warmup_fraction": 0.01,
+                "initial_loss_scale": 65536,
+                "use_fused_rmsnorm": true,
+                "use_flash_attn": true
+            },
+            "get_gpt_layer_local_spec": {
+                "num_experts": null,
+                "moe_grouped_gemm": false,
+                "qk_layernorm": false,
+                "multi_latent_attention": false,
+                "fp8": null,
+                "moe_use_legacy_grouped_gemm": false,
+                "normalization": "RMSNorm",
+                "qk_l2_norm": false
+            },
+            "input": {
+                "shape": [
+                    32,
+                    1,
+                    4096
+                ],
+                "dtype": "torch.float32",
+                "device": "cuda"
+            },
+            "attention_mask": "default"
+        },
+        "after": {
+            "TransformerConfig": {
+                "num_layers": 32,
+                "hidden_size": 4096,
+                "ffn_hidden_size": 11008,
+                "num_attention_heads": 32,
+                "num_query_groups": 1,
+                "tensor_model_parallel_size": 1,
+                "pipeline_model_parallel_size": 1,
+                "normalization": "RMSNorm",
+                "layernorm_epsilon": 1e-05,
+                "attention_dropout": 0.0,
+                "hidden_dropout": 0.0,
+                "add_bias_linear": false,
+                "init_method_std": 0.01
+            },
+            "extra_config": {
+                "seq_length": 2048,
+                "position_embedding_type": "rope",
+                "max_position_embeddings": 2048,
+                "micro_batch_size": 4,
+                "global_batch_size": 256,
+                "lr": 1e-06,
+                "min_lr": 1e-07,
+                "weight_decay": 0.1,
+                "clip_grad": 1.0,
+                "adam_beta1": 0.9,
+                "adam_beta2": 0.95,
+                "lr_warmup_fraction": 0.01,
+                "initial_loss_scale": 65536,
+                "use_fused_rmsnorm": true,
+                "use_flash_attn": true
+            },
+            "get_gpt_layer_local_spec": {
+                "num_experts": null,
+                "moe_grouped_gemm": false,
+                "qk_layernorm": false,
+                "multi_latent_attention": false,
+                "fp8": null,
+                "moe_use_legacy_grouped_gemm": false,
+                "normalization": "RMSNorm",
+                "qk_l2_norm": false
+            },
+            "input": {
+                "shape": [
+                    32,
+                    1,
+                    4096
+                ],
+                "dtype": "torch.float32",
+                "device": "cuda"
+            },
+            "attention_mask": "default"
+        },
+        "diff": {
+            "created": {},
+            "deleted": [],
+            "modified": {}
+        },
+        "source_file": "llama2.yaml"
+    },
+    "success": true,
+    "forward_skipped": false,
+    "baseline": true,
+    "mutation_num": 0,
+    "note": "No mutation: decoder node before == after."
+}

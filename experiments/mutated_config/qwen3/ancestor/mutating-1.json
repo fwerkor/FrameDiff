@@ -1,0 +1,172 @@
+{
+    "0": {
+        "mutated": false,
+        "before": {},
+        "after": {},
+        "diff": {
+            "created": {},
+            "deleted": [],
+            "modified": {}
+        }
+    },
+    "1": {
+        "mutated": false,
+        "before": {
+            "MLATransformerConfig": {
+                "num_layers": 8,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 2048,
+                "num_attention_heads": 16,
+                "kv_channels": 64,
+                "num_query_groups": 4,
+                "max_position_embeddings": 2048,
+                "rotary_base": 1000000,
+                "tensor_model_parallel_size": 1,
+                "pipeline_model_parallel_size": 1,
+                "sequence_parallel": false,
+                "context_parallel_size": 1,
+                "num_moe_experts": 32,
+                "moe_router_topk": 8,
+                "moe_ffn_hidden_size": 512,
+                "moe_router_load_balancing_type": "aux_loss",
+                "moe_router_score_function": "sigmoid",
+                "moe_router_enable_expert_bias": false,
+                "moe_aux_loss_coeff": 0.001,
+                "moe_grouped_gemm": false,
+                "moe_layer_freq": 1,
+                "normalization": "RMSNorm",
+                "layernorm_epsilon": 1e-06,
+                "attention_dropout": 0.0,
+                "hidden_dropout": 0.0,
+                "add_bias_linear": false,
+                "gated_linear_unit": true,
+                "attention_softmax_in_fp32": true,
+                "masked_softmax_fusion": false,
+                "bf16": false,
+                "params_dtype": "torch.float32",
+                "pipeline_dtype": "torch.float32",
+                "init_method_std": 0.01
+            },
+            "extra_config": {
+                "seq_length": 2048,
+                "position_embedding_type": "rope",
+                "micro_batch_size": 1,
+                "global_batch_size": 4,
+                "lr": 1e-07,
+                "min_lr": 1e-08,
+                "weight_decay": 0.1,
+                "clip_grad": 1.0,
+                "adam_beta1": 0.9,
+                "adam_beta2": 0.95,
+                "adam_eps": 1e-08,
+                "expert_model_parallel_size": 1,
+                "untie_embeddings_and_output_weights": true,
+                "make_vocab_size_divisible_by": 128
+            },
+            "get_gpt_layer_local_spec": {
+                "num_experts": 32,
+                "moe_grouped_gemm": false,
+                "qk_layernorm": false,
+                "multi_latent_attention": false,
+                "fp8": null,
+                "moe_use_legacy_grouped_gemm": false,
+                "normalization": "RMSNorm",
+                "qk_l2_norm": false
+            },
+            "input": {
+                "shape": [
+                    256,
+                    1,
+                    1024
+                ],
+                "dtype": "torch.float32",
+                "device": "cuda"
+            },
+            "attention_mask": "default"
+        },
+        "after": {
+            "MLATransformerConfig": {
+                "num_layers": 8,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 2048,
+                "num_attention_heads": 16,
+                "kv_channels": 64,
+                "num_query_groups": 4,
+                "max_position_embeddings": 2048,
+                "rotary_base": 1000000,
+                "tensor_model_parallel_size": 1,
+                "pipeline_model_parallel_size": 1,
+                "sequence_parallel": false,
+                "context_parallel_size": 1,
+                "num_moe_experts": 32,
+                "moe_router_topk": 8,
+                "moe_ffn_hidden_size": 512,
+                "moe_router_load_balancing_type": "aux_loss",
+                "moe_router_score_function": "sigmoid",
+                "moe_router_enable_expert_bias": false,
+                "moe_aux_loss_coeff": 0.001,
+                "moe_grouped_gemm": false,
+                "moe_layer_freq": 1,
+                "normalization": "RMSNorm",
+                "layernorm_epsilon": 1e-06,
+                "attention_dropout": 0.0,
+                "hidden_dropout": 0.0,
+                "add_bias_linear": false,
+                "gated_linear_unit": true,
+                "attention_softmax_in_fp32": true,
+                "masked_softmax_fusion": false,
+                "bf16": false,
+                "params_dtype": "torch.float32",
+                "pipeline_dtype": "torch.float32",
+                "init_method_std": 0.01
+            },
+            "extra_config": {
+                "seq_length": 2048,
+                "position_embedding_type": "rope",
+                "micro_batch_size": 1,
+                "global_batch_size": 4,
+                "lr": 1e-07,
+                "min_lr": 1e-08,
+                "weight_decay": 0.1,
+                "clip_grad": 1.0,
+                "adam_beta1": 0.9,
+                "adam_beta2": 0.95,
+                "adam_eps": 1e-08,
+                "expert_model_parallel_size": 1,
+                "untie_embeddings_and_output_weights": true,
+                "make_vocab_size_divisible_by": 128
+            },
+            "get_gpt_layer_local_spec": {
+                "num_experts": 32,
+                "moe_grouped_gemm": false,
+                "qk_layernorm": false,
+                "multi_latent_attention": false,
+                "fp8": null,
+                "moe_use_legacy_grouped_gemm": false,
+                "normalization": "RMSNorm",
+                "qk_l2_norm": false
+            },
+            "input": {
+                "shape": [
+                    256,
+                    1,
+                    1024
+                ],
+                "dtype": "torch.float32",
+                "device": "cuda"
+            },
+            "attention_mask": "default"
+        },
+        "diff": {
+            "created": {},
+            "deleted": [],
+            "modified": {}
+        },
+        "source_file": "qwen3.yaml"
+    },
+    "success": true,
+    "forward_skipped": false,
+    "baseline": true,
+    "mutation_num": 0,
+    "note": "No mutation: decoder node before == after."
+}
