@@ -47,9 +47,9 @@ class Config:
     # 运行配置
     PTA_ENV = "mindspeed"
     MSA_ENV = "msadapter"
-    PTA_MAX_RUNTIME = 3000
+    PTA_MAX_RUNTIME = 6000
     MAX_MUTATION_WAIT = 600
-    MSA_MAX_RUNTIME = 3000
+    MSA_MAX_RUNTIME = 6000
     LOG_INIT_WAIT = 240
     LOG_STABLE_THRESHOLD = 150
     SAVE_ABNORMAL_WEIGHTS = True
@@ -978,9 +978,9 @@ def _apply_config(params):
     Config.SAVE_STEPS = 1
     Config.LOAD_STEPS = 15
     Config.FULLNET_ASSEMBLY_MODE = "single_model_fullnet"
-    Config.PTA_MAX_RUNTIME = 3000
+    Config.PTA_MAX_RUNTIME = 6000
     Config.MAX_MUTATION_WAIT = 600
-    Config.MSA_MAX_RUNTIME = 3000
+    Config.MSA_MAX_RUNTIME = 6000
     Config.LOG_INIT_WAIT = 240
     Config.LOG_STABLE_THRESHOLD = 150
     Config.TARGET_TENSOR_PARALLEL_SIZE = _parse_optional_positive_int(
