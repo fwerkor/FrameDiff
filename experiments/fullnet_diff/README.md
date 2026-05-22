@@ -14,7 +14,7 @@ python fullnet.py models
 Create a config for one language model:
 
 ```bash
-python fullnet.py init --models qwen2 --iters 3
+python fullnet.py init --models qwen2
 ```
 
 Check paths and selected models:
@@ -32,7 +32,7 @@ python fullnet.py run
 Preview the final runtime config without launching training:
 
 ```bash
-python fullnet.py run --models qwen3 --iters 1 --dry-run
+python fullnet.py run --models qwen2 --perturb-eps 1e-5 --dry-run
 ```
 
 Rebuild the lightweight paper report for the latest run:
@@ -49,10 +49,10 @@ FrameDiff uses this slice for language-model full-network precision experiments:
 2. Run PTA-SAVE to produce shared weights.
 3. Run PTA-LOAD as the same-backend baseline.
 4. Run MSA-LOAD with the same graph and weights.
-5. When trace is enabled, run PTA/MSA input-perturbation replays for metamorphic data.
+5. Run PTA/MSA input-perturbation replays for metamorphic data with a one-way `+eps` tensor perturbation.
 6. Archive per-iteration logs, scripts, mutation inputs, step-level loss CSVs, full tensor/weight traces, and compact analysis artifacts.
 
-Set `TRACE.ENABLED=true` in `config.json`, or pass `--trace`, when component-level diagnosis needs full tensor and weight exports. The trace index records 17 paper components, whole-network inputs/outputs, overall loss, mutation metadata, PTA/MSA baselines, and MSA perturbation data. The low-level runtime still uses a few `LMSV_*` environment flags internally because the existing shared-weight and training-log patches depend on those names.
+This paper slice runs one iteration per launch. Component-level trace, full weight export, PTA/MSA baseline alignment, and perturbation replay are fixed internal behavior rather than user-facing switches. The public config only keeps PTA/MSA paths, output root, selected model, `PERTURB_EPS`, and baseline loss tolerance. Mutation parameter count is fixed to `0`; the selected YAML decides the real decoder depth. The trace index records 17 paper components, whole-network inputs/outputs, overall loss, mutation metadata, PTA/MSA baselines, and perturbation data.
 
 ## Key Files
 
@@ -63,6 +63,8 @@ Set `TRACE.ENABLED=true` in `config.json`, or pass `--trace`, when component-lev
 - `utils/task/fullnet.py`: single-machine full-network orchestration core.
 - `utils/analyze/fullnet_result.py`: lightweight paper-oriented result analysis.
 - `../frame_diff_common/model_configs/*.yaml`: supported language model presets shared with the other diff workflows.
+- `assets/runtime/configs/*.yaml`: graph template and mutation schema still used by the runtime graph builder.
+- `assets/runtime/tokenizers/baichuan2/`: the bootstrap tokenizer path used by the inherited PTA/MSA launch scripts.
 - `scripts/mutation/mutate-auto.sh`: mutation entry used by the full-network chain.
 - `scripts/runtime/submodule_entry.py`: runtime patch wrapper used for PTA/MSA graph execution.
 

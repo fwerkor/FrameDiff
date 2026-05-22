@@ -46,7 +46,7 @@ print(port)
 PY
 )"
 
-DEFAULT_MUTATE_ARGS="-c ${MODEL_CONFIG_DIR} -r 100 --mutnm 2 -n 1 -m ${MODEL_CONFIG_DIR}/qwen2.yaml --args_path ${MUTATION_SCHEMA_PATH}"
+DEFAULT_MUTATE_ARGS="-c ${MODEL_CONFIG_DIR} -r 1 --mutnm 0 -n 1 -m ${MODEL_CONFIG_DIR}/qwen2.yaml --args_path ${MUTATION_SCHEMA_PATH}"
 MUTATE_ARGS="${MUTATE_ARGS:-${DEFAULT_MUTATE_ARGS}}"
 
 distributed_args=(

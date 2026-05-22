@@ -70,9 +70,6 @@ def export_runtime_env(config: dict[str, Any]) -> None:
     env_map = {
         "PTA_PATH": ("PTAPATH", "PTA path"),
         "MSA_PATH": ("MSAPATH", "MSA path"),
-        "PTA_NAME": ("PTANAME", "PTA conda env"),
-        "MSA_NAME": ("MSANAME", "MSA conda env"),
-        "SAVE_ABNORMAL_WEIGHTS": ("SAVE_ABNORMAL_WEIGHTS", "abnormal weight archive"),
     }
     for key, (legacy_key, _label) in env_map.items():
         if key not in config:
@@ -81,16 +78,18 @@ def export_runtime_env(config: dict[str, Any]) -> None:
         os.environ[key] = value
         os.environ[legacy_key] = value
 
-    trace = config.get("TRACE") if isinstance(config.get("TRACE"), dict) else {}
-    if trace.get("ENABLED") or trace.get("DEBUG_COMPARE"):
-        os.environ.setdefault("LMSV_DEBUG_COMPARE", "1")
-        os.environ.setdefault("LMSV_FULLNET_TRACE", "1")
-    if trace.get("LAYER_SUMMARY"):
-        os.environ.setdefault("LMSV_LAYER_SUMMARY", "1")
-    if "EXPORT_FULL_WEIGHTS" in trace:
-        os.environ.setdefault("LMSV_FULLNET_TRACE_FULL_WEIGHTS", "1" if trace.get("EXPORT_FULL_WEIGHTS") else "0")
-    if "PERTURB_SIGMA" in trace:
-        os.environ.setdefault("LMSV_FULLNET_PERTURB_SIGMA", str(trace["PERTURB_SIGMA"]))
+    os.environ.setdefault("PTA_NAME", "mindspeed")
+    os.environ.setdefault("PTANAME", os.environ["PTA_NAME"])
+    os.environ.setdefault("MSA_NAME", "msadapter")
+    os.environ.setdefault("MSANAME", os.environ["MSA_NAME"])
+    os.environ.setdefault("SAVE_ABNORMAL_WEIGHTS", "1")
+    os.environ.setdefault("LMSV_DEBUG_COMPARE", "1")
+    os.environ.setdefault("LMSV_FULLNET_TRACE", "1")
+    os.environ.setdefault("LMSV_FULLNET_TRACE_FULL_WEIGHTS", "1")
+
+    fullnet = config.get("fullnet") if isinstance(config.get("fullnet"), dict) else {}
+    if "PERTURB_EPS" in fullnet:
+        os.environ.setdefault("LMSV_FULLNET_PERTURB_EPS", str(fullnet["PERTURB_EPS"]))
 
 
 def configure_tmp_defaults() -> None:
@@ -152,18 +151,15 @@ def run_fullnet(config: dict[str, Any]) -> int:
     output_dir = create_output_dir(config)
 
     params = dict(fullnet)
-    if "SAVE_ABNORMAL_WEIGHTS" in config:
-        params["SAVE_ABNORMAL_WEIGHTS"] = config["SAVE_ABNORMAL_WEIGHTS"]
-    if isinstance(config.get("TRACE"), dict):
-        params["TRACE"] = dict(config["TRACE"])
-    if isinstance(config.get("PRECISION"), dict):
-        params["PRECISION"] = dict(config["PRECISION"])
 
     utils.log.write.info(_log("任务", f"开始执行 {TASK_LABEL}"))
     utils.log.write.info(_log("输出", str(output_dir)))
     from utils.task import fullnet as fullnet_module
 
-    return int(fullnet_module.main(params) or 0)
+    result = int(fullnet_module.main(params) or 0)
+    if result != 0:
+        utils.log.write.error(_log("失败", f"整网链路失败，退出码 {result}。详见 {output_dir / 'log.txt'} 和 iters/iter_1/failure_info.txt"))
+    return result
 
 
 def copy_example_if_missing() -> None:

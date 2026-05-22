@@ -542,19 +542,15 @@ def maybe_perturb_tensor(
                 {"tensor_name": tensor_name, "reason": f"non_float_dtype:{tensor.dtype}"},
             )
             return tensor
-        sigma = float(os.getenv("LMSV_FULLNET_PERTURB_SIGMA", "1e-6"))
-        seed = int(float(os.getenv("LMSV_FULLNET_PERTURB_SEED", os.getenv("BASE_SEED", "43"))))
-        generator = torch.Generator(device="cpu")
-        generator.manual_seed(seed + max(0, get_trace_step()))
-        noise = torch.randn(tuple(tensor.shape), generator=generator, dtype=torch.float32)
-        noise = (noise * sigma).to(device=tensor.device, dtype=tensor.dtype)
-        perturbed = tensor + noise
+        eps = float(os.getenv("LMSV_FULLNET_PERTURB_EPS", "1e-5"))
+        delta = torch.full_like(tensor, eps)
+        perturbed = tensor + delta
         trace_tensor(component_id, component_name, f"{tensor_name}.baseline", tensor, stage=stage, node_id=node_id)
-        trace_tensor(component_id, component_name, f"{tensor_name}.delta", noise, stage=stage, node_id=node_id)
+        trace_tensor(component_id, component_name, f"{tensor_name}.delta", delta, stage=stage, node_id=node_id)
         trace_tensor(component_id, component_name, f"{tensor_name}.perturbed", perturbed, stage=stage, node_id=node_id)
         trace_event(
             "input_perturbation",
-            {"tensor_name": tensor_name, "sigma": sigma, "seed": seed, "stage": stage, "node_id": node_id},
+            {"tensor_name": tensor_name, "eps": eps, "direction": "positive", "stage": stage, "node_id": node_id},
         )
         return perturbed
     except Exception as exc:

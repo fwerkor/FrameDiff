@@ -28,21 +28,25 @@ class FullNetConfigTests(unittest.TestCase):
                 },
             },
             models=["qwen2", "glm4"],
-            total_iter=2,
+            perturb_eps="1e-4",
         )
         encoded = json.dumps(config, ensure_ascii=False)
-        blocked = ("M" + "F", "pta_" + "mf", "COMPARE_" + "MODE")
+        blocked = ("M" + "F", "pta_" + "mf", "COMPARE_" + "MODE", "TRACE", "PRECISION", "TOTAL_ITER", "MUTNM")
 
         self.assertEqual(config["entry"], "fullnet")
         self.assertEqual(config["fullnet"]["MODELS"], ["qwen2", "glm4"])
-        self.assertEqual(config["fullnet"]["TOTAL_ITER"], 2)
-        self.assertEqual(config["fullnet"]["NODE_NUM"], 0)
-        self.assertEqual(config["fullnet"]["FULLNET_ASSEMBLY_MODE"], "single_model_fullnet")
-        self.assertTrue(config["TRACE"]["EXPORT_FULL_WEIGHTS"])
-        self.assertTrue(config["PRECISION"]["BASELINE_ALIGNMENT_REQUIRED"])
-        self.assertEqual(config["PRECISION"]["BASELINE_LOSS_TOLERANCE"], 0.0)
+        self.assertEqual(config["fullnet"]["PERTURB_EPS"], "1e-4")
+        self.assertEqual(config["fullnet"]["BASELINE_LOSS_TOLERANCE"], 0.0)
         for token in blocked:
             self.assertNotIn(token, encoded)
+
+    def test_available_models_match_icse_scope(self) -> None:
+        from fullnet_core.models import available_models
+
+        models = available_models()
+        self.assertIn("qwen2", models)
+        self.assertIn("grok1", models)
+        self.assertNotIn("qwen3", models)
 
     def test_cli_dry_run_outputs_fullnet_config(self) -> None:
         result = subprocess.run(
@@ -53,8 +57,8 @@ class FullNetConfigTests(unittest.TestCase):
                 "--models",
                 "qwen2",
                 "glm4",
-                "--iters",
-                "1",
+                "--perturb-eps",
+                "1e-5",
                 "--dry-run",
             ],
             cwd=PROJECT_ROOT,
@@ -64,10 +68,10 @@ class FullNetConfigTests(unittest.TestCase):
         )
         config = json.loads(result.stdout)
         encoded = json.dumps(config, ensure_ascii=False)
-        blocked = ("M" + "F", "COMPARE_" + "MODE")
+        blocked = ("M" + "F", "COMPARE_" + "MODE", "TOTAL_ITER", "TRACE", "PRECISION")
 
         self.assertEqual(config["fullnet"]["MODELS"], ["qwen2", "glm4"])
-        self.assertEqual(config["fullnet"]["TOTAL_ITER"], 1)
+        self.assertEqual(config["fullnet"]["PERTURB_EPS"], "1e-5")
         for token in blocked:
             self.assertNotIn(token, encoded)
 
@@ -205,7 +209,7 @@ class FullNetTraceTests(unittest.TestCase):
     def test_trace_exports_full_tensor_and_weights(self) -> None:
         import torch
 
-        from utils.runtime.fullnet_trace import set_trace_step, trace_loss, trace_module_weights, trace_tensor
+        from utils.runtime.fullnet_trace import maybe_perturb_tensor, set_trace_step, trace_loss, trace_module_weights, trace_tensor
 
         env_names = [
             "LMSV_FULLNET_TRACE",
@@ -214,6 +218,8 @@ class FullNetTraceTests(unittest.TestCase):
             "LMSV_FULLNET_TRACE_RUN",
             "LMSV_FULLNET_TRACE_ITER",
             "LMSV_FULLNET_TRACE_FULL_WEIGHTS",
+            "LMSV_FULLNET_PERTURB",
+            "LMSV_FULLNET_PERTURB_EPS",
         ]
         old_env = {name: os.environ.get(name) for name in env_names}
         try:
@@ -224,6 +230,8 @@ class FullNetTraceTests(unittest.TestCase):
                 os.environ["LMSV_FULLNET_TRACE_RUN"] = "pta_baseline"
                 os.environ["LMSV_FULLNET_TRACE_ITER"] = "1"
                 os.environ["LMSV_FULLNET_TRACE_FULL_WEIGHTS"] = "1"
+                os.environ["LMSV_FULLNET_PERTURB"] = "1"
+                os.environ["LMSV_FULLNET_PERTURB_EPS"] = "1e-5"
                 set_trace_step(0)
 
                 tensor_path = trace_tensor(3, "linear_operator", "x", torch.arange(4), stage="unit")
@@ -235,9 +243,16 @@ class FullNetTraceTests(unittest.TestCase):
                     module_name="linear",
                 )
                 trace_loss("overall_loss", torch.tensor(2.0))
+                perturbed = maybe_perturb_tensor(
+                    torch.zeros(2, dtype=torch.float32),
+                    tensor_name="unit_input",
+                    component_id=0,
+                    component_name="full_network",
+                )
 
                 self.assertTrue(Path(tensor_path).exists())
                 self.assertTrue(Path(weight_path).exists())
+                self.assertTrue(torch.allclose(perturbed, torch.full((2,), 1e-5)))
                 index_path = Path(temp_dir) / "trace_index.jsonl"
                 rows = [json.loads(line) for line in index_path.read_text(encoding="utf-8").splitlines()]
                 self.assertTrue((Path(temp_dir) / "components.json").exists())

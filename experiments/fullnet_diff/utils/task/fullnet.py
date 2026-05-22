@@ -32,10 +32,10 @@ TOKENIZER_BAICHUAN_REL = repo_rel(TOKENIZER_DIR / "baichuan2")
 class Config:
     # 任务参数
     MODE = "DEVELOP"
-    TOTAL_ITER = 100
-    TEST_ITERATIONS = 2
+    TOTAL_ITER = 1
+    TEST_ITERATIONS = 1
     BASE_SEED = 43
-    MUTNM = 2
+    MUTNM = 0
     MODELS = ["qwen2"]
     NODE_NUM = 0
     MUTATION_ROUNDS = TOTAL_ITER
@@ -68,10 +68,10 @@ class Config:
     MSA_CSV_PATH = "res/execution_msa.csv"
     PERSIST_ROOT = ""
     SHARED_WEIGHT_TMP_ROOT = str(FULLNET_TMP_ROOT / "shared_weight")
-    TRACE_ENABLED = False
+    TRACE_ENABLED = True
     TRACE_FULL_WEIGHTS = True
     TRACE_PERTURBATION_RUNS = True
-    TRACE_PERTURB_SIGMA = "1e-6"
+    TRACE_PERTURB_EPS = "1e-5"
     TRACE_PERTURB_SEED = ""
     BASELINE_ALIGNMENT_REQUIRED = True
     BASELINE_LOSS_TOLERANCE = 0.0
@@ -315,11 +315,11 @@ def _build_trace_env_block(
     backend,
     run_name,
     perturb=False,
-    perturb_sigma=None,
+    perturb_eps=None,
 ):
     enabled = "1" if Config.TRACE_ENABLED or os.environ.get("LMSV_FULLNET_TRACE") == "1" else "0"
     perturb_value = "1" if perturb else "0"
-    sigma = str(perturb_sigma or Config.TRACE_PERTURB_SIGMA)
+    eps = str(perturb_eps or Config.TRACE_PERTURB_EPS)
     lines = [
         f"export LMSV_FULLNET_TRACE={enabled}",
         f"export LMSV_FULLNET_TRACE_BACKEND={shlex.quote(str(backend))}",
@@ -328,7 +328,7 @@ def _build_trace_env_block(
         f"export LMSV_FULLNET_TRACE_DIR={shlex.quote(str(Path(trace_dir).resolve()))}",
         f"export LMSV_FULLNET_TRACE_FULL_WEIGHTS={'1' if Config.TRACE_FULL_WEIGHTS else '0'}",
         f"export LMSV_FULLNET_PERTURB={perturb_value}",
-        f"export LMSV_FULLNET_PERTURB_SIGMA={shlex.quote(sigma)}",
+        f"export LMSV_FULLNET_PERTURB_EPS={shlex.quote(eps)}",
     ]
     if Config.TRACE_PERTURB_SEED:
         lines.append(f"export LMSV_FULLNET_PERTURB_SEED={shlex.quote(str(Config.TRACE_PERTURB_SEED))}")
@@ -693,7 +693,7 @@ def build_pta_verify_stage_cmd(
     trace_dir=None,
     trace_run_name="pta_baseline",
     perturb=False,
-    perturb_sigma=None,
+    perturb_eps=None,
 ):
     train_iters = int(train_iters)
     dist_cfg = resolve_distributed_config()
@@ -708,7 +708,7 @@ def build_pta_verify_stage_cmd(
         backend="pta",
         run_name=trace_run_name,
         perturb=perturb,
-        perturb_sigma=perturb_sigma,
+        perturb_eps=perturb_eps,
     )
     return f"""
     {build_conda_activate_block(pta_env, load_ascend=True)}
@@ -793,7 +793,7 @@ def run_pta_verify_stage(
     trace_dir=None,
     trace_run_name="pta_baseline",
     perturb=False,
-    perturb_sigma=None,
+    perturb_eps=None,
 ):
     cmd = build_pta_verify_stage_cmd(
         iter_num,
@@ -809,7 +809,7 @@ def run_pta_verify_stage(
         trace_dir=trace_dir,
         trace_run_name=trace_run_name,
         perturb=perturb,
-        perturb_sigma=perturb_sigma,
+        perturb_eps=perturb_eps,
     )
     if script_output_path:
         write_runtime_script(script_output_path, cmd)
@@ -837,7 +837,7 @@ def build_msa_verify_load_cmd(
     trace_dir=None,
     trace_run_name="msa_baseline",
     perturb=False,
-    perturb_sigma=None,
+    perturb_eps=None,
 ):
     train_iters = int(train_iters)
     dist_cfg = resolve_distributed_config()
@@ -852,7 +852,7 @@ def build_msa_verify_load_cmd(
         backend="msa",
         run_name=trace_run_name,
         perturb=perturb,
-        perturb_sigma=perturb_sigma,
+        perturb_eps=perturb_eps,
     )
     return f"""
     {build_conda_activate_block(msa_env, load_ascend=True)}
@@ -944,7 +944,7 @@ def run_msa_verify_load(
     trace_dir=None,
     trace_run_name="msa_baseline",
     perturb=False,
-    perturb_sigma=None,
+    perturb_eps=None,
 ):
     cmd = build_msa_verify_load_cmd(
         iter_num,
@@ -960,7 +960,7 @@ def run_msa_verify_load(
         trace_dir=trace_dir,
         trace_run_name=trace_run_name,
         perturb=perturb,
-        perturb_sigma=perturb_sigma,
+        perturb_eps=perturb_eps,
     )
     if script_output_path:
         write_runtime_script(script_output_path, cmd)
@@ -969,18 +969,20 @@ def run_msa_verify_load(
 
 
 def _apply_config(params):
-    Config.MODE = str(params.get("MODE", Config.MODE)).upper()
-    Config.TOTAL_ITER = int(params.get("TOTAL_ITER", params.get("TITAL_ITER", Config.TOTAL_ITER)))
-    Config.TEST_ITERATIONS = int(params.get("TEST_ITERATIONS", Config.TEST_ITERATIONS))
-    Config.BASE_SEED = int(params.get("BASE_SEED", Config.BASE_SEED))
-    Config.MUTNM = int(params.get("MUTNM", Config.MUTNM))
-    Config.SAVE_STEPS = int(params.get("SAVE_STEPS", Config.SAVE_STEPS))
-    Config.LOAD_STEPS = int(params.get("LOAD_STEPS", Config.LOAD_STEPS))
-    Config.PTA_MAX_RUNTIME = int(params.get("PTA_MAX_RUNTIME", Config.PTA_MAX_RUNTIME))
-    Config.MAX_MUTATION_WAIT = int(params.get("MAX_MUTATION_WAIT", Config.MAX_MUTATION_WAIT))
-    Config.MSA_MAX_RUNTIME = int(params.get("MSA_MAX_RUNTIME", params.get("MAX_VALIDATE_TIME", Config.MSA_MAX_RUNTIME)))
-    Config.LOG_INIT_WAIT = int(params.get("LOG_INIT_WAIT", Config.LOG_INIT_WAIT))
-    Config.LOG_STABLE_THRESHOLD = int(params.get("LOG_STABLE_THRESHOLD", Config.LOG_STABLE_THRESHOLD))
+    Config.MODE = "DEVELOP"
+    Config.TOTAL_ITER = 1
+    Config.TEST_ITERATIONS = 1
+    Config.MUTATION_ROUNDS = 1
+    Config.BASE_SEED = 43
+    Config.MUTNM = 0
+    Config.SAVE_STEPS = 1
+    Config.LOAD_STEPS = 15
+    Config.FULLNET_ASSEMBLY_MODE = "single_model_fullnet"
+    Config.PTA_MAX_RUNTIME = 3000
+    Config.MAX_MUTATION_WAIT = 600
+    Config.MSA_MAX_RUNTIME = 3000
+    Config.LOG_INIT_WAIT = 240
+    Config.LOG_STABLE_THRESHOLD = 150
     Config.TARGET_TENSOR_PARALLEL_SIZE = _parse_optional_positive_int(
         params.get("TARGET_TENSOR_PARALLEL_SIZE", Config.TARGET_TENSOR_PARALLEL_SIZE),
     )
@@ -994,13 +996,10 @@ def _apply_config(params):
     Config.TARGET_WORLD_SIZE = int(params.get("TARGET_WORLD_SIZE", Config.TARGET_WORLD_SIZE) or 0)
     Config.TARGET_MASTER_ADDR = str(params.get("TARGET_MASTER_ADDR", Config.TARGET_MASTER_ADDR))
     Config.TARGET_MASTER_PORT = int(params.get("TARGET_MASTER_PORT", Config.TARGET_MASTER_PORT))
-    Config.ARGS_PATH = str(params.get("ARGS_PATH", Config.ARGS_PATH))
-    Config.FULLNET_ASSEMBLY_MODE = str(params.get("FULLNET_ASSEMBLY_MODE", Config.FULLNET_ASSEMBLY_MODE))
+    Config.ARGS_PATH = "assets/runtime/configs/mutation_schema.yaml"
     Config.PTA_ENV = str(params.get("PTA_ENV", os.environ.get("PTA_NAME", Config.PTA_ENV)))
     Config.MSA_ENV = str(params.get("MSA_ENV", os.environ.get("MSA_NAME", Config.MSA_ENV)))
-    Config.SAVE_ABNORMAL_WEIGHTS = data_helpers.parse_bool(
-        params.get("SAVE_ABNORMAL_WEIGHTS", os.environ.get("SAVE_ABNORMAL_WEIGHTS", Config.SAVE_ABNORMAL_WEIGHTS))
-    )
+    Config.SAVE_ABNORMAL_WEIGHTS = True
     os.environ["BASE_SEED"] = str(Config.BASE_SEED)
 
     raw_persist_root = str(params.get("PERSIST_ROOT", os.environ.get("LMSV_OUTPATH", str(LMSV_ROOT / "output"))))
@@ -1027,18 +1026,21 @@ def _apply_config(params):
     Config.TRACE_PERTURBATION_RUNS = data_helpers.parse_bool(
         trace_cfg.get("PERTURBATION_RUNS", Config.TRACE_PERTURBATION_RUNS)
     )
-    Config.TRACE_PERTURB_SIGMA = str(trace_cfg.get("PERTURB_SIGMA", Config.TRACE_PERTURB_SIGMA))
+    Config.TRACE_PERTURB_EPS = str(
+        params.get("PERTURB_EPS", trace_cfg.get("PERTURB_EPS", Config.TRACE_PERTURB_EPS))
+    )
     Config.TRACE_PERTURB_SEED = str(trace_cfg.get("PERTURB_SEED", "") or "")
 
     precision_cfg = params.get("PRECISION", {})
     if not isinstance(precision_cfg, dict):
         precision_cfg = {}
-    Config.BASELINE_ALIGNMENT_REQUIRED = data_helpers.parse_bool(
-        precision_cfg.get("BASELINE_ALIGNMENT_REQUIRED", Config.BASELINE_ALIGNMENT_REQUIRED)
-    )
+    Config.BASELINE_ALIGNMENT_REQUIRED = True
     try:
         Config.BASELINE_LOSS_TOLERANCE = float(
-            precision_cfg.get("BASELINE_LOSS_TOLERANCE", Config.BASELINE_LOSS_TOLERANCE)
+            params.get(
+                "BASELINE_LOSS_TOLERANCE",
+                precision_cfg.get("BASELINE_LOSS_TOLERANCE", Config.BASELINE_LOSS_TOLERANCE),
+            )
         )
     except (TypeError, ValueError):
         Config.BASELINE_LOSS_TOLERANCE = 0.0
@@ -1079,10 +1081,8 @@ def main(params):
     Config.MSA_MONITOR_LOG = resolve_msa_monitor_log()
 
     inferred_decoder_count = _infer_fullnet_decoder_count(assembly_model_paths)
-    Config.NODE_NUM = int(params.get("NODE_NUM", Config.NODE_NUM) or 0)
-    if Config.NODE_NUM <= 0:
-        Config.NODE_NUM = inferred_decoder_count
-    Config.MUTATION_ROUNDS = int(params.get("MUTATION_ROUNDS", Config.TOTAL_ITER))
+    Config.NODE_NUM = inferred_decoder_count
+    Config.MUTATION_ROUNDS = 1
 
     pta_path = os.environ.get("PTA_PATH") or os.environ.get("PTAPATH")
     msa_path = os.environ.get("MSA_PATH") or os.environ.get("MSAPATH")
@@ -1093,7 +1093,7 @@ def main(params):
         log_error("环境变量缺失：请先配置 MSA_PATH")
         return 1
 
-    max_iterations = Config.TEST_ITERATIONS if Config.MODE == "TEST" else Config.TOTAL_ITER
+    max_iterations = 1
     mutate_args_common = build_mutate_args(assembly_model_paths, Config.NODE_NUM, Config.MUTNM, Config.MUTATION_ROUNDS)
     mutate_args_for_mutate = (
         f"{mutate_args_common} --args_path {Config.ARGS_PATH}" if Config.ARGS_PATH else mutate_args_common
@@ -1138,6 +1138,7 @@ def main(params):
 
     pta_success_count = 0
     msa_success_count = 0
+    exit_code = 0
     try:
         for i in range(1, max_iterations + 1):
             try:
@@ -1186,17 +1187,23 @@ def main(params):
                 backup_runtime_log_to_output(mutate_log, run_dir, i)
                 if not mutate_ok or not wait_for_mutation_artifacts(i, result_dir_name):
                     mutate_result = "ERROR"
-                    write_iteration_status(i, run_dir, "FAILED", "变异配置生成失败", mutate_result=mutate_result)
+                    reason = "变异配置生成失败，整网实验已停止"
+                    log_error(f"[iter{i}] {reason}，详见 {mutate_log}")
+                    write_iteration_status(i, run_dir, "FAILED", reason, mutate_result=mutate_result)
                     snapshot_iter_artifacts(i, run_dir, result_dir_name)
                     cleanup_shared_weight_file(shared_weight_file)
-                    continue
+                    exit_code = 1
+                    break
                 mutate_result = "OK"
 
                 if not load_path_abs.exists() or load_path_abs.stat().st_size <= 0:
-                    write_iteration_status(i, run_dir, "FAILED", f"变异JSON缺失: {load_path_abs}", mutate_result=mutate_result)
+                    reason = f"变异JSON缺失: {load_path_abs}"
+                    log_error(f"[iter{i}] {reason}，整网实验已停止")
+                    write_iteration_status(i, run_dir, "FAILED", reason, mutate_result=mutate_result)
                     snapshot_iter_artifacts(i, run_dir, result_dir_name)
                     cleanup_shared_weight_file(shared_weight_file)
-                    continue
+                    exit_code = 1
+                    break
 
                 log_step("2. PTA-SAVE：生成共享权重")
                 pta_save_ok = run_pta_verify_stage(
@@ -1213,7 +1220,8 @@ def main(params):
                     write_iteration_status(i, run_dir, "FAILED", "PTA-SAVE失败", mutate_result=mutate_result, pta_save_result=pta_save_result)
                     snapshot_iter_artifacts(i, run_dir, result_dir_name)
                     cleanup_shared_weight_file(shared_weight_file)
-                    continue
+                    exit_code = 1
+                    break
                 pta_save_result = "OK"
                 remove_iteration_rows(Config.PTA_CSV_PATH, i)
 
@@ -1237,7 +1245,8 @@ def main(params):
                     write_iteration_status(i, run_dir, "FAILED", "PTA-LOAD失败或结果无效", mutate_result=mutate_result, pta_save_result=pta_save_result, pta_load_result=pta_load_result)
                     snapshot_iter_artifacts(i, run_dir, result_dir_name)
                     cleanup_shared_weight_file(shared_weight_file)
-                    continue
+                    exit_code = 1
+                    break
                 pta_load_result = "OK"
                 pta_success_count += 1
                 utils.control.clean.kill_pretraingpt()
@@ -1259,7 +1268,8 @@ def main(params):
                     write_iteration_status(i, run_dir, "FAILED", "MSA-LOAD失败或结果无效", mutate_result=mutate_result, pta_save_result=pta_save_result, pta_load_result=pta_load_result, msa_load_result=msa_load_result)
                     snapshot_iter_artifacts(i, run_dir, result_dir_name)
                     cleanup_shared_weight_file(shared_weight_file)
-                    continue
+                    exit_code = 1
+                    break
                 backup_artifact_to_output(msa_step_csv, run_dir, i, "", f"training_log_msa-{i}.csv", missing_log_level="info")
                 _archive_result_csvs(i, run_dir, include_msa=True)
                 if msa_profile_dir.exists() and any(msa_profile_dir.rglob("*")):
@@ -1304,7 +1314,8 @@ def main(params):
                         )
                         snapshot_iter_artifacts(i, run_dir, result_dir_name)
                         cleanup_shared_weight_file(shared_weight_file)
-                        continue
+                        exit_code = 1
+                        break
                 else:
                     log_info(f"[iter{i}] Baseline精度对齐通过: {alignment_report}")
 
@@ -1319,7 +1330,7 @@ def main(params):
                         trace_dir=trace_dir,
                         trace_run_name="pta_perturb",
                         perturb=True,
-                        perturb_sigma=Config.TRACE_PERTURB_SIGMA,
+                        perturb_eps=Config.TRACE_PERTURB_EPS,
                         script_output_path=script_artifact_dir / f"pta-perturb_iter{i}.sh",
                     )
                     backup_runtime_log_to_output(pta_perturb_log, run_dir, i, dst_name=f"pta_perturb_iter{i}.log")
@@ -1338,7 +1349,7 @@ def main(params):
                         trace_dir=trace_dir,
                         trace_run_name="msa_perturb",
                         perturb=True,
-                        perturb_sigma=Config.TRACE_PERTURB_SIGMA,
+                        perturb_eps=Config.TRACE_PERTURB_EPS,
                         script_output_path=script_artifact_dir / f"msa-perturb_iter{i}.sh",
                     )
                     msa_perturb_finished = wait_msa_finish_csv(i, msa_perturb_csv, "扰动") if msa_perturb_ok else False
@@ -1383,4 +1394,4 @@ def main(params):
     except Exception as exc:
         log_warn(f"自动分析失败，已跳过: {exc}")
     log_kv("概览", "结束时间", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    return 0
+    return exit_code

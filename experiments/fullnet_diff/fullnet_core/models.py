@@ -5,11 +5,26 @@ from pathlib import Path
 from .paths import MODEL_CONFIG_DIR
 
 
+ICSE_MODEL_NAMES = {
+    "qwen2",
+    "llama2",
+    "baichuan2",
+    "chatglm3",
+    "glm4",
+    "yi",
+    "codellama",
+    "pangu",
+    "deepseekv3",
+    "mixtral",
+    "grok1",
+}
+
+
 def available_models(model_config_dir: Path = MODEL_CONFIG_DIR) -> list[str]:
     """Return model names backed by language-model YAML configs."""
     if not model_config_dir.is_dir():
         return []
-    return sorted(path.stem for path in model_config_dir.glob("*.yaml"))
+    return sorted(path.stem for path in model_config_dir.glob("*.yaml") if path.stem in ICSE_MODEL_NAMES)
 
 
 def validate_models(models: list[str], model_config_dir: Path = MODEL_CONFIG_DIR) -> list[str]:

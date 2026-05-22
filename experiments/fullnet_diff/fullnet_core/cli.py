@@ -21,34 +21,20 @@ def _parse_models(value: list[str] | None) -> list[str] | None:
 
 def _add_common_run_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--models", nargs="+", help="模型名或逗号分隔列表，如 qwen2 glm4")
-    parser.add_argument("--iters", type=int, help="任务迭代次数")
     parser.add_argument("--pta-path", help="PTA/MindSpeed 代码路径")
     parser.add_argument("--msa-path", help="MSA 代码路径")
-    parser.add_argument("--pta-env", help="PTA conda 环境名")
-    parser.add_argument("--msa-env", help="MSA conda 环境名")
-    parser.add_argument("--save-steps", type=int, help="PTA-SAVE 步数")
-    parser.add_argument("--load-steps", type=int, help="PTA/MSA LOAD 步数")
-    parser.add_argument("--mutnm", type=int, help="每轮变异配置数")
-    parser.add_argument("--base-seed", type=int, help="基础随机种子")
-    parser.add_argument("--trace", action="store_true", help="开启论文实验用调试/张量摘要环境")
-    parser.add_argument("--debug-compare", action="store_true", help="输出更详细的层级张量摘要")
+    parser.add_argument("--perturb-eps", help="单向输入扰动 epsilon，默认 1e-5")
+    parser.add_argument("--baseline-loss-tolerance", type=float, help="PTA/MSA baseline loss 对齐容差，默认 0.0")
 
 
 def _config_from_args(args: argparse.Namespace) -> dict:
     return build_run_config(
         load_config(CONFIG_PATH),
         models=_parse_models(getattr(args, "models", None)),
-        total_iter=getattr(args, "iters", None),
         pta_path=getattr(args, "pta_path", None),
         msa_path=getattr(args, "msa_path", None),
-        pta_env=getattr(args, "pta_env", None),
-        msa_env=getattr(args, "msa_env", None),
-        save_steps=getattr(args, "save_steps", None),
-        load_steps=getattr(args, "load_steps", None),
-        mutnm=getattr(args, "mutnm", None),
-        base_seed=getattr(args, "base_seed", None),
-        trace=True if getattr(args, "trace", False) else None,
-        debug_compare=True if getattr(args, "debug_compare", False) else None,
+        perturb_eps=getattr(args, "perturb_eps", None),
+        baseline_loss_tolerance=getattr(args, "baseline_loss_tolerance", None),
     )
 
 
@@ -72,7 +58,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print(f"project: {PROJECT_ROOT}")
     print(f"models: {', '.join(fullnet['MODELS'])}")
     print("compare: pta_msa")
-    print(f"iters: {fullnet['TOTAL_ITER']}")
+    print("iteration: 1")
     for key in ("PTA_PATH", "MSA_PATH"):
         value = str(config.get(key, ""))
         exists = Path(value).expanduser().exists() if value and not value.startswith("<") else False
@@ -105,7 +91,7 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     if not isinstance(fullnet, dict):
         raise ValueError(f"配置缺少 fullnet: {target / 'config.json'}")
     models = fullnet.get("MODELS") or []
-    planned = int(fullnet.get("TOTAL_ITER", 0) or 0)
+    planned = 1
     from utils.analyze.fullnet_result import analyze_fullnet_run
 
     result = analyze_fullnet_run(
