@@ -7,14 +7,14 @@ on:
       - master
     paths:
       - ".github/workflows/**"
-      - "lm_fullnet/**"
+      - "experiments/**"
       - "README.md"
       - "LICENSE"
       - "cyh任务.md"
   pull_request:
     paths:
       - ".github/workflows/**"
-      - "lm_fullnet/**"
+      - "experiments/**"
       - "README.md"
       - "LICENSE"
       - "cyh任务.md"
@@ -41,18 +41,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: lm_fullnet/requirements.txt
+          cache-dependency-path: experiments/fullnet_diff/requirements.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r lm_fullnet/requirements.txt pytest
+          python -m pip install -r experiments/fullnet_diff/requirements.txt pytest
 
       - name: Compile Python sources
-        run: python -m compileall -q lm_fullnet
+        run: python -m compileall -q experiments
 
       - name: Validate JSON and YAML assets
-        working-directory: lm_fullnet
+        working-directory: experiments
         run: |
           python - <<'PY'
           from __future__ import annotations
@@ -72,8 +72,7 @@ jobs:
           PY
 
       - name: Run unit tests
-        working-directory: lm_fullnet
-        run: python -m pytest tests -q
+        run: python -m pytest experiments/fullnet_diff/tests -q
 
   shell:
     name: Shell checks
@@ -92,7 +91,7 @@ jobs:
         run: |
           while IFS= read -r script; do
             bash -n "$script"
-          done < <(find lm_fullnet -type f -name '*.sh' -print)
+          done < <(find experiments -type f -name '*.sh' -print)
 
       - name: Run ShellCheck
-        run: find lm_fullnet -type f -name '*.sh' -print0 | xargs -0 shellcheck --shell=bash --severity=error
+        run: find experiments -type f -name '*.sh' -print0 | xargs -0 shellcheck --shell=bash --severity=error

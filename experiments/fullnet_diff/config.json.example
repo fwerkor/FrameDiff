@@ -1,0 +1,37 @@
+{
+  "entry": "fullnet",
+  "PTA_NAME": "mindspeed",
+  "PTA_PATH": "<YOUR_PTA_PATH>",
+  "MSA_NAME": "msadapter",
+  "MSA_PATH": "<YOUR_MSA_PATH>",
+  "SAVE_ABNORMAL_WEIGHTS": true,
+  "TRACE": {
+    "ENABLED": false,
+    "DEBUG_COMPARE": false,
+    "LAYER_SUMMARY": false,
+    "EXPORT_FULL_WEIGHTS": true,
+    "PERTURBATION_RUNS": true,
+    "PERTURB_SIGMA": "1e-6"
+  },
+  "PRECISION": {
+    "BASELINE_ALIGNMENT_REQUIRED": true,
+    "BASELINE_LOSS_TOLERANCE": 0.0
+  },
+  "fullnet": {
+    "MODELS": [
+      "qwen2"
+    ],
+    "TOTAL_ITER": 10,
+    "PTA_MAX_RUNTIME": 3000,
+    "MSA_MAX_RUNTIME": 3000,
+    "LOG_INIT_WAIT": 240,
+    "LOG_STABLE_THRESHOLD": 150,
+    "MAX_MUTATION_WAIT": 600,
+    "BASE_SEED": 43,
+    "MUTNM": 2,
+    "NODE_NUM": 0,
+    "FULLNET_ASSEMBLY_MODE": "single_model_fullnet",
+    "SAVE_STEPS": 1,
+    "LOAD_STEPS": 15
+  }
+}
