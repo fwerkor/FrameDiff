@@ -715,7 +715,21 @@ if __name__ == "__main__":
         if profiler is not None:
             profiler.start()
         load_success = graph.load(yaml_file_path, file_path)
+        if not load_success:
+            raise RuntimeError(
+                f"图配置加载失败，停止forward: yaml={yaml_file_path}, json={file_path}"
+            )
         _normalize_graph_node_indices(graph)
+        executable_nodes = [
+            node for node in graph.nodes.values()
+            if getattr(node, "block", None) is not None
+            or "embedding" in str(getattr(node, "str_op", "")).lower()
+            or "decoder" in str(getattr(node, "str_op", "")).lower()
+        ]
+        if not executable_nodes:
+            raise RuntimeError(
+                f"图配置未生成可执行节点，停止forward: nodes={[(node.id, node.str_op) for node in graph.nodes.values()]}"
+            )
         for i in range(len(graph.nodes)):
             print(i, graph.nodes[i].id, graph.nodes[i].str_op)
 

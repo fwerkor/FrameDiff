@@ -11,20 +11,28 @@ base_config:
     moe_router_load_balancing_type: aux_loss
     moe_router_pre_softmax: true
     moe_aux_loss_coeff: 0.0001
+    moe_router_num_groups: 1
     normalization: RMSNorm
-    layernorm_epsilon: 1.0e-06
+    layernorm_epsilon: 0.000001
     attention_dropout: 0.0
     hidden_dropout: 0.0
     add_bias_linear: false
+    gated_linear_unit: true
+    attention_softmax_in_fp32: true
+    masked_softmax_fusion: false
+    bf16: false
+    params_dtype: torch.float32
+    pipeline_dtype: torch.float32
     init_method_std: 0.01
+    sequence_parallel: false
     moe_grouped_gemm: false
   vocab_size: 129280
   max_sequence_length: 4096
   position_embedding_type: rope
-  seq_len_interpolation_factor: null
+  seq_len_interpolation_factor:
   rotary_base: 10000
   rotary_percent: 1.0
-  rope_scaling: null
+  rope_scaling:
   rope_scaling_factor: 1
 graph_structure:
   LayerConfig:
@@ -44,16 +52,94 @@ graph_structure:
       state: none
       layer_limits:
       - Qwen2DecoderLayer
-      to: []
+      to:
+      - 3
       from:
       - 1
+      layer_nums: 1
+    3:
+      name: Decoderlayer2
+      params: {}
+      state: none
+      layer_limits:
+      - Qwen2DecoderLayer
+      to:
+      - 4
+      from:
+      - 2
+      layer_nums: 1
+    4:
+      name: Decoderlayer3
+      params: {}
+      state: none
+      layer_limits:
+      - Qwen2DecoderLayer
+      to:
+      - 5
+      from:
+      - 3
+      layer_nums: 1
+    5:
+      name: Decoderlayer4
+      params: {}
+      state: none
+      layer_limits:
+      - Qwen2DecoderLayer
+      to:
+      - 6
+      from:
+      - 4
+      layer_nums: 1
+    6:
+      name: Decoderlayer5
+      params: {}
+      state: none
+      layer_limits:
+      - Qwen2DecoderLayer
+      to:
+      - 7
+      from:
+      - 5
+      layer_nums: 1
+    7:
+      name: Decoderlayer6
+      params: {}
+      state: none
+      layer_limits:
+      - Qwen2DecoderLayer
+      to:
+      - 8
+      from:
+      - 6
+      layer_nums: 1
+    8:
+      name: Decoderlayer7
+      params: {}
+      state: none
+      layer_limits:
+      - Qwen2DecoderLayer
+      to:
+      - 9
+      from:
+      - 7
+      layer_nums: 1
+    9:
+      name: Decoderlayer8
+      params: {}
+      state: des
+      layer_limits:
+      - Qwen2DecoderLayer
+      to: []
+      from:
+      - 8
       layer_nums: 1
 metadata:
   iteration: 1
   mutation_rate: 0
   timestamp: '2026-05-22T14:25:06'
-  generated_by: ChatGPT baseline generator
+  generated_by: FrameDiff fullnet variant generator
   source_model: deepseekv3
-  source_path: lmsv_rec/assets/runtime/model_config/deepseekv3.yaml
-  note: Original baseline Task3 load product; no automatic mutation; mutating-1.json
-    has before == after.
+  source_path: model_config/deepseekv3.yaml
+  note: Full-network load product; graph_structure expands to the model decoder 
+    depth.
+  decoder_layers: 8

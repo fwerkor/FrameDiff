@@ -14,17 +14,21 @@ from pathlib import Path
 
 
 def configure_project_tmp_env(project_tmp_root: Path) -> str:
-    """Pin runtime temp directories to the configured project tmp directory."""
+    """Prepare repo-local runtime space and keep Python temp files off NFS."""
     override_root = os.environ.get("LMSV_PROJECT_TMP_ROOT", "").strip()
     if override_root:
         project_tmp_root = Path(override_root).expanduser()
 
     project_tmp_root.mkdir(parents=True, exist_ok=True)
-    tmp_root = str(project_tmp_root.resolve())
+    process_tmp_root = Path(
+        os.environ.get("LMSV_PROCESS_TMP_ROOT", f"/tmp/framediff-fullnet-{os.getuid()}")
+    ).expanduser()
+    process_tmp_root.mkdir(parents=True, exist_ok=True)
+    tmp_root = str(process_tmp_root.resolve())
     for env_name in ("TMPDIR", "TMP", "TEMP"):
         os.environ[env_name] = tmp_root
     prepare_repo_runtime_workspace(project_tmp_root, Path(__file__).resolve().parents[2])
-    return tmp_root
+    return str(project_tmp_root.resolve())
 
 
 def build_sigterm_shield_block(env_var_name: str = "LMSV_IGNORE_PTA_SIGTERM") -> str:
