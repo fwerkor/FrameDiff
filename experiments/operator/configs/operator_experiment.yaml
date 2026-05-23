@@ -21,7 +21,6 @@ metrics:
 
 model_configs:
   qwen2: "model_config/qwen2.yaml"
-  qwen3: "model_config/qwen3.yaml"
   llama2: "model_config/llama2.yaml"
   baichuan2: "model_config/baichuan2.yaml"
   chatglm3: "model_config/chatglm3.yaml"
