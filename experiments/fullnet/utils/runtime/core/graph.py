@@ -73,7 +73,9 @@ def _extract_node_transformer_config(config_data):
 
     cfg = model_helpers.extract_graph_transformer_config_from_yaml(config_data)
     valid_fields = set(TransformerConfig.__dataclass_fields__.keys())
-    return {k: v for k, v in cfg.items() if k in valid_fields}
+    filtered = {k: v for k, v in cfg.items() if k in valid_fields}
+    _normalize_init_method(filtered)
+    return filtered
 
 
 def _lmsv_exact_gelu(x):
