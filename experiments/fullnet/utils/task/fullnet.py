@@ -1100,7 +1100,6 @@ def main(params):
             log_kv("配置", f"{model_name}.整网基准模型", assembly_model_paths)
             log_kv("配置", f"{model_name}.Decoder层数", Config.NODE_NUM)
             log_kv("配置", f"{model_name}.变体顺序", [path.name for path in variants])
-            log_kv("配置", f"{model_name}.MUTATE_ARGS(load)", mutate_args_common)
             dist_cfg = resolve_distributed_config()
             log_kv(
                 "配置",
