@@ -34,7 +34,7 @@ class Config:
     TEST_ITERATIONS = 1
     BASE_SEED = 43
     MUTNM = 0
-    MODELS = ["qwen2"]
+    MODELS = sorted(path.stem for path in MODEL_CONFIG_DIR.glob("*.yaml")) or ["qwen2"]
     NODE_NUM = 0
     RUNTIME_ROUNDS = TOTAL_ITER
     SAVE_STEPS = 1
@@ -1008,6 +1008,65 @@ def write_alignment_report_new(
     return payload, report_path
 
 
+def build_final_overview_markdown(summary):
+    lines = [
+        "# FrameDiff FullNet Summary",
+        "",
+        f"- status: {summary.get('overall_status', 'UNKNOWN')}",
+        f"- models: {len(summary.get('model_results', []))}",
+        f"- iterations: {summary.get('iterations')}",
+        f"- planned_runs: {summary.get('planned_variant_runs')}",
+        f"- failed_runs: {summary.get('failed_variant_runs')}",
+        f"- pta_baseline: {summary.get('pta-baseline_success')}/{summary.get('planned_variant_runs')}",
+        f"- msa_baseline: {summary.get('msa-baseline_success')}/{summary.get('planned_variant_runs')}",
+        "",
+        "## Training Matrix",
+        "",
+        "| Model | Variant | Iter | Overall | prepare | pta-baseline | msa-baseline | baseline-align | pta-preturb | msa-preturb | Reason |",
+        "| --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for record in summary.get("records", []):
+        trainings = record.get("trainings", {})
+        lines.append(
+            "| {model} | {variant} | {iteration} | {overall} | {prepare} | {pta} | {msa} | {align} | {pta_p} | {msa_p} | {reason} |".format(
+                model=record.get("model", ""),
+                variant=record.get("variant", ""),
+                iteration=record.get("iteration", ""),
+                overall=record.get("overall_status", ""),
+                prepare=trainings.get(TRAIN_PREPARE, ""),
+                pta=trainings.get(TRAIN_PTA_BASELINE, ""),
+                msa=trainings.get(TRAIN_MSA_BASELINE, ""),
+                align=trainings.get("baseline-align", ""),
+                pta_p=trainings.get(TRAIN_PTA_PRETURB, ""),
+                msa_p=trainings.get(TRAIN_MSA_PRETURB, ""),
+                reason=str(record.get("reason", "") or "").replace("|", "/"),
+            )
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Model Overview",
+            "",
+            "| Model | Status | Planned | PTA OK | MSA OK | Failed | Reason |",
+            "| --- | --- | ---: | ---: | ---: | ---: | --- |",
+        ]
+    )
+    for item in summary.get("model_results", []):
+        lines.append(
+            "| {model} | {status} | {planned} | {pta} | {msa} | {failed} | {reason} |".format(
+                model=item.get("model", ""),
+                status=item.get("status", ""),
+                planned=item.get("planned_variant_runs", 0),
+                pta=item.get("pta_baseline_success", 0),
+                msa=item.get("msa_baseline_success", 0),
+                failed=item.get("failed_variant_runs", 0),
+                reason=str(item.get("reason", "") or "").replace("|", "/"),
+            )
+        )
+    return "\n".join(lines) + "\n"
+
+
 def stage_files(stage_dir):
     stage_dir = Path(stage_dir)
     return {
@@ -1075,13 +1134,22 @@ def main(params):
     variant_failure_count = 0
     planned_baseline_runs = 0
     exit_code = 0
-    stop_requested = False
+    model_results = []
 
     try:
         for model_path in model_paths:
-            if stop_requested:
-                break
             model_name = _model_name_from_path(model_path)
+            model_result = {
+                "model": model_name,
+                "status": "RUNNING",
+                "reason": "",
+                "planned_variant_runs": 0,
+                "failed_variant_runs": 0,
+                "pta_baseline_success": 0,
+                "msa_baseline_success": 0,
+            }
+            model_results.append(model_result)
+            skip_current_model = False
             assembly_model_paths = _assembly_model_paths([model_path])
             if not any(
                 _parse_optional_positive_int(params.get(key)) > 0
@@ -1107,10 +1175,15 @@ def main(params):
             try:
                 variants = list_model_variants(model_name)
             except Exception as exc:
-                log_error(f"模型 {model_name} 变体读取失败: {exc}")
+                reason = f"模型变体读取失败: {exc}"
+                log_error(f"模型 {model_name} {reason}，跳过当前模型")
+                model_result["status"] = "SKIPPED"
+                model_result["reason"] = reason
                 exit_code = 1
-                break
-            planned_baseline_runs += len(variants) * max_iterations
+                continue
+            model_planned_runs = len(variants) * max_iterations
+            model_result["planned_variant_runs"] = model_planned_runs
+            planned_baseline_runs += model_planned_runs
 
             log_step(f"模型 {model_name} 整网执行准备")
             log_kv("配置", f"{model_name}.整网基准模型", assembly_model_paths)
@@ -1124,7 +1197,7 @@ def main(params):
             )
 
             for i in range(1, max_iterations + 1):
-                if stop_requested:
+                if skip_current_model:
                     break
                 log_step(f"{model_name} 开始第 {i}/{max_iterations} 轮")
                 ancestor_shared_weight = (
@@ -1134,7 +1207,7 @@ def main(params):
                 cleanup_shared_weight_file(ancestor_shared_weight)
 
                 for variant_dir in variants:
-                    if stop_requested:
+                    if skip_current_model:
                         break
                     variant_name = variant_dir.name
                     stage_results = {
@@ -1145,11 +1218,21 @@ def main(params):
                         TRAIN_MSA_PRETURB: "SKIP",
                         "baseline-align": "SKIP",
                     }
-                    run_records.append({"model": model_name, "variant": variant_name, "iteration": i})
+                    record = {
+                        "model": model_name,
+                        "variant": variant_name,
+                        "iteration": i,
+                        "overall_status": "RUNNING",
+                        "reason": "",
+                        "trainings": stage_results,
+                    }
+                    run_records.append(record)
 
                     def fail_current(reason):
                         nonlocal variant_failure_count
                         log_error(f"[{model_name}/{variant_name}/iter{i}] {reason}")
+                        record["overall_status"] = "FAILED"
+                        record["reason"] = reason
                         write_variant_status(
                             output_root,
                             model_name,
@@ -1161,6 +1244,7 @@ def main(params):
                             **stage_results,
                         )
                         variant_failure_count += 1
+                        model_result["failed_variant_runs"] += 1
 
                     try:
                         load_path, runtime_json, runtime_yaml, source_json, source_yaml = materialize_variant_for_runtime(
@@ -1236,6 +1320,7 @@ def main(params):
                         continue
                     stage_results[TRAIN_PTA_BASELINE] = "OK"
                     pta_success_count += 1
+                    model_result["pta_baseline_success"] += 1
 
                     utils.control.clean.kill_pretraingpt()
                     msa_stage_dir = fresh_stage_dir(output_root, model_name, variant_name, TRAIN_MSA_BASELINE, i, max_iterations)
@@ -1279,6 +1364,7 @@ def main(params):
                         continue
                     stage_results[TRAIN_MSA_BASELINE] = "OK"
                     msa_success_count += 1
+                    model_result["msa_baseline_success"] += 1
 
                     precision_issue = find_preferred_loss_mismatch(
                         pta_files["result_csv"],
@@ -1311,9 +1397,11 @@ def main(params):
                         log_warn(f"[{model_name}/{variant_name}/iter{i}] Baseline未对齐: {precision_issue}")
                         if alignment_required:
                             copy_if_exists(ancestor_shared_weight, msa_stage_dir / "shared_weight_on_alignment_failure.pth")
-                            fail_current("Baseline精度未对齐，已停止扰动/RQ3数据采集")
+                            fail_current("Baseline精度未对齐，跳过当前模型")
                             exit_code = 1
-                            stop_requested = True
+                            model_result["status"] = "FAILED"
+                            model_result["reason"] = "ancestor baseline 精度未对齐"
+                            skip_current_model = True
                             break
                     else:
                         log_info(f"[{model_name}/{variant_name}/iter{i}] Baseline精度对齐通过: {alignment_report}")
@@ -1394,12 +1482,25 @@ def main(params):
                         "变体执行完成",
                         **stage_results,
                     )
+                    record["overall_status"] = "PASS"
+                    record["reason"] = "变体执行完成"
                     utils.control.clean.kill_pretraingpt()
+            if model_result["status"] == "RUNNING":
+                if model_result["failed_variant_runs"]:
+                    model_result["status"] = "PARTIAL"
+                    model_result["reason"] = "存在失败的训练阶段"
+                else:
+                    model_result["status"] = "PASS"
+                    model_result["reason"] = "模型执行完成"
     finally:
         shutil.rmtree(shared_weight_tmp_run_dir, ignore_errors=True)
 
+    if exit_code == 0 and any(item.get("status") != "PASS" for item in model_results):
+        exit_code = 1
+    overall_status = "PASS" if exit_code == 0 else "FAILED"
     summary = {
         "task_name": "fullnet",
+        "overall_status": overall_status,
         "models": [_model_name_from_path(path) for path in model_paths],
         "iterations": max_iterations,
         "load_steps": Config.LOAD_STEPS,
@@ -1408,6 +1509,7 @@ def main(params):
         "failed_variant_runs": variant_failure_count,
         "pta-baseline_success": pta_success_count,
         "msa-baseline_success": msa_success_count,
+        "model_results": model_results,
         "exit_code": exit_code,
         "records": run_records,
         "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -1416,11 +1518,44 @@ def main(params):
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+    summary_md_path = output_root / "summary.md"
+    summary_md_path.write_text(build_final_overview_markdown(summary), encoding="utf-8")
 
     log_step("整网链路结束")
+    log_kv("统计", "总体状态", overall_status)
     log_kv("统计", "PTA baseline 成功", f"{pta_success_count}/{planned_baseline_runs}")
     log_kv("统计", "MSA baseline 成功", f"{msa_success_count}/{planned_baseline_runs}")
     log_kv("统计", "变体失败", variant_failure_count)
+    for item in model_results:
+        log_info(
+            "[FullNet][总览] {model}: {status} | planned={planned} | PTA={pta} | MSA={msa} | failed={failed} | {reason}".format(
+                model=item.get("model"),
+                status=item.get("status"),
+                planned=item.get("planned_variant_runs", 0),
+                pta=item.get("pta_baseline_success", 0),
+                msa=item.get("msa_baseline_success", 0),
+                failed=item.get("failed_variant_runs", 0),
+                reason=item.get("reason", ""),
+            )
+        )
+    for record in run_records:
+        trainings = record.get("trainings", {})
+        log_info(
+            "[FullNet][训练总览] {model}/{variant}/iter{iteration}: {overall} | prepare={prepare} | pta-baseline={pta} | msa-baseline={msa} | baseline-align={align} | pta-preturb={pta_p} | msa-preturb={msa_p} | {reason}".format(
+                model=record.get("model"),
+                variant=record.get("variant"),
+                iteration=record.get("iteration"),
+                overall=record.get("overall_status"),
+                prepare=trainings.get(TRAIN_PREPARE, ""),
+                pta=trainings.get(TRAIN_PTA_BASELINE, ""),
+                msa=trainings.get(TRAIN_MSA_BASELINE, ""),
+                align=trainings.get("baseline-align", ""),
+                pta_p=trainings.get(TRAIN_PTA_PRETURB, ""),
+                msa_p=trainings.get(TRAIN_MSA_PRETURB, ""),
+                reason=record.get("reason", ""),
+            )
+        )
     log_kv("统计", "汇总文件", output_root / "summary.json")
+    log_kv("统计", "总览文件", summary_md_path)
     log_kv("概览", "结束时间", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     return exit_code

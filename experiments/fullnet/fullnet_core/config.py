@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .models import validate_models
+from .models import available_models, validate_models
 from .paths import CONFIG_EXAMPLE_PATH, CONFIG_PATH
 
 
@@ -15,7 +15,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "MSA_PATH": "<YOUR_MSA_PATH>",
     "OUTPUT_ROOT": "output",
     "fullnet": {
-        "MODELS": ["qwen2"],
+        "MODELS": available_models() or ["qwen2"],
         "TOTAL_ITER": 1,
         "LOAD_STEPS": 3,
         "PERTURB_EPS": "1e-5",

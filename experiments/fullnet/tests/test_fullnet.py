@@ -50,6 +50,12 @@ class FullNetConfigTests(unittest.TestCase):
         self.assertIn("grok1", models)
         self.assertIn("qwen3", models)
 
+    def test_default_config_enables_all_models(self) -> None:
+        from fullnet_core.config import DEFAULT_CONFIG
+        from fullnet_core.models import available_models
+
+        self.assertEqual(DEFAULT_CONFIG["fullnet"]["MODELS"], available_models())
+
     def test_auto_parallel_uses_visible_cards_safely(self) -> None:
         from utils.task import fullnet
 
@@ -150,6 +156,53 @@ class FullNetConfigTests(unittest.TestCase):
         self.assertEqual(config["fullnet"]["PERTURB_EPS"], "1e-5")
         for token in blocked:
             self.assertNotIn(token, encoded)
+
+    def test_final_overview_includes_training_matrix(self) -> None:
+        from utils.task.fullnet import build_final_overview_markdown
+
+        summary = {
+            "overall_status": "FAILED",
+            "iterations": 1,
+            "planned_variant_runs": 2,
+            "failed_variant_runs": 1,
+            "pta-baseline_success": 1,
+            "msa-baseline_success": 0,
+            "model_results": [
+                {
+                    "model": "qwen2",
+                    "status": "PARTIAL",
+                    "planned_variant_runs": 2,
+                    "pta_baseline_success": 1,
+                    "msa_baseline_success": 0,
+                    "failed_variant_runs": 1,
+                    "reason": "存在失败的训练阶段",
+                }
+            ],
+            "records": [
+                {
+                    "model": "qwen2",
+                    "variant": "ancestor",
+                    "iteration": 1,
+                    "overall_status": "FAILED",
+                    "reason": "MSA baseline 失败",
+                    "trainings": {
+                        "prepare": "OK",
+                        "pta-baseline": "OK",
+                        "msa-baseline": "ERROR",
+                        "baseline-align": "SKIP",
+                        "pta-preturb": "SKIP",
+                        "msa-preturb": "SKIP",
+                    },
+                }
+            ],
+        }
+
+        markdown = build_final_overview_markdown(summary)
+
+        self.assertIn("## Training Matrix", markdown)
+        self.assertIn("qwen2 | ancestor | 1 | FAILED", markdown)
+        self.assertIn("msa-baseline", markdown)
+        self.assertIn("MSA baseline 失败", markdown)
 
 
 class FullNetAnalysisTests(unittest.TestCase):

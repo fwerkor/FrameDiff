@@ -5,7 +5,18 @@
   "OUTPUT_ROOT": "output",
   "fullnet": {
     "MODELS": [
-      "qwen2"
+      "baichuan2",
+      "chatglm3",
+      "codellama",
+      "deepseekv3",
+      "glm4",
+      "grok1",
+      "llama2",
+      "mixtral",
+      "pangu",
+      "qwen2",
+      "qwen3",
+      "yi"
     ],
     "TOTAL_ITER": 1,
     "LOAD_STEPS": 3,
