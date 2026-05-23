@@ -565,7 +565,8 @@ def print_graph(graph: Graph):
             print("     position_embedding_type:",graph.total_config['position_embedding_type'])
             print()
         else:
-            print("DecoderLayer类:基于",graph.nodes[i].params['model_config'],"变异的",graph.nodes[i].block.__class__.__name__,"主要参数：")
+            source_config = graph.nodes[i].params.get('model_config', 'fullnet/base_config')
+            print("DecoderLayer类:基于",source_config,"变异的",graph.nodes[i].block.__class__.__name__,"主要参数：")
             print("     num_layers:",graph.nodes[i].config.num_layers)
             print("     ffn_hidden_size:",graph.nodes[i].config.ffn_hidden_size)
             print("     num_attention_heads:",graph.nodes[i].config.num_attention_heads)
