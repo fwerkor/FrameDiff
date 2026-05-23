@@ -337,6 +337,7 @@ class FullNetTraceTests(unittest.TestCase):
             "LMSV_FULLNET_TRACE_FULL_WEIGHTS",
             "LMSV_FULLNET_PERTURB",
             "LMSV_FULLNET_PERTURB_EPS",
+            "LMSV_FULLNET_TRACE_MODE",
         ]
         old_env = {name: os.environ.get(name) for name in env_names}
         try:
@@ -349,6 +350,7 @@ class FullNetTraceTests(unittest.TestCase):
                 os.environ["LMSV_FULLNET_TRACE_FULL_WEIGHTS"] = "1"
                 os.environ["LMSV_FULLNET_PERTURB"] = "1"
                 os.environ["LMSV_FULLNET_PERTURB_EPS"] = "1e-5"
+                os.environ["LMSV_FULLNET_TRACE_MODE"] = "full"
                 set_trace_step(0)
 
                 tensor_path = trace_tensor(3, "linear_operator", "x", torch.arange(4), stage="unit")
@@ -376,6 +378,54 @@ class FullNetTraceTests(unittest.TestCase):
                 self.assertTrue(any(row.get("kind") == "tensor" for row in rows))
                 self.assertTrue(any(row.get("kind") == "weights" for row in rows))
                 self.assertTrue(any(row.get("event") == "loss" for row in rows))
+        finally:
+            for name, value in old_env.items():
+                if value is None:
+                    os.environ.pop(name, None)
+                else:
+                    os.environ[name] = value
+
+    @unittest.skipUnless(importlib.util.find_spec("torch") is not None, "torch unavailable")
+    def test_trace_defaults_to_one_output_per_component_instance(self) -> None:
+        import torch
+
+        from utils.runtime.fullnet_trace import set_trace_step, trace_module_weights, trace_tensor
+
+        env_names = [
+            "LMSV_FULLNET_TRACE",
+            "LMSV_FULLNET_TRACE_DIR",
+            "LMSV_FULLNET_TRACE_BACKEND",
+            "LMSV_FULLNET_TRACE_RUN",
+            "LMSV_FULLNET_TRACE_ITER",
+            "LMSV_FULLNET_TRACE_FULL_WEIGHTS",
+            "LMSV_FULLNET_TRACE_MODE",
+        ]
+        old_env = {name: os.environ.get(name) for name in env_names}
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                os.environ["LMSV_FULLNET_TRACE"] = "1"
+                os.environ["LMSV_FULLNET_TRACE_DIR"] = temp_dir
+                os.environ["LMSV_FULLNET_TRACE_BACKEND"] = "pta"
+                os.environ["LMSV_FULLNET_TRACE_RUN"] = "pta-baseline"
+                os.environ["LMSV_FULLNET_TRACE_ITER"] = "1"
+                os.environ["LMSV_FULLNET_TRACE_FULL_WEIGHTS"] = "1"
+                os.environ["LMSV_FULLNET_TRACE_MODE"] = "output_only"
+
+                set_trace_step(0)
+                skipped_input = trace_tensor(14, "decoder_block", "decoder_1.input", torch.ones(1), stage="decoder_input", node_id=1)
+                first = trace_tensor(14, "decoder_block", "decoder_1.output", torch.ones(1), stage="decoder_output", node_id=1)
+                duplicate = trace_tensor(14, "decoder_block", "decoder_1.output_again", torch.ones(1), stage="decoder_output", node_id=1)
+                second_instance = trace_tensor(14, "decoder_block", "decoder_2.output", torch.ones(1), stage="decoder_output", node_id=2)
+                skipped_weight = trace_module_weights(14, "decoder_block", torch.nn.Linear(1, 1), stage="decoder_weights", node_id=1)
+                set_trace_step(1)
+                next_step = trace_tensor(14, "decoder_block", "decoder_1.output", torch.ones(1), stage="decoder_output", node_id=1)
+
+                self.assertIsNone(skipped_input)
+                self.assertIsNotNone(first)
+                self.assertIsNone(duplicate)
+                self.assertIsNotNone(second_instance)
+                self.assertIsNone(skipped_weight)
+                self.assertIsNotNone(next_step)
         finally:
             for name, value in old_env.items():
                 if value is None:

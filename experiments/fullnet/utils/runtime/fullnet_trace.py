@@ -37,6 +37,7 @@ _STATE = {
     "step": -1,
     "counter": 0,
     "manifest_written": set(),
+    "emitted_records": set(),
 }
 _LOCK = threading.Lock()
 
@@ -105,6 +106,54 @@ def _safe_part(value: Any, *, max_len: int = 80) -> str:
     if not text:
         text = "none"
     return text[:max_len]
+
+
+def _trace_mode() -> str:
+    return os.getenv("LMSV_FULLNET_TRACE_MODE", "output_only").strip().lower()
+
+
+def _full_trace_enabled() -> bool:
+    mode = _trace_mode()
+    granularity = os.getenv("LMSV_FULLNET_TRACE_GRANULARITY", "").strip().lower()
+    return mode in {"full", "all", "debug", "layer"} or granularity in {"layer", "node", "full", "all"}
+
+
+def _is_output_tensor(stage: Any, name: Any) -> bool:
+    text = f"{stage}.{name}".lower()
+    return "output" in text or "logits" in text
+
+
+def _component_instance_key(component_id: int, stage: Any, name: Any, node_id: Any | None) -> str:
+    if node_id is not None:
+        return f"node:{node_id}"
+    text = f"{stage}.{name}"
+    match = re.search(r"(decoder|block|layer)[_-]?(\d+)", text, flags=re.IGNORECASE)
+    if match:
+        return f"{match.group(1).lower()}:{match.group(2)}"
+    return f"component:{component_id}"
+
+
+def _should_emit_tensor(component_id: int, stage: str, name: Any, node_id: Any | None) -> bool:
+    if _full_trace_enabled():
+        return True
+    if not _is_output_tensor(stage, name):
+        return False
+    ctx = _context()
+    key = (
+        "tensor",
+        ctx["backend"],
+        ctx["run"],
+        ctx["iteration"],
+        ctx["step"],
+        str(_trace_root()),
+        component_id,
+        _component_instance_key(component_id, stage, name, node_id),
+    )
+    with _LOCK:
+        if key in _STATE["emitted_records"]:
+            return False
+        _STATE["emitted_records"].add(key)
+    return True
 
 
 def _next_counter() -> int:
@@ -286,6 +335,8 @@ def trace_tensor(
     trace_components_manifest()
     root = _trace_root()
     component_id, component_name = _component_lookup(component_id, component_name)
+    if not _should_emit_tensor(component_id, stage, tensor_name, node_id):
+        return None
     counter = _next_counter()
     base = (
         _context_dir(root, "tensors")
@@ -362,6 +413,8 @@ def trace_module_weights(
     if not trace_enabled() or not is_rank0() or module is None:
         return None
     if not _env_flag("LMSV_FULLNET_TRACE_FULL_WEIGHTS", True):
+        return None
+    if not _full_trace_enabled():
         return None
     state = _state_dict_cpu(module)
     if not state:
