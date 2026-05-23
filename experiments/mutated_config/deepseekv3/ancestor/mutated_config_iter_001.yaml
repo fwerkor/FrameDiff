@@ -26,6 +26,7 @@ base_config:
     init_method_std: 0.01
     sequence_parallel: false
     moe_grouped_gemm: false
+    init_method: torch.nn.init.xavier_uniform_
   vocab_size: 129280
   max_sequence_length: 4096
   position_embedding_type: rope

@@ -14,6 +14,7 @@ base_config:
     add_bias_linear: false
     init_method_std: 0.01
     add_qkv_bias: true
+    init_method: torch.nn.init.xavier_uniform_
   vocab_size: 65024
   max_sequence_length: 8192
   position_embedding_type: rope

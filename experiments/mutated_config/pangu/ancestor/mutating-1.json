@@ -30,7 +30,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -99,7 +100,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -127,7 +129,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -155,7 +158,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -185,7 +189,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -254,7 +259,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -282,7 +288,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -310,7 +317,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -349,7 +357,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -418,7 +427,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -446,7 +456,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -474,7 +485,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -504,7 +516,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -573,7 +586,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -601,7 +615,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -629,7 +644,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -668,7 +684,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -737,7 +754,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -765,7 +783,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -793,7 +812,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -823,7 +843,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -892,7 +913,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -920,7 +942,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -948,7 +971,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -987,7 +1011,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -1056,7 +1081,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1084,7 +1110,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1112,7 +1139,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1142,7 +1170,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -1211,7 +1240,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1239,7 +1269,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1267,7 +1298,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1306,7 +1338,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -1375,7 +1408,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1403,7 +1437,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1431,7 +1466,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1461,7 +1497,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -1530,7 +1567,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1558,7 +1596,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1586,7 +1625,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1625,7 +1665,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -1694,7 +1735,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1722,7 +1764,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1750,7 +1793,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1780,7 +1824,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -1849,7 +1894,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1877,7 +1923,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1905,7 +1952,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -1944,7 +1992,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -2013,7 +2062,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -2041,7 +2091,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -2069,7 +2120,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -2099,7 +2151,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -2168,7 +2221,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -2196,7 +2250,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -2224,7 +2279,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -2263,7 +2319,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -2332,7 +2389,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -2360,7 +2418,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -2388,7 +2447,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -2418,7 +2478,8 @@
                 "masked_softmax_fusion": false,
                 "bf16": false,
                 "params_dtype": "torch.float32",
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -2487,7 +2548,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -2515,7 +2577,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,
@@ -2543,7 +2606,8 @@
                         "masked_softmax_fusion": false,
                         "bf16": false,
                         "params_dtype": "torch.float32",
-                        "init_method_std": 0.02
+                        "init_method_std": 0.02,
+                        "init_method": "torch.nn.init.xavier_uniform_"
                     },
                     "extra_config": {
                         "seq_length": 1024,

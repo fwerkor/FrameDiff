@@ -50,6 +50,43 @@ class FullNetConfigTests(unittest.TestCase):
         self.assertIn("grok1", models)
         self.assertIn("qwen3", models)
 
+    def test_auto_parallel_uses_visible_cards_safely(self) -> None:
+        from utils.task import fullnet
+
+        old_env = os.environ.get("ASCEND_RT_VISIBLE_DEVICES")
+        old_values = {
+            name: getattr(fullnet.Config, name)
+            for name in (
+                "TARGET_TENSOR_PARALLEL_SIZE",
+                "TARGET_PIPELINE_PARALLEL_SIZE",
+                "TARGET_EXPERT_PARALLEL_SIZE",
+                "TARGET_NPUS_PER_NODE",
+                "TARGET_WORLD_SIZE",
+            )
+        }
+        try:
+            os.environ["ASCEND_RT_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
+            fullnet.Config.TARGET_TENSOR_PARALLEL_SIZE = 0
+            fullnet.Config.TARGET_PIPELINE_PARALLEL_SIZE = 0
+            fullnet.Config.TARGET_EXPERT_PARALLEL_SIZE = 0
+            fullnet.Config.TARGET_NPUS_PER_NODE = 0
+            fullnet.Config.TARGET_WORLD_SIZE = 0
+            fullnet.configure_auto_parallel_from_models([str(PROJECT_ROOT.parent / "model_config" / "qwen2.yaml")])
+            dist_cfg = fullnet.resolve_distributed_config()
+
+            self.assertEqual(dist_cfg["tp"], 2)
+            self.assertEqual(dist_cfg["pp"], 1)
+            self.assertEqual(dist_cfg["ep"], 1)
+            self.assertEqual(dist_cfg["npus_per_node"], 8)
+            self.assertEqual(dist_cfg["world_size"], 8)
+        finally:
+            if old_env is None:
+                os.environ.pop("ASCEND_RT_VISIBLE_DEVICES", None)
+            else:
+                os.environ["ASCEND_RT_VISIBLE_DEVICES"] = old_env
+            for name, value in old_values.items():
+                setattr(fullnet.Config, name, value)
+
     def test_cli_dry_run_outputs_fullnet_config(self) -> None:
         result = subprocess.run(
             [

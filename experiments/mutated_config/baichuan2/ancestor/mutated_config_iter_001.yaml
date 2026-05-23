@@ -18,6 +18,7 @@ base_config:
     bf16: false
     params_dtype: torch.float32
     init_method_std: 0.01
+    init_method: torch.nn.init.xavier_uniform_
   vocab_size: 151936
   max_sequence_length: 1024
   position_embedding_type: alibi

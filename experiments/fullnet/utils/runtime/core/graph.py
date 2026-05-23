@@ -80,6 +80,14 @@ def _lmsv_exact_gelu(x):
     return 0.5 * x * (1.0 + torch.erf(x / math.sqrt(2.0)))
 
 
+def _normalize_init_method(config: dict) -> None:
+    init_method = config.get("init_method")
+    if init_method is None:
+        config["init_method"] = torch.nn.init.xavier_uniform_
+    elif init_method == "torch.nn.init.xavier_uniform_":
+        config["init_method"] = torch.nn.init.xavier_uniform_
+
+
 def reshape_tensor_nd(
         input_tensor: torch.Tensor,
         target_shape: tuple,
@@ -146,16 +154,15 @@ class Graph(LanguageModule):
         if config_dict is not None:
             # 使用配置字典初始化
             model_config = config_dict
-            if 'config' in model_config and model_config['config']['init_method'] == "torch.nn.init.xavier_uniform_":
-                model_config['config']['init_method'] = torch.nn.init.xavier_uniform_
+            if 'config' in model_config:
+                _normalize_init_method(model_config['config'])
         elif config_path is not None:
             # 使用配置文件路径初始化
             config_path = model_helpers.resolve_repo_path(config_path)
             yaml = YAML()
             with open(config_path, 'r', encoding='utf-8') as file:
                 model_config = yaml.load(file)
-                if model_config['config']['init_method'] == "torch.nn.init.xavier_uniform_":
-                    model_config['config']['init_method'] = torch.nn.init.xavier_uniform_
+                _normalize_init_method(model_config['config'])
         else:
             raise ValueError("必须提供 config_path 或 config_dict 中的一个")
 
@@ -1468,8 +1475,7 @@ class Graph(LanguageModule):
             graph_structure = loaded_config['graph_structure']
 
             # 重新初始化Graph的配置
-            if base_config['config']['init_method'] == "torch.nn.init.xavier_uniform_":
-                base_config['config']['init_method'] = torch.nn.init.xavier_uniform_
+            _normalize_init_method(base_config['config'])
 
             # 处理torch数据类型的字符串表示
             if 'autocast_dtype' in base_config['config'] and isinstance(base_config['config']['autocast_dtype'], str):

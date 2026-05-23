@@ -21,6 +21,7 @@ base_config:
     params_dtype: torch.float32
     pipeline_dtype: torch.float32
     init_method_std: 0.01
+    init_method: torch.nn.init.xavier_uniform_
   vocab_size: 37888
   max_sequence_length: 2048
   position_embedding_type: rope

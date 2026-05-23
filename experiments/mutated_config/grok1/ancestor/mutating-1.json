@@ -29,7 +29,8 @@
                 "attention_dropout": 0.0,
                 "hidden_dropout": 0.0,
                 "add_bias_linear": false,
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -92,7 +93,8 @@
                 "attention_dropout": 0.0,
                 "hidden_dropout": 0.0,
                 "add_bias_linear": false,
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -164,7 +166,8 @@
                 "attention_dropout": 0.0,
                 "hidden_dropout": 0.0,
                 "add_bias_linear": false,
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -227,7 +230,8 @@
                 "attention_dropout": 0.0,
                 "hidden_dropout": 0.0,
                 "add_bias_linear": false,
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -299,7 +303,8 @@
                 "attention_dropout": 0.0,
                 "hidden_dropout": 0.0,
                 "add_bias_linear": false,
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -362,7 +367,8 @@
                 "attention_dropout": 0.0,
                 "hidden_dropout": 0.0,
                 "add_bias_linear": false,
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -434,7 +440,8 @@
                 "attention_dropout": 0.0,
                 "hidden_dropout": 0.0,
                 "add_bias_linear": false,
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -497,7 +504,8 @@
                 "attention_dropout": 0.0,
                 "hidden_dropout": 0.0,
                 "add_bias_linear": false,
-                "init_method_std": 0.02
+                "init_method_std": 0.02,
+                "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
                 "seq_length": 1024,

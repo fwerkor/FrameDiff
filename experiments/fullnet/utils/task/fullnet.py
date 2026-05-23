@@ -221,6 +221,15 @@ def _infer_model_aware_tensor_parallel_size(model_paths, visible_cards):
     return 1
 
 
+def _largest_usable_worker_count(visible_cards, parallel_cards):
+    visible_cards = max(1, int(visible_cards or 1))
+    parallel_cards = max(1, int(parallel_cards or 1))
+    for candidate in range(visible_cards, 0, -1):
+        if candidate % parallel_cards == 0:
+            return candidate
+    return parallel_cards
+
+
 def resolve_distributed_config():
     inferred_cards = _infer_visible_device_count()
     tp = _parse_optional_positive_int(Config.TARGET_TENSOR_PARALLEL_SIZE)
@@ -241,7 +250,7 @@ def resolve_distributed_config():
 
     configured_npus = int(Config.TARGET_NPUS_PER_NODE or 0)
     if configured_npus <= 0:
-        configured_npus = parallel_cards
+        configured_npus = _largest_usable_worker_count(inferred_cards, parallel_cards)
     npus_per_node = max(1, configured_npus)
     if configured_world > 0:
         world_size = max(parallel_cards, configured_world)
