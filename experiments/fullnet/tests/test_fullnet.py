@@ -62,6 +62,7 @@ class FullNetConfigTests(unittest.TestCase):
                 "TARGET_EXPERT_PARALLEL_SIZE",
                 "TARGET_NPUS_PER_NODE",
                 "TARGET_WORLD_SIZE",
+                "ENABLE_DATA_PARALLEL",
             )
         }
         try:
@@ -71,12 +72,18 @@ class FullNetConfigTests(unittest.TestCase):
             fullnet.Config.TARGET_EXPERT_PARALLEL_SIZE = 0
             fullnet.Config.TARGET_NPUS_PER_NODE = 0
             fullnet.Config.TARGET_WORLD_SIZE = 0
+            fullnet.Config.ENABLE_DATA_PARALLEL = False
             fullnet.configure_auto_parallel_from_models([str(PROJECT_ROOT.parent / "model_config" / "qwen2.yaml")])
             dist_cfg = fullnet.resolve_distributed_config()
 
             self.assertEqual(dist_cfg["tp"], 2)
             self.assertEqual(dist_cfg["pp"], 1)
             self.assertEqual(dist_cfg["ep"], 1)
+            self.assertEqual(dist_cfg["npus_per_node"], 2)
+            self.assertEqual(dist_cfg["world_size"], 2)
+
+            fullnet.Config.ENABLE_DATA_PARALLEL = True
+            dist_cfg = fullnet.resolve_distributed_config()
             self.assertEqual(dist_cfg["npus_per_node"], 8)
             self.assertEqual(dist_cfg["world_size"], 8)
         finally:

@@ -54,6 +54,7 @@ class Config:
     TARGET_EXPERT_PARALLEL_SIZE = 0
     TARGET_NPUS_PER_NODE = 0
     TARGET_WORLD_SIZE = 0
+    ENABLE_DATA_PARALLEL = False
     TARGET_MASTER_ADDR = "localhost"
     TARGET_MASTER_PORT = 6000
 
@@ -250,7 +251,10 @@ def resolve_distributed_config():
 
     configured_npus = int(Config.TARGET_NPUS_PER_NODE or 0)
     if configured_npus <= 0:
-        configured_npus = _largest_usable_worker_count(inferred_cards, parallel_cards)
+        if Config.ENABLE_DATA_PARALLEL:
+            configured_npus = _largest_usable_worker_count(inferred_cards, parallel_cards)
+        else:
+            configured_npus = parallel_cards
     npus_per_node = max(1, configured_npus)
     if configured_world > 0:
         world_size = max(parallel_cards, configured_world)
@@ -756,6 +760,9 @@ def _apply_config(params):
     )
     Config.TARGET_EXPERT_PARALLEL_SIZE = _parse_optional_positive_int(
         params.get("TARGET_EXPERT_PARALLEL_SIZE", Config.TARGET_EXPERT_PARALLEL_SIZE),
+    )
+    Config.ENABLE_DATA_PARALLEL = data_helpers.parse_bool(
+        params.get("ENABLE_DATA_PARALLEL", Config.ENABLE_DATA_PARALLEL)
     )
     Config.TARGET_NPUS_PER_NODE = int(params.get("TARGET_NPUS_PER_NODE", Config.TARGET_NPUS_PER_NODE) or 0)
     Config.TARGET_WORLD_SIZE = int(params.get("TARGET_WORLD_SIZE", Config.TARGET_WORLD_SIZE) or 0)
