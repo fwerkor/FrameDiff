@@ -1,0 +1,48 @@
+# 组件级实验基础配置
+experiment:
+  seed: 42
+  device: "npu"
+  output_dir: "res/component"
+  num_iterations: 10
+
+# 扰动配置（RQ2 蜕变测试）
+perturbation:
+  sigmas: [0.00001]
+  distribution: "uniform"
+
+# 组件输入形状配置
+input_shapes:
+  default: [32, 2, 1024]        # (seq_len, batch_size, hidden_size)
+  embedding_input: [32, 2]       # (seq_len, batch_size) -> input_ids
+  output_layer_input: [32, 2, 1024]  # (seq_len, batch_size, hidden_size)
+  output_layer_output: [32, 2, 40000] # (seq_len, batch_size, vocab_size)
+
+# 指标配置
+metrics:
+  eps: 1e-8
+  compute_ulp: false
+
+# 模型配置映射
+model_configs:
+  qwen2: "model_config/qwen2.yaml"
+  qwen3: "model_config/qwen3.yaml"
+  llama2: "model_config/llama2.yaml"
+  baichuan2: "model_config/baichuan2.yaml"
+  chatglm3: "model_config/chatglm3.yaml"
+  glm4: "model_config/glm4.yaml"
+  yi: "model_config/yi.yaml"
+  codellama: "model_config/codellama.yaml"
+  pangu: "model_config/pangu.yaml"
+  deepseekv3: "model_config/deepseekv3.yaml"
+  mixtral: "model_config/mixtral.yaml"
+  grok1: "model_config/grok1.yaml"
+
+# 组件编号映射
+components:
+  embedding_layer: 11
+  self_attention_block: 12
+  ffn_block: 13
+  decoder_block: 14
+  output_layer: 15
+  moe_ffn_block: 16
+  mla_self_attention_block: 17

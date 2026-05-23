@@ -1,0 +1,1400 @@
+#!/usr/bin/env python3
+"""
+语言模型整网组装与差分验证链路。
+重构自旧版 internal_exe_script.sh
+"""
+
+import json
+import os
+import subprocess
+import shutil
+import shlex
+from datetime import datetime
+from pathlib import Path
+import yaml
+
+import utils
+from utils.analyze.precision import find_preferred_loss_mismatch
+from utils.runtime.paths import MODEL_CONFIG_DIR, MUTATED_CONFIG_DIR, RUNTIME_SCRIPT_DIR, TOKENIZER_DIR, repo_rel
+from utils.runtime.profiler_tools import generate_profile_report
+from utils.task import data_helpers, runtime_helpers
+
+LMSV_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_TMP_ROOT = LMSV_ROOT / "tmp"
+FULLNET_TMP_ROOT = PROJECT_TMP_ROOT / "fullnet"
+MODEL_CONFIG_REL = repo_rel(MODEL_CONFIG_DIR)
+RUNTIME_SCRIPT_REL = repo_rel(RUNTIME_SCRIPT_DIR)
+TOKENIZER_BAICHUAN_REL = repo_rel(TOKENIZER_DIR / "baichuan2")
+
+
+class Config:
+    # 任务参数
+    MODE = "DEVELOP"
+    TOTAL_ITER = 1
+    TEST_ITERATIONS = 1
+    BASE_SEED = 43
+    MUTNM = 0
+    MODELS = ["qwen2"]
+    NODE_NUM = 0
+    RUNTIME_ROUNDS = TOTAL_ITER
+    SAVE_STEPS = 1
+    LOAD_STEPS = 3
+    FULLNET_ASSEMBLY_MODE = "single_model_fullnet"
+
+    # 运行配置
+    PTA_ENV = "mindspeed"
+    MSA_ENV = "msadapter"
+    PTA_MAX_RUNTIME = 6000
+    MSA_MAX_RUNTIME = 6000
+    LOG_INIT_WAIT = 240
+    LOG_STABLE_THRESHOLD = 150
+    SAVE_ABNORMAL_WEIGHTS = True
+    TARGET_TENSOR_PARALLEL_SIZE = 0
+    TARGET_PIPELINE_PARALLEL_SIZE = 0
+    TARGET_EXPERT_PARALLEL_SIZE = 0
+    TARGET_NPUS_PER_NODE = 0
+    TARGET_WORLD_SIZE = 0
+    TARGET_MASTER_ADDR = "localhost"
+    TARGET_MASTER_PORT = 6000
+
+    # 路径配置
+    LOG_PATH = "res/internal_execution.log"
+    MSA_MONITOR_LOG = "msrun_log/worker_0.log"
+    PTA_CSV_PATH = "res/execution_pta.csv"
+    MSA_CSV_PATH = "res/execution_msa.csv"
+    PERSIST_ROOT = ""
+    SHARED_WEIGHT_TMP_ROOT = str(FULLNET_TMP_ROOT / "shared_weight")
+    TRACE_ENABLED = True
+    TRACE_FULL_WEIGHTS = True
+    TRACE_PERTURBATION_RUNS = True
+    TRACE_PERTURB_EPS = "1e-5"
+    TRACE_PERTURB_SEED = ""
+    BASELINE_ALIGNMENT_REQUIRED = True
+    BASELINE_LOSS_TOLERANCE = 0.0
+
+
+LOG_SCOPE = "FullNet"
+
+
+def _format_log(tag, msg):
+    text = str(msg)
+    if tag:
+        return f"[{LOG_SCOPE}][{tag}] {text}"
+    return f"[{LOG_SCOPE}] {text}"
+
+
+def log_info(msg):
+    utils.log.write.info(_format_log(None, msg))
+
+
+def log_warn(msg):
+    utils.log.write.warn(_format_log(None, msg))
+
+
+def log_error(msg):
+    utils.log.write.error(_format_log(None, msg))
+
+
+def log_step(msg):
+    utils.log.write.info(_format_log("阶段", msg))
+
+
+def log_kv(group, key, value):
+    utils.log.write.info(_format_log(group, f"{key}: {value}"))
+
+
+def configure_project_tmp_env():
+    return runtime_helpers.configure_project_tmp_env(PROJECT_TMP_ROOT)
+
+
+def _parse_positive_int(value, default):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        parsed = int(default)
+    return parsed if parsed > 0 else int(default)
+
+
+def _parse_optional_positive_int(value):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return 0
+    return parsed if parsed > 0 else 0
+
+
+def _infer_visible_device_count():
+    for env_name in (
+        "ASCEND_RT_VISIBLE_DEVICES",
+        "ASCEND_VISIBLE_DEVICES",
+        "NPU_VISIBLE_DEVICES",
+        "CUDA_VISIBLE_DEVICES",
+    ):
+        raw = str(os.environ.get(env_name, "")).strip()
+        if not raw:
+            continue
+        parts = [item.strip() for item in raw.split(",") if item.strip()]
+        if parts:
+            return len(parts)
+
+    try:
+        import torch
+
+        if hasattr(torch, "npu") and callable(getattr(torch.npu, "device_count", None)):
+            count = int(torch.npu.device_count())
+            if count > 0:
+                return count
+        if callable(getattr(torch.cuda, "device_count", None)):
+            count = int(torch.cuda.device_count())
+            if count > 0:
+                return count
+    except Exception:
+        pass
+
+    for cmd in (
+        ["bash", "-lc", "npu-smi info -l | grep -c '^\\s*NPU ID'"],
+        ["bash", "-lc", "npu-smi info | grep -c '| NPU '"],
+    ):
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        except OSError:
+            continue
+        if result.returncode != 0:
+            continue
+        count = _parse_optional_positive_int((result.stdout or "").strip())
+        if count > 0:
+            return count
+
+    return 1
+
+
+def _load_transformer_config(model_path):
+    config_path = Path(model_path)
+    if not config_path.is_absolute():
+        config_path = LMSV_ROOT / config_path
+    data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    config = (
+        data.get("TransformerConfig")
+        or data.get("MLATransformerConfig")
+        or data.get("config")
+        or data
+    )
+    return config if isinstance(config, dict) else {}
+
+
+def _infer_fullnet_decoder_count(model_paths):
+    if not model_paths:
+        return 1
+    cfg = _load_transformer_config(model_paths[0])
+    for key in ("num_layers", "n_layer", "num_hidden_layers"):
+        value = _parse_optional_positive_int(cfg.get(key))
+        if value > 0:
+            return value
+    return max(1, len(model_paths))
+
+
+def _assembly_model_paths(model_paths):
+    if Config.FULLNET_ASSEMBLY_MODE == "single_model_fullnet" and model_paths:
+        return [model_paths[0]]
+    return model_paths
+
+
+def _infer_model_aware_tensor_parallel_size(model_paths, visible_cards):
+    max_tp = max(1, int(visible_cards))
+    if not model_paths:
+        return max_tp
+
+    constraints = []
+    for model_path in model_paths:
+        cfg = _load_transformer_config(model_path)
+        for key in ("num_attention_heads", "num_query_groups", "hidden_size", "ffn_hidden_size"):
+            value = _parse_optional_positive_int(cfg.get(key))
+            if value > 0:
+                constraints.append(value)
+
+    if not constraints:
+        return max_tp
+
+    for candidate in range(max_tp, 0, -1):
+        if all(value % candidate == 0 for value in constraints):
+            return candidate
+    return 1
+
+
+def resolve_distributed_config():
+    inferred_cards = _infer_visible_device_count()
+    tp = _parse_optional_positive_int(Config.TARGET_TENSOR_PARALLEL_SIZE)
+    pp = _parse_optional_positive_int(Config.TARGET_PIPELINE_PARALLEL_SIZE)
+    ep = _parse_optional_positive_int(Config.TARGET_EXPERT_PARALLEL_SIZE)
+
+    if tp <= 0 and pp <= 0 and ep <= 0:
+        tp = inferred_cards
+        pp = 1
+        ep = 1
+    else:
+        tp = max(1, tp)
+        pp = max(1, pp)
+        ep = max(1, ep)
+
+    parallel_cards = max(1, tp * pp * ep)
+    configured_world = int(Config.TARGET_WORLD_SIZE or 0)
+
+    configured_npus = int(Config.TARGET_NPUS_PER_NODE or 0)
+    if configured_npus <= 0:
+        configured_npus = parallel_cards
+    npus_per_node = max(1, configured_npus)
+    if configured_world > 0:
+        world_size = max(parallel_cards, configured_world)
+    else:
+        world_size = max(parallel_cards, npus_per_node)
+
+    return {
+        "tp": tp,
+        "pp": pp,
+        "ep": ep,
+        "inferred_cards": inferred_cards,
+        "nnodes": 1,
+        "node_rank": 0,
+        "master_addr": str(Config.TARGET_MASTER_ADDR),
+        "master_port": int(Config.TARGET_MASTER_PORT),
+        "npus_per_node": npus_per_node,
+        "world_size": world_size,
+    }
+
+
+def configure_auto_parallel_from_models(model_paths):
+    if any(
+        _parse_optional_positive_int(value) > 0
+        for value in (
+            Config.TARGET_TENSOR_PARALLEL_SIZE,
+            Config.TARGET_PIPELINE_PARALLEL_SIZE,
+            Config.TARGET_EXPERT_PARALLEL_SIZE,
+        )
+    ):
+        return
+
+    visible_cards = _infer_visible_device_count()
+    Config.TARGET_TENSOR_PARALLEL_SIZE = _infer_model_aware_tensor_parallel_size(model_paths, visible_cards)
+    Config.TARGET_PIPELINE_PARALLEL_SIZE = 1
+    Config.TARGET_EXPERT_PARALLEL_SIZE = 1
+
+
+def resolve_msa_monitor_log():
+    worker_index = max(0, resolve_distributed_config()["npus_per_node"] - 1)
+    return f"msrun_log/worker_{worker_index}.log"
+
+
+def _to_bool(value):
+    return data_helpers.parse_bool(value)
+
+
+def _build_distributed_deterministic_env_block(dist_cfg) -> str:
+    return """
+    export HCCL_DETERMINISTIC=true
+    export ASCEND_LAUNCH_BLOCKING=1
+    export NCCL_DETERMINISTIC=1
+    export CUDA_DEVICE_MAX_CONNECTIONS=1
+    export PYTORCH_NPU_ALLOC_CONF=expandable_segments:True
+    """.strip()
+
+
+def _build_msa_profile_dir_env_block(profile_dir=None):
+    if profile_dir:
+        return f"export LMSV_MSA_PROFILE_DIR={shlex.quote(str(Path(profile_dir).resolve()))}"
+    return "unset LMSV_MSA_PROFILE_DIR"
+
+
+def _build_trace_env_block(
+    *,
+    iter_num,
+    trace_dir,
+    backend,
+    run_name,
+    perturb=False,
+    perturb_eps=None,
+):
+    enabled = "1" if Config.TRACE_ENABLED or os.environ.get("LMSV_FULLNET_TRACE") == "1" else "0"
+    perturb_value = "1" if perturb else "0"
+    eps = str(perturb_eps or Config.TRACE_PERTURB_EPS)
+    lines = [
+        f"export LMSV_FULLNET_TRACE={enabled}",
+        f"export LMSV_FULLNET_TRACE_BACKEND={shlex.quote(str(backend))}",
+        f"export LMSV_FULLNET_TRACE_RUN={shlex.quote(str(run_name))}",
+        f"export LMSV_FULLNET_TRACE_ITER={int(iter_num)}",
+        f"export LMSV_FULLNET_TRACE_DIR={shlex.quote(str(Path(trace_dir).resolve()))}",
+        f"export LMSV_FULLNET_TRACE_FULL_WEIGHTS={'1' if Config.TRACE_FULL_WEIGHTS else '0'}",
+        f"export LMSV_FULLNET_PERTURB={perturb_value}",
+        f"export LMSV_FULLNET_PERTURB_EPS={shlex.quote(eps)}",
+    ]
+    if Config.TRACE_PERTURB_SEED:
+        lines.append(f"export LMSV_FULLNET_PERTURB_SEED={shlex.quote(str(Config.TRACE_PERTURB_SEED))}")
+    if Config.TRACE_ENABLED:
+        lines.append("export LMSV_DEBUG_COMPARE=${LMSV_DEBUG_COMPARE:-1}")
+    return "\n    ".join(lines)
+
+
+def run_shell_to_file(cmd, log_file, check=False, timeout=None, timeout_label=None):
+    return runtime_helpers.run_shell_to_file(
+        cmd,
+        log_file,
+        LMSV_ROOT,
+        log_error,
+        check=check,
+        timeout=timeout,
+        timeout_label=timeout_label,
+    )
+
+
+def write_runtime_script(script_path, cmd):
+    return runtime_helpers.write_runtime_script(script_path, cmd)
+
+
+def build_conda_activate_block(env_name, load_ascend=False):
+    return runtime_helpers.build_conda_activate_block(env_name, load_ascend=load_ascend)
+
+
+def normalize_models(raw_models):
+    return runtime_helpers.normalize_models(raw_models, MODEL_CONFIG_DIR)
+
+
+def build_mutate_args(model_paths, node_num, mutnm, rounds):
+    model_arg = ",".join(model_paths)
+    return (
+        f"-c {MODEL_CONFIG_REL} -r {rounds} --mutnm {mutnm} "
+        f"-n {node_num} -m {model_arg}"
+    )
+
+
+def cleanup_shared_weight_file(weight_path):
+    data_helpers.cleanup_shared_weight_file(weight_path)
+
+
+def csv_has_iteration(csv_path, iteration):
+    return data_helpers.csv_has_iteration(csv_path, iteration)
+
+
+def csv_iteration_is_valid(csv_path, iteration):
+    return data_helpers.csv_iteration_is_valid(csv_path, iteration)
+
+
+def wait_msa_finish_csv(iter_num, csv_path, label):
+    log_step(f"等待MSA验证完成 | {label} | 迭代{iter_num}")
+    log_path = LMSV_ROOT / Config.MSA_MONITOR_LOG
+    csv_path = Path(csv_path)
+    return runtime_helpers.wait_msa_finish(
+        iter_num=iter_num,
+        log_path=log_path,
+        total_timeout=Config.MSA_MAX_RUNTIME,
+        init_wait=Config.LOG_INIT_WAIT,
+        stable_threshold=Config.LOG_STABLE_THRESHOLD,
+        poll_interval=20,
+        log_info=log_info,
+        log_error=log_error,
+        success_checker=lambda: csv_iteration_is_valid(csv_path, iter_num),
+        result_exists_checker=lambda: csv_has_iteration(csv_path, iter_num),
+    )
+
+
+def reset_msrun_log():
+    runtime_helpers.clear_path(LMSV_ROOT / "msrun_log")
+    (LMSV_ROOT / "msrun_log").mkdir(parents=True, exist_ok=True)
+
+
+def init_workspace(result_dir_name=None):
+    """清理本任务相关历史产物。"""
+    log_step("初始化整网工作目录")
+    targets = [
+        LMSV_ROOT / "msrun_log",
+        LMSV_ROOT / "res" / "training_log_pta",
+        LMSV_ROOT / "res" / "training_log_msa",
+        LMSV_ROOT / "res" / "analyse_report",
+        LMSV_ROOT / "res" / "execution_pta.csv",
+        LMSV_ROOT / "res" / "execution_msa.csv",
+    ]
+    if result_dir_name:
+        targets.extend(
+            [
+                LMSV_ROOT / "ms" / result_dir_name,
+                LMSV_ROOT / "pta" / result_dir_name,
+                LMSV_ROOT / "res" / result_dir_name,
+            ]
+        )
+
+    for target in targets:
+        if not target.exists() and not target.is_symlink():
+            continue
+        runtime_helpers.clear_path(target)
+
+    (LMSV_ROOT / "res").mkdir(parents=True, exist_ok=True)
+    (LMSV_ROOT / "msrun_log").mkdir(parents=True, exist_ok=True)
+    (LMSV_ROOT / "res" / "training_log_pta").mkdir(parents=True, exist_ok=True)
+    (LMSV_ROOT / "res" / "training_log_msa").mkdir(parents=True, exist_ok=True)
+
+def build_pta_verify_stage_cmd(
+    iter_num,
+    mutate_args,
+    load_path,
+    pta_env,
+    pta_path,
+    shared_weight_path,
+    shared_mode,
+    train_iters,
+    step_log_csv_path=None,
+    result_csv_path=None,
+    trace_dir=None,
+    trace_run_name="pta-baseline",
+    perturb=False,
+    perturb_eps=None,
+):
+    train_iters = int(train_iters)
+    dist_cfg = resolve_distributed_config()
+    if step_log_csv_path:
+        step_log_block = f"export LMSV_TRAINING_LOG_CSV={shlex.quote(str(Path(step_log_csv_path).resolve()))}"
+    else:
+        step_log_block = "unset LMSV_TRAINING_LOG_CSV"
+    pta_csv_path = result_csv_path or (LMSV_ROOT / Config.PTA_CSV_PATH)
+    trace_block = _build_trace_env_block(
+        iter_num=iter_num,
+        trace_dir=trace_dir or (Path(Config.PERSIST_ROOT) / "iters" / f"iter_{iter_num}" / "traces"),
+        backend="pta",
+        run_name=trace_run_name,
+        perturb=perturb,
+        perturb_eps=perturb_eps,
+    )
+    return f"""
+    {build_conda_activate_block(pta_env, load_ascend=True)}
+    export PTA_PATH={shlex.quote(pta_path)}
+    export PTAPATH={shlex.quote(pta_path)}
+    source scripts/envset/pta.sh
+    export LMSV_ENABLE_SUBMODULE_SHARED_WEIGHT_PATCH=1
+    export LMSV_PATCH_LOG=1
+    export LMSV_SUBMODULE_TARGET_SCRIPT=mutate_and_forward/load_and_forward_graph.py
+    export LMSV_SHARED_WEIGHT_TARGET_MODULES=core.graph,utils.runtime.core.graph
+
+    {_build_distributed_deterministic_env_block(dist_cfg)}
+
+    NPUS_PER_NODE={dist_cfg["npus_per_node"]}
+    MASTER_ADDR={shlex.quote(dist_cfg["master_addr"])}
+    MASTER_PORT={dist_cfg["master_port"]}
+    NNODES={dist_cfg["nnodes"]}
+    NODE_RANK={dist_cfg["node_rank"]}
+    export MASTER_ADDR="$MASTER_ADDR"
+    export MASTER_PORT="$MASTER_PORT"
+    export NNODES="$NNODES"
+    export NODE_RANK="$NODE_RANK"
+
+    DISTRIBUTED_ARGS="
+        --nproc_per_node $NPUS_PER_NODE \
+        --nnodes $NNODES \
+        --node_rank $NODE_RANK \
+        --master_addr $MASTER_ADDR \
+        --master_port $MASTER_PORT
+    "
+
+    GPT_ARGS="
+        --tensor-model-parallel-size {dist_cfg["tp"]} \
+        --pipeline-model-parallel-size {dist_cfg["pp"]} \
+        --expert-model-parallel-size {dist_cfg["ep"]} \
+        --num-layers 16 \
+        --hidden-size 928 \
+        --ffn-hidden-size 1712 \
+        --num-attention-heads 8 \
+        --tokenizer-type PretrainedFromHF \
+        --tokenizer-name-or-path {TOKENIZER_BAICHUAN_REL} \
+        --seq-length 1024 \
+        --max-position-embeddings 1024 \
+        --micro-batch-size 1 \
+        --global-batch-size 8 \
+        --make-vocab-size-divisible-by 1 \
+        --seed 114514 \
+        --attention-dropout 0.0 \
+        --hidden-dropout 0.0 \
+        --position-embedding-type rope \
+    "
+
+    export MUTATE_ROUND={iter_num}
+    export MUTATE_ARGS={shlex.quote(mutate_args)}
+    export LMSV_SHARED_WEIGHT_PATH={shlex.quote(shared_weight_path)}
+    export LMSV_SHARED_WEIGHT_MODE={shlex.quote(shared_mode)}
+    export LMSV_PTA_CSV_PATH={shlex.quote(str(Path(pta_csv_path).resolve()))}
+    export LMSV_TRAIN_ITERS={train_iters}
+    {trace_block}
+    {step_log_block}
+    torchrun $DISTRIBUTED_ARGS {shlex.quote(f"{RUNTIME_SCRIPT_REL}/submodule_entry.py")} \
+        $GPT_ARGS \
+        $MUTATE_ARGS \
+        --train-iters {train_iters} \
+        --load-path {shlex.quote(load_path)}
+    """
+
+
+def run_pta_verify_stage(
+    iter_num,
+    mutate_args,
+    load_path,
+    exec_log_file,
+    pta_env,
+    pta_path,
+    shared_weight_path,
+    shared_mode,
+    train_iters,
+    step_log_csv_path=None,
+    result_csv_path=None,
+    script_output_path=None,
+    trace_dir=None,
+    trace_run_name="pta-baseline",
+    perturb=False,
+    perturb_eps=None,
+):
+    cmd = build_pta_verify_stage_cmd(
+        iter_num,
+        mutate_args,
+        load_path,
+        pta_env,
+        pta_path,
+        shared_weight_path,
+        shared_mode,
+        train_iters,
+        step_log_csv_path=step_log_csv_path,
+        result_csv_path=result_csv_path,
+        trace_dir=trace_dir,
+        trace_run_name=trace_run_name,
+        perturb=perturb,
+        perturb_eps=perturb_eps,
+    )
+    if script_output_path:
+        write_runtime_script(script_output_path, cmd)
+    result = run_shell_to_file(
+        cmd,
+        exec_log_file,
+        check=False,
+        timeout=Config.PTA_MAX_RUNTIME,
+        timeout_label="PTA执行",
+    )
+    return result is not None and result.returncode == 0
+
+
+def build_msa_verify_load_cmd(
+    iter_num,
+    mutate_args,
+    load_path,
+    msa_env,
+    msa_path,
+    shared_weight_path,
+    train_iters,
+    step_log_csv_path=None,
+    result_csv_path=None,
+    profile_output_dir=None,
+    trace_dir=None,
+    trace_run_name="msa-baseline",
+    perturb=False,
+    perturb_eps=None,
+):
+    train_iters = int(train_iters)
+    dist_cfg = resolve_distributed_config()
+    if step_log_csv_path:
+        step_log_block = f"export LMSV_TRAINING_LOG_CSV={shlex.quote(str(Path(step_log_csv_path).resolve()))}"
+    else:
+        step_log_block = "unset LMSV_TRAINING_LOG_CSV"
+    msa_csv_path = result_csv_path or (LMSV_ROOT / Config.MSA_CSV_PATH)
+    trace_block = _build_trace_env_block(
+        iter_num=iter_num,
+        trace_dir=trace_dir or (Path(Config.PERSIST_ROOT) / "iters" / f"iter_{iter_num}" / "traces"),
+        backend="msa",
+        run_name=trace_run_name,
+        perturb=perturb,
+        perturb_eps=perturb_eps,
+    )
+    return f"""
+    {build_conda_activate_block(msa_env, load_ascend=True)}
+    export MSA_PATH={shlex.quote(msa_path)}
+    export MSAPATH={shlex.quote(msa_path)}
+    source scripts/envset/msa.sh
+    {_build_msa_profile_dir_env_block(profile_output_dir)}
+    export LMSV_ENABLE_SUBMODULE_SHARED_WEIGHT_PATCH=1
+    export LMSV_PATCH_LOG=1
+    export LMSV_SUBMODULE_TARGET_SCRIPT=ms_mutate_and_forward/load_and_forward_graph.py
+    export LMSV_SHARED_WEIGHT_TARGET_MODULES=core.graph,utils.runtime.core.graph
+
+    {_build_distributed_deterministic_env_block(dist_cfg)}
+
+    NPUS_PER_NODE={dist_cfg["npus_per_node"]}
+    MASTER_ADDR={shlex.quote(dist_cfg["master_addr"])}
+    MASTER_PORT={dist_cfg["master_port"]}
+    NNODES={dist_cfg["nnodes"]}
+    NODE_RANK={dist_cfg["node_rank"]}
+    WORLD_SIZE={dist_cfg["world_size"]}
+    export MASTER_ADDR="$MASTER_ADDR"
+    export MASTER_PORT="$MASTER_PORT"
+    export NNODES="$NNODES"
+    export NODE_RANK="$NODE_RANK"
+    export WORLD_SIZE="$WORLD_SIZE"
+
+    DISTRIBUTED_ARGS="
+        --master_addr $MASTER_ADDR \
+        --node_rank $NODE_RANK \
+        --worker_num $WORLD_SIZE \
+        --local_worker_num $NPUS_PER_NODE \
+        --master_port $MASTER_PORT \
+        --log_dir=msrun_log \
+        --join=False \
+        --cluster_time_out=300 \
+        --bind_core=True
+    "
+
+    GPT_ARGS="
+        --tensor-model-parallel-size {dist_cfg["tp"]} \
+        --pipeline-model-parallel-size {dist_cfg["pp"]} \
+        --expert-model-parallel-size {dist_cfg["ep"]} \
+        --num-layers 16 \
+        --hidden-size 928 \
+        --ffn-hidden-size 1712 \
+        --num-attention-heads 8 \
+        --tokenizer-type PretrainedFromHF \
+        --tokenizer-name-or-path {TOKENIZER_BAICHUAN_REL} \
+        --seq-length 1024 \
+        --max-position-embeddings 1024 \
+        --micro-batch-size 1 \
+        --global-batch-size 8 \
+        --make-vocab-size-divisible-by 1 \
+        --seed 114514 \
+        --attention-dropout 0.0 \
+        --hidden-dropout 0.0 \
+        --position-embedding-type rope \
+    "
+
+    export MUTATE_ROUND={iter_num}
+    export MUTATE_ARGS={shlex.quote(mutate_args)}
+    export LMSV_SHARED_WEIGHT_PATH={shlex.quote(shared_weight_path)}
+    export LMSV_SHARED_WEIGHT_MODE=load
+    export LMSV_MSA_CSV_PATH={shlex.quote(str(Path(msa_csv_path).resolve()))}
+    export LMSV_TRAIN_ITERS={train_iters}
+    {trace_block}
+    {step_log_block}
+    msrun $DISTRIBUTED_ARGS {shlex.quote(f"{RUNTIME_SCRIPT_REL}/submodule_entry.py")} \
+        $GPT_ARGS \
+        $MUTATE_ARGS \
+        --train-iters {train_iters} \
+        --load-path {shlex.quote(load_path)}
+    """
+
+
+def run_msa_verify_load(
+    iter_num,
+    mutate_args,
+    load_path,
+    exec_log_file,
+    msa_env,
+    msa_path,
+    shared_weight_path,
+    train_iters,
+    step_log_csv_path=None,
+    result_csv_path=None,
+    profile_output_dir=None,
+    script_output_path=None,
+    trace_dir=None,
+    trace_run_name="msa-baseline",
+    perturb=False,
+    perturb_eps=None,
+):
+    cmd = build_msa_verify_load_cmd(
+        iter_num,
+        mutate_args,
+        load_path,
+        msa_env,
+        msa_path,
+        shared_weight_path,
+        train_iters,
+        step_log_csv_path=step_log_csv_path,
+        result_csv_path=result_csv_path,
+        profile_output_dir=profile_output_dir,
+        trace_dir=trace_dir,
+        trace_run_name=trace_run_name,
+        perturb=perturb,
+        perturb_eps=perturb_eps,
+    )
+    if script_output_path:
+        write_runtime_script(script_output_path, cmd)
+    result = run_shell_to_file(
+        cmd,
+        exec_log_file,
+        check=False,
+        timeout=Config.MSA_MAX_RUNTIME,
+        timeout_label="MSA执行",
+    )
+    return result is not None and result.returncode == 0
+
+
+def _apply_config(params):
+    Config.MODE = "DEVELOP"
+    Config.TOTAL_ITER = _parse_positive_int(params.get("TOTAL_ITER", Config.TOTAL_ITER), 1)
+    Config.TEST_ITERATIONS = Config.TOTAL_ITER
+    Config.RUNTIME_ROUNDS = Config.TOTAL_ITER
+    Config.BASE_SEED = 43
+    Config.MUTNM = 0
+    Config.SAVE_STEPS = 1
+    Config.LOAD_STEPS = _parse_positive_int(params.get("LOAD_STEPS", Config.LOAD_STEPS), 3)
+    Config.FULLNET_ASSEMBLY_MODE = "single_model_fullnet"
+    Config.PTA_MAX_RUNTIME = 6000
+    Config.MSA_MAX_RUNTIME = 6000
+    Config.LOG_INIT_WAIT = 240
+    Config.LOG_STABLE_THRESHOLD = 150
+    Config.TARGET_TENSOR_PARALLEL_SIZE = _parse_optional_positive_int(
+        params.get("TARGET_TENSOR_PARALLEL_SIZE", Config.TARGET_TENSOR_PARALLEL_SIZE),
+    )
+    Config.TARGET_PIPELINE_PARALLEL_SIZE = _parse_optional_positive_int(
+        params.get("TARGET_PIPELINE_PARALLEL_SIZE", Config.TARGET_PIPELINE_PARALLEL_SIZE),
+    )
+    Config.TARGET_EXPERT_PARALLEL_SIZE = _parse_optional_positive_int(
+        params.get("TARGET_EXPERT_PARALLEL_SIZE", Config.TARGET_EXPERT_PARALLEL_SIZE),
+    )
+    Config.TARGET_NPUS_PER_NODE = int(params.get("TARGET_NPUS_PER_NODE", Config.TARGET_NPUS_PER_NODE) or 0)
+    Config.TARGET_WORLD_SIZE = int(params.get("TARGET_WORLD_SIZE", Config.TARGET_WORLD_SIZE) or 0)
+    Config.TARGET_MASTER_ADDR = str(params.get("TARGET_MASTER_ADDR", Config.TARGET_MASTER_ADDR))
+    Config.TARGET_MASTER_PORT = int(params.get("TARGET_MASTER_PORT", Config.TARGET_MASTER_PORT))
+    Config.PTA_ENV = str(params.get("PTA_ENV", os.environ.get("PTA_NAME", Config.PTA_ENV)))
+    Config.MSA_ENV = str(params.get("MSA_ENV", os.environ.get("MSA_NAME", Config.MSA_ENV)))
+    Config.SAVE_ABNORMAL_WEIGHTS = True
+    os.environ["BASE_SEED"] = str(Config.BASE_SEED)
+
+    raw_persist_root = str(params.get("PERSIST_ROOT", os.environ.get("LMSV_OUTPATH", str(LMSV_ROOT / "output"))))
+    persist_root_path = Path(raw_persist_root).expanduser()
+    if not persist_root_path.is_absolute():
+        persist_root_path = LMSV_ROOT / persist_root_path
+    Config.PERSIST_ROOT = str(persist_root_path.resolve())
+
+    raw_tmp_root = str(params.get("SHARED_WEIGHT_TMP_ROOT", Config.SHARED_WEIGHT_TMP_ROOT))
+    tmp_root_path = Path(raw_tmp_root).expanduser()
+    if not tmp_root_path.is_absolute():
+        tmp_root_path = LMSV_ROOT / tmp_root_path
+    Config.SHARED_WEIGHT_TMP_ROOT = str(tmp_root_path.resolve())
+
+    trace_cfg = params.get("TRACE", {})
+    if not isinstance(trace_cfg, dict):
+        trace_cfg = {}
+    Config.TRACE_ENABLED = data_helpers.parse_bool(
+        trace_cfg.get("ENABLED", os.environ.get("LMSV_FULLNET_TRACE", Config.TRACE_ENABLED))
+    )
+    Config.TRACE_FULL_WEIGHTS = data_helpers.parse_bool(
+        trace_cfg.get("EXPORT_FULL_WEIGHTS", trace_cfg.get("FULL_WEIGHTS", Config.TRACE_FULL_WEIGHTS))
+    )
+    Config.TRACE_PERTURBATION_RUNS = data_helpers.parse_bool(
+        trace_cfg.get("PERTURBATION_RUNS", Config.TRACE_PERTURBATION_RUNS)
+    )
+    Config.TRACE_PERTURB_EPS = str(
+        params.get("PERTURB_EPS", trace_cfg.get("PERTURB_EPS", Config.TRACE_PERTURB_EPS))
+    )
+    Config.TRACE_PERTURB_SEED = str(trace_cfg.get("PERTURB_SEED", "") or "")
+
+    precision_cfg = params.get("PRECISION", {})
+    if not isinstance(precision_cfg, dict):
+        precision_cfg = {}
+    Config.BASELINE_ALIGNMENT_REQUIRED = True
+    try:
+        Config.BASELINE_LOSS_TOLERANCE = float(
+            params.get(
+                "BASELINE_LOSS_TOLERANCE",
+                precision_cfg.get("BASELINE_LOSS_TOLERANCE", Config.BASELINE_LOSS_TOLERANCE),
+            )
+        )
+    except (TypeError, ValueError):
+        Config.BASELINE_LOSS_TOLERANCE = 0.0
+
+
+TRAIN_PREPARE = "prepare"
+TRAIN_PTA_BASELINE = "pta-baseline"
+TRAIN_MSA_BASELINE = "msa-baseline"
+TRAIN_PTA_PRETURB = "pta-preturb"
+TRAIN_MSA_PRETURB = "msa-preturb"
+RUN_TRAININGS = (TRAIN_PTA_BASELINE, TRAIN_MSA_BASELINE, TRAIN_PTA_PRETURB, TRAIN_MSA_PRETURB)
+
+
+def _model_name_from_path(model_path):
+    return Path(str(model_path)).stem
+
+
+def _variant_sort_key(path):
+    name = path.name
+    return (0 if name == "ancestor" else 1, name)
+
+
+def list_model_variants(model_name):
+    model_dir = MUTATED_CONFIG_DIR / model_name
+    if not model_dir.is_dir():
+        raise FileNotFoundError(f"未找到模型变体目录: {model_dir}")
+    variants = sorted([path for path in model_dir.iterdir() if path.is_dir()], key=_variant_sort_key)
+    if not variants:
+        raise FileNotFoundError(f"模型变体目录为空: {model_dir}")
+    if variants[0].name != "ancestor":
+        raise FileNotFoundError(f"{model_dir} 缺少 ancestor 变体；ancestor 必须第一个执行")
+    return variants
+
+
+def _first_existing(candidates):
+    for candidate in candidates:
+        if candidate.exists() and candidate.stat().st_size > 0:
+            return candidate
+    return None
+
+
+def resolve_variant_files(variant_dir):
+    json_candidates = [variant_dir / "mutating.json"]
+    json_candidates.extend(
+        sorted(path for path in variant_dir.glob("mutating-*.json") if "-err" not in path.name)
+    )
+    yaml_candidates = [variant_dir / "mutated_config.yaml"]
+    yaml_candidates.extend(sorted(variant_dir.glob("mutated_config_iter_*.yaml")))
+
+    json_path = _first_existing(json_candidates)
+    yaml_path = _first_existing(yaml_candidates)
+    if json_path is None or yaml_path is None:
+        raise FileNotFoundError(
+            f"变体缺少 mutating.json/mutated_config.yaml 或兼容编号文件: {variant_dir}"
+        )
+    return json_path, yaml_path
+
+
+def stage_output_dir(output_root, model_name, variant_name, training_name, iteration, max_iterations):
+    base = Path(output_root) / model_name / variant_name / training_name
+    if max_iterations > 1:
+        base = base / f"iter_{iteration}"
+    return base
+
+
+def fresh_stage_dir(output_root, model_name, variant_name, training_name, iteration, max_iterations):
+    stage_dir = stage_output_dir(output_root, model_name, variant_name, training_name, iteration, max_iterations)
+    runtime_helpers.clear_path(stage_dir)
+    stage_dir.mkdir(parents=True, exist_ok=True)
+    return stage_dir
+
+
+def variant_output_dir(output_root, model_name, variant_name):
+    path = Path(output_root) / model_name / variant_name
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def materialize_variant_for_runtime(model_name, variant_dir, iteration):
+    """Copy a prepared variant into the legacy runtime layout expected by task3."""
+    source_json, source_yaml = resolve_variant_files(variant_dir)
+    runtime_dir = LMSV_ROOT / "res" / model_name
+    runtime_helpers.clear_path(runtime_dir)
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+
+    json_dst = runtime_dir / f"mutating-{iteration}.json"
+    yaml_dst = runtime_dir / f"mutated_config_iter_{iteration:03d}.yaml"
+    shutil.copy2(source_json, json_dst)
+    shutil.copy2(source_yaml, yaml_dst)
+    load_path = f"res/{model_name}/mutating-{iteration}.json"
+    return load_path, json_dst, yaml_dst, source_json, source_yaml
+
+
+def copy_variant_inputs(stage_dir, source_json, source_yaml, runtime_json=None, runtime_yaml=None):
+    variant_input_dir = Path(stage_dir) / "variant_inputs"
+    variant_input_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source_json, variant_input_dir / "mutating.json")
+    shutil.copy2(source_yaml, variant_input_dir / "mutated_config.yaml")
+    if runtime_json and Path(runtime_json).exists():
+        shutil.copy2(runtime_json, variant_input_dir / Path(runtime_json).name)
+    if runtime_yaml and Path(runtime_yaml).exists():
+        shutil.copy2(runtime_yaml, variant_input_dir / Path(runtime_yaml).name)
+
+
+def copy_if_exists(src_path, dst_path):
+    src = Path(src_path)
+    if not src.exists():
+        return False
+    dst = Path(dst_path)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    if src.is_dir():
+        shutil.copytree(src, dst, dirs_exist_ok=True)
+    else:
+        shutil.copy2(src, dst)
+    return True
+
+
+def archive_stage_runtime(stage_dir, model_name, *, include_msrun=False):
+    copy_if_exists(LMSV_ROOT / "res" / model_name / "verify_log.txt", Path(stage_dir) / "verify_log.txt")
+    if include_msrun:
+        copy_if_exists(LMSV_ROOT / "msrun_log", Path(stage_dir) / "msrun_log")
+
+
+def write_variant_status(
+    output_root,
+    model_name,
+    variant_name,
+    iteration,
+    max_iterations,
+    overall_status,
+    reason="",
+    **stages,
+):
+    root = variant_output_dir(output_root, model_name, variant_name)
+    status_path = root / ("status.json" if max_iterations == 1 else f"status_iter_{iteration}.json")
+    payload = {
+        "task_name": "fullnet",
+        "model": model_name,
+        "variant": variant_name,
+        "iteration": iteration,
+        "overall_status": overall_status,
+        "reason": reason,
+        "trainings": {
+            TRAIN_PREPARE: stages.get(TRAIN_PREPARE, "SKIP"),
+            TRAIN_PTA_BASELINE: stages.get(TRAIN_PTA_BASELINE, "SKIP"),
+            TRAIN_MSA_BASELINE: stages.get(TRAIN_MSA_BASELINE, "SKIP"),
+            TRAIN_PTA_PRETURB: stages.get(TRAIN_PTA_PRETURB, "SKIP"),
+            TRAIN_MSA_PRETURB: stages.get(TRAIN_MSA_PRETURB, "SKIP"),
+            "baseline-align": stages.get("baseline-align", "SKIP"),
+        },
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    status_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if overall_status != "PASS":
+        failure_path = root / ("failure_info.txt" if max_iterations == 1 else f"failure_info_iter_{iteration}.txt")
+        failure_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return payload
+
+
+def write_alignment_report_new(
+    output_root,
+    model_name,
+    variant_name,
+    iteration,
+    max_iterations,
+    *,
+    issue,
+    tolerance,
+    required,
+    pta_csv,
+    msa_csv,
+    pta_step_csv,
+    msa_step_csv,
+):
+    root = variant_output_dir(output_root, model_name, variant_name)
+    report_path = root / (
+        "baseline_alignment.json" if max_iterations == 1 else f"baseline_alignment_iter_{iteration}.json"
+    )
+    payload = {
+        "model": model_name,
+        "variant": variant_name,
+        "iteration": iteration,
+        "aligned": issue is None,
+        "required": bool(required),
+        "tolerance": float(tolerance),
+        "issue": issue or "",
+        "pta_csv": str(pta_csv),
+        "msa_csv": str(msa_csv),
+        "pta_step_csv": str(pta_step_csv),
+        "msa_step_csv": str(msa_step_csv),
+        "checked_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    report_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return payload, report_path
+
+
+def stage_files(stage_dir):
+    stage_dir = Path(stage_dir)
+    return {
+        "runtime_log": stage_dir / "runtime.log",
+        "script": stage_dir / "run.sh",
+        "trace_dir": stage_dir / "traces",
+        "step_csv": stage_dir / "training_log.csv",
+        "result_csv": stage_dir / "execution.csv",
+    }
+
+
+def main(params):
+    project_tmp_root = configure_project_tmp_env()
+    utils.control.clean.kill_pretraingpt()
+    _apply_config(params)
+
+    model_paths = normalize_models(params.get("MODELS", Config.MODELS))
+    if not model_paths:
+        log_error("整网参数错误：MODELS 为空或格式非法")
+        return 1
+
+    pta_path = os.environ.get("PTA_PATH") or os.environ.get("PTAPATH")
+    msa_path = os.environ.get("MSA_PATH") or os.environ.get("MSAPATH")
+    if not pta_path:
+        log_error("环境变量缺失：请先配置 PTA_PATH")
+        return 1
+    if not msa_path:
+        log_error("环境变量缺失：请先配置 MSA_PATH")
+        return 1
+
+    max_iterations = max(1, int(Config.TOTAL_ITER))
+    output_root = Path(Config.PERSIST_ROOT).resolve()
+    output_root.mkdir(parents=True, exist_ok=True)
+
+    log_step("整网链路启动")
+    log_kv("配置", "迭代次数", max_iterations)
+    log_kv("配置", "基础随机种子", Config.BASE_SEED)
+    log_kv("配置", "模型配置", model_paths)
+    log_kv("配置", "变体来源", MUTATED_CONFIG_DIR)
+    log_kv("配置", "输出目录", output_root)
+    log_kv("配置", "对比模式", "pta_msa")
+    log_kv("配置", "训练命名", ", ".join((TRAIN_PREPARE,) + RUN_TRAININGS))
+    log_kv("配置", "训练步数", f"PREPARE({Config.SAVE_STEPS}) | LOAD({Config.LOAD_STEPS})")
+    log_kv("配置", "当前执行对", "PTA + MSA")
+    log_kv("配置", "激活环境", f"PTA={Config.PTA_ENV} | MSA={Config.MSA_ENV}")
+    log_kv("配置", "项目临时目录", project_tmp_root)
+    log_kv("配置", "共享权重临时目录", Config.SHARED_WEIGHT_TMP_ROOT)
+    log_kv("配置", "Trace导出", f"{Config.TRACE_ENABLED} | full_weights={Config.TRACE_FULL_WEIGHTS} | perturb_runs={Config.TRACE_PERTURBATION_RUNS}")
+    log_kv("配置", "Baseline精度门槛", f"required={Config.BASELINE_ALIGNMENT_REQUIRED} | loss_tolerance={Config.BASELINE_LOSS_TOLERANCE}")
+    log_kv("概览", "开始时间", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+    init_workspace()
+    shared_weight_tmp_run_dir = (
+        Path(Config.SHARED_WEIGHT_TMP_ROOT) / f"fullnet_{output_root.name}_{os.getpid()}"
+    ).resolve()
+    shared_weight_tmp_run_dir.mkdir(parents=True, exist_ok=True)
+
+    run_records = []
+    pta_success_count = 0
+    msa_success_count = 0
+    planned_baseline_runs = 0
+    exit_code = 0
+    stop_requested = False
+
+    try:
+        for model_path in model_paths:
+            if stop_requested:
+                break
+            model_name = _model_name_from_path(model_path)
+            assembly_model_paths = _assembly_model_paths([model_path])
+            if not any(
+                _parse_optional_positive_int(params.get(key)) > 0
+                for key in (
+                    "TARGET_TENSOR_PARALLEL_SIZE",
+                    "TARGET_PIPELINE_PARALLEL_SIZE",
+                    "TARGET_EXPERT_PARALLEL_SIZE",
+                )
+            ):
+                Config.TARGET_TENSOR_PARALLEL_SIZE = 0
+                Config.TARGET_PIPELINE_PARALLEL_SIZE = 0
+                Config.TARGET_EXPERT_PARALLEL_SIZE = 0
+            configure_auto_parallel_from_models(assembly_model_paths)
+            Config.MSA_MONITOR_LOG = resolve_msa_monitor_log()
+            Config.NODE_NUM = _infer_fullnet_decoder_count(assembly_model_paths)
+            Config.RUNTIME_ROUNDS = max_iterations
+            mutate_args_common = build_mutate_args(
+                assembly_model_paths,
+                Config.NODE_NUM,
+                Config.MUTNM,
+                Config.RUNTIME_ROUNDS,
+            )
+            try:
+                variants = list_model_variants(model_name)
+            except Exception as exc:
+                log_error(f"模型 {model_name} 变体读取失败: {exc}")
+                exit_code = 1
+                break
+            planned_baseline_runs += len(variants) * max_iterations
+
+            log_step(f"模型 {model_name} 整网执行准备")
+            log_kv("配置", f"{model_name}.整网基准模型", assembly_model_paths)
+            log_kv("配置", f"{model_name}.Decoder层数", Config.NODE_NUM)
+            log_kv("配置", f"{model_name}.变体顺序", [path.name for path in variants])
+            log_kv("配置", f"{model_name}.MUTATE_ARGS(load)", mutate_args_common)
+            dist_cfg = resolve_distributed_config()
+            log_kv(
+                "配置",
+                f"{model_name}.单机并行设置",
+                f"TP={dist_cfg['tp']} | PP={dist_cfg['pp']} | EP={dist_cfg['ep']} | NPUS_PER_NODE={dist_cfg['npus_per_node']} | WORLD_SIZE={dist_cfg['world_size']}",
+            )
+
+            for i in range(1, max_iterations + 1):
+                if stop_requested:
+                    break
+                log_step(f"{model_name} 开始第 {i}/{max_iterations} 轮")
+                ancestor_shared_weight = (
+                    shared_weight_tmp_run_dir / model_name / f"ancestor_shared_iter{i}.pth"
+                ).resolve()
+                ancestor_shared_weight.parent.mkdir(parents=True, exist_ok=True)
+                cleanup_shared_weight_file(ancestor_shared_weight)
+
+                for variant_dir in variants:
+                    if stop_requested:
+                        break
+                    variant_name = variant_dir.name
+                    stage_results = {
+                        TRAIN_PREPARE: "SKIP",
+                        TRAIN_PTA_BASELINE: "SKIP",
+                        TRAIN_MSA_BASELINE: "SKIP",
+                        TRAIN_PTA_PRETURB: "SKIP",
+                        TRAIN_MSA_PRETURB: "SKIP",
+                        "baseline-align": "SKIP",
+                    }
+                    run_records.append({"model": model_name, "variant": variant_name, "iteration": i})
+
+                    def fail_current(reason):
+                        nonlocal exit_code, stop_requested
+                        log_error(f"[{model_name}/{variant_name}/iter{i}] {reason}")
+                        write_variant_status(
+                            output_root,
+                            model_name,
+                            variant_name,
+                            i,
+                            max_iterations,
+                            "FAILED",
+                            reason,
+                            **stage_results,
+                        )
+                        exit_code = 1
+                        stop_requested = True
+
+                    try:
+                        load_path, runtime_json, runtime_yaml, source_json, source_yaml = materialize_variant_for_runtime(
+                            model_name,
+                            variant_dir,
+                            i,
+                        )
+                    except Exception as exc:
+                        fail_current(f"变体输入准备失败: {exc}")
+                        break
+
+                    shared_weight_path = str(ancestor_shared_weight)
+
+                    if variant_name == "ancestor":
+                        utils.control.clean.kill_pretraingpt()
+                        stage_dir = fresh_stage_dir(output_root, model_name, variant_name, TRAIN_PREPARE, i, max_iterations)
+                        files = stage_files(stage_dir)
+                        copy_variant_inputs(stage_dir, source_json, source_yaml, runtime_json, runtime_yaml)
+                        log_step(f"{model_name}/{variant_name} {TRAIN_PREPARE}: PTA 生成共享权重")
+                        prepare_ok = run_pta_verify_stage(
+                            i,
+                            mutate_args_common,
+                            load_path,
+                            files["runtime_log"],
+                            Config.PTA_ENV,
+                            pta_path,
+                            shared_weight_path,
+                            "save",
+                            Config.SAVE_STEPS,
+                            step_log_csv_path=files["step_csv"],
+                            result_csv_path=files["result_csv"],
+                            trace_dir=files["trace_dir"],
+                            trace_run_name=TRAIN_PREPARE,
+                            script_output_path=files["script"],
+                        )
+                        archive_stage_runtime(stage_dir, model_name)
+                        if not prepare_ok or not ancestor_shared_weight.exists() or ancestor_shared_weight.stat().st_size <= 0:
+                            stage_results[TRAIN_PREPARE] = "ERROR"
+                            fail_current(f"{TRAIN_PREPARE} 失败或未产出共享权重: {files['runtime_log']}")
+                            break
+                        copy_if_exists(ancestor_shared_weight, stage_dir / "shared_weight.pth")
+                        stage_results[TRAIN_PREPARE] = "OK"
+                    elif not ancestor_shared_weight.exists() or ancestor_shared_weight.stat().st_size <= 0:
+                        fail_current("ancestor 共享权重不存在，无法执行后续变体")
+                        break
+
+                    utils.control.clean.kill_pretraingpt()
+                    pta_stage_dir = fresh_stage_dir(output_root, model_name, variant_name, TRAIN_PTA_BASELINE, i, max_iterations)
+                    pta_files = stage_files(pta_stage_dir)
+                    copy_variant_inputs(pta_stage_dir, source_json, source_yaml, runtime_json, runtime_yaml)
+                    log_step(f"{model_name}/{variant_name} {TRAIN_PTA_BASELINE}: PTA baseline")
+                    pta_ok = run_pta_verify_stage(
+                        i,
+                        mutate_args_common,
+                        load_path,
+                        pta_files["runtime_log"],
+                        Config.PTA_ENV,
+                        pta_path,
+                        shared_weight_path,
+                        "load",
+                        Config.LOAD_STEPS,
+                        step_log_csv_path=pta_files["step_csv"],
+                        result_csv_path=pta_files["result_csv"],
+                        trace_dir=pta_files["trace_dir"],
+                        trace_run_name=TRAIN_PTA_BASELINE,
+                        script_output_path=pta_files["script"],
+                    )
+                    archive_stage_runtime(pta_stage_dir, model_name)
+                    if not pta_ok or not csv_iteration_is_valid(pta_files["result_csv"], i):
+                        stage_results[TRAIN_PTA_BASELINE] = "ERROR"
+                        copy_if_exists(ancestor_shared_weight, pta_stage_dir / "shared_weight_on_failure.pth")
+                        fail_current(f"{TRAIN_PTA_BASELINE} 失败或结果无效: {pta_files['runtime_log']}")
+                        break
+                    stage_results[TRAIN_PTA_BASELINE] = "OK"
+                    pta_success_count += 1
+
+                    utils.control.clean.kill_pretraingpt()
+                    msa_stage_dir = fresh_stage_dir(output_root, model_name, variant_name, TRAIN_MSA_BASELINE, i, max_iterations)
+                    msa_files = stage_files(msa_stage_dir)
+                    msa_profile_dir = msa_stage_dir / "profiler" / "raw"
+                    msa_profile_report_dir = msa_stage_dir / "profiler" / "report"
+                    copy_variant_inputs(msa_stage_dir, source_json, source_yaml, runtime_json, runtime_yaml)
+                    reset_msrun_log()
+                    log_step(f"{model_name}/{variant_name} {TRAIN_MSA_BASELINE}: MSA baseline")
+                    msa_ok = run_msa_verify_load(
+                        i,
+                        mutate_args_common,
+                        load_path,
+                        msa_files["runtime_log"],
+                        Config.MSA_ENV,
+                        msa_path,
+                        shared_weight_path,
+                        Config.LOAD_STEPS,
+                        step_log_csv_path=msa_files["step_csv"],
+                        result_csv_path=msa_files["result_csv"],
+                        profile_output_dir=msa_profile_dir,
+                        trace_dir=msa_files["trace_dir"],
+                        trace_run_name=TRAIN_MSA_BASELINE,
+                        script_output_path=msa_files["script"],
+                    )
+                    msa_finished = wait_msa_finish_csv(i, msa_files["result_csv"], TRAIN_MSA_BASELINE) if msa_ok else False
+                    archive_stage_runtime(msa_stage_dir, model_name, include_msrun=True)
+                    if msa_profile_dir.exists() and any(msa_profile_dir.rglob("*")):
+                        generate_profile_report(
+                            msa_profile_dir,
+                            msa_profile_report_dir,
+                            msa_files["step_csv"],
+                            msa_files["runtime_log"],
+                            f"FullNet-MSA-{model_name}-{variant_name}",
+                            i,
+                        )
+                    if not msa_ok or not msa_finished or not csv_iteration_is_valid(msa_files["result_csv"], i):
+                        stage_results[TRAIN_MSA_BASELINE] = "ERROR"
+                        copy_if_exists(ancestor_shared_weight, msa_stage_dir / "shared_weight_on_failure.pth")
+                        fail_current(f"{TRAIN_MSA_BASELINE} 失败或结果无效: {msa_files['runtime_log']}")
+                        break
+                    stage_results[TRAIN_MSA_BASELINE] = "OK"
+                    msa_success_count += 1
+
+                    precision_issue = find_preferred_loss_mismatch(
+                        pta_files["result_csv"],
+                        msa_files["result_csv"],
+                        iteration=i,
+                        tolerance=Config.BASELINE_LOSS_TOLERANCE,
+                        pta_step_csv_path=pta_files["step_csv"],
+                        msa_step_csv_path=msa_files["step_csv"],
+                    )
+                    alignment_report, alignment_path = write_alignment_report_new(
+                        output_root,
+                        model_name,
+                        variant_name,
+                        i,
+                        max_iterations,
+                        issue=precision_issue,
+                        tolerance=Config.BASELINE_LOSS_TOLERANCE,
+                        required=Config.BASELINE_ALIGNMENT_REQUIRED,
+                        pta_csv=pta_files["result_csv"],
+                        msa_csv=msa_files["result_csv"],
+                        pta_step_csv=pta_files["step_csv"],
+                        msa_step_csv=msa_files["step_csv"],
+                    )
+                    copy_if_exists(alignment_path, msa_stage_dir / "baseline_alignment.json")
+                    stage_results["baseline-align"] = "OK" if precision_issue is None else "ERROR"
+                    if precision_issue:
+                        log_warn(f"[{model_name}/{variant_name}/iter{i}] Baseline未对齐: {precision_issue}")
+                        copy_if_exists(ancestor_shared_weight, msa_stage_dir / "shared_weight_on_alignment_failure.pth")
+                        if Config.BASELINE_ALIGNMENT_REQUIRED:
+                            fail_current("Baseline精度未对齐，已停止扰动/RQ3数据采集")
+                            break
+                    else:
+                        log_info(f"[{model_name}/{variant_name}/iter{i}] Baseline精度对齐通过: {alignment_report}")
+
+                    if Config.TRACE_ENABLED and Config.TRACE_PERTURBATION_RUNS:
+                        utils.control.clean.kill_pretraingpt()
+                        pta_perturb_dir = fresh_stage_dir(output_root, model_name, variant_name, TRAIN_PTA_PRETURB, i, max_iterations)
+                        pta_perturb_files = stage_files(pta_perturb_dir)
+                        copy_variant_inputs(pta_perturb_dir, source_json, source_yaml, runtime_json, runtime_yaml)
+                        log_step(f"{model_name}/{variant_name} {TRAIN_PTA_PRETURB}: PTA 输入扰动")
+                        pta_perturb_ok = run_pta_verify_stage(
+                            i,
+                            mutate_args_common,
+                            load_path,
+                            pta_perturb_files["runtime_log"],
+                            Config.PTA_ENV,
+                            pta_path,
+                            shared_weight_path,
+                            "load",
+                            Config.LOAD_STEPS,
+                            step_log_csv_path=pta_perturb_files["step_csv"],
+                            result_csv_path=pta_perturb_files["result_csv"],
+                            trace_dir=pta_perturb_files["trace_dir"],
+                            trace_run_name=TRAIN_PTA_PRETURB,
+                            perturb=True,
+                            perturb_eps=Config.TRACE_PERTURB_EPS,
+                            script_output_path=pta_perturb_files["script"],
+                        )
+                        archive_stage_runtime(pta_perturb_dir, model_name)
+                        if not pta_perturb_ok or not csv_iteration_is_valid(pta_perturb_files["result_csv"], i):
+                            stage_results[TRAIN_PTA_PRETURB] = "ERROR"
+                            fail_current(f"{TRAIN_PTA_PRETURB} 失败或结果无效: {pta_perturb_files['runtime_log']}")
+                            break
+                        stage_results[TRAIN_PTA_PRETURB] = "OK"
+
+                        utils.control.clean.kill_pretraingpt()
+                        msa_perturb_dir = fresh_stage_dir(output_root, model_name, variant_name, TRAIN_MSA_PRETURB, i, max_iterations)
+                        msa_perturb_files = stage_files(msa_perturb_dir)
+                        copy_variant_inputs(msa_perturb_dir, source_json, source_yaml, runtime_json, runtime_yaml)
+                        reset_msrun_log()
+                        log_step(f"{model_name}/{variant_name} {TRAIN_MSA_PRETURB}: MSA 输入扰动")
+                        msa_perturb_ok = run_msa_verify_load(
+                            i,
+                            mutate_args_common,
+                            load_path,
+                            msa_perturb_files["runtime_log"],
+                            Config.MSA_ENV,
+                            msa_path,
+                            shared_weight_path,
+                            Config.LOAD_STEPS,
+                            step_log_csv_path=msa_perturb_files["step_csv"],
+                            result_csv_path=msa_perturb_files["result_csv"],
+                            trace_dir=msa_perturb_files["trace_dir"],
+                            trace_run_name=TRAIN_MSA_PRETURB,
+                            perturb=True,
+                            perturb_eps=Config.TRACE_PERTURB_EPS,
+                            script_output_path=msa_perturb_files["script"],
+                        )
+                        msa_perturb_finished = (
+                            wait_msa_finish_csv(i, msa_perturb_files["result_csv"], TRAIN_MSA_PRETURB)
+                            if msa_perturb_ok
+                            else False
+                        )
+                        archive_stage_runtime(msa_perturb_dir, model_name, include_msrun=True)
+                        if not msa_perturb_ok or not msa_perturb_finished or not csv_iteration_is_valid(msa_perturb_files["result_csv"], i):
+                            stage_results[TRAIN_MSA_PRETURB] = "ERROR"
+                            fail_current(f"{TRAIN_MSA_PRETURB} 失败或结果无效: {msa_perturb_files['runtime_log']}")
+                            break
+                        stage_results[TRAIN_MSA_PRETURB] = "OK"
+
+                    write_variant_status(
+                        output_root,
+                        model_name,
+                        variant_name,
+                        i,
+                        max_iterations,
+                        "PASS",
+                        "变体执行完成",
+                        **stage_results,
+                    )
+                    utils.control.clean.kill_pretraingpt()
+    finally:
+        shutil.rmtree(shared_weight_tmp_run_dir, ignore_errors=True)
+
+    summary = {
+        "task_name": "fullnet",
+        "models": [_model_name_from_path(path) for path in model_paths],
+        "iterations": max_iterations,
+        "load_steps": Config.LOAD_STEPS,
+        "trainings": [TRAIN_PREPARE, *RUN_TRAININGS],
+        "planned_variant_runs": planned_baseline_runs,
+        "pta-baseline_success": pta_success_count,
+        "msa-baseline_success": msa_success_count,
+        "exit_code": exit_code,
+        "records": run_records,
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    (output_root / "summary.json").write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    log_step("整网链路结束")
+    log_kv("统计", "PTA baseline 成功", f"{pta_success_count}/{planned_baseline_runs}")
+    log_kv("统计", "MSA baseline 成功", f"{msa_success_count}/{planned_baseline_runs}")
+    log_kv("统计", "汇总文件", output_root / "summary.json")
+    log_kv("概览", "结束时间", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    return exit_code

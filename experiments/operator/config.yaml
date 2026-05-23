@@ -1,0 +1,34 @@
+experiment:
+  seed: 42
+  device: "npu"
+  output_dir: "res/operator"
+  num_iterations: 10
+
+perturbation:
+  sigmas: [1e-7, 1e-6, 1e-5, 1e-4]
+  distribution: "uniform"
+
+input_shapes:
+  default: [32, 2, 1024]
+  attention_score: [32, 16, 2, 2]
+  ffn: [32, 2, 4096]
+  vocab: [64]
+  logits: [64, 40000]
+
+metrics:
+  eps: 1e-8
+  compute_ulp: false
+
+model_configs:
+  qwen2: "model_config/qwen2.yaml"
+  qwen3: "model_config/qwen3.yaml"
+  llama2: "model_config/llama2.yaml"
+  baichuan2: "model_config/baichuan2.yaml"
+  chatglm3: "model_config/chatglm3.yaml"
+  glm4: "model_config/glm4.yaml"
+  yi: "model_config/yi.yaml"
+  codellama: "model_config/codellama.yaml"
+  pangu: "model_config/pangu.yaml"
+  deepseekv3: "model_config/deepseekv3.yaml"
+  mixtral: "model_config/mixtral.yaml"
+  grok1: "model_config/grok1.yaml"

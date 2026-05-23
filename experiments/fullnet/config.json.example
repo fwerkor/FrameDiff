@@ -1,0 +1,15 @@
+{
+  "entry": "fullnet",
+  "PTA_PATH": "<YOUR_PTA_PATH>",
+  "MSA_PATH": "<YOUR_MSA_PATH>",
+  "OUTPUT_ROOT": "output",
+  "fullnet": {
+    "MODELS": [
+      "qwen2"
+    ],
+    "TOTAL_ITER": 1,
+    "LOAD_STEPS": 3,
+    "PERTURB_EPS": "1e-5",
+    "BASELINE_LOSS_TOLERANCE": 0.0
+  }
+}
