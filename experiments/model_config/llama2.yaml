@@ -8,12 +8,11 @@ TransformerConfig:
   hidden_size: 4096
   ffn_hidden_size: 11008
   num_attention_heads: 32
-  num_query_groups: 1
+  num_query_groups: 32
   
   # ===== 并行配置 =====
   tensor_model_parallel_size: 1
-  pipeline_model_parallel_size: 1      # 简化为单卡测试，避免pipeline问题
-  # pipeline_dtype: torch.float16      # 单卡时不需要
+  pipeline_model_parallel_size: 1
   
   # ===== 基础配置 =====
   normalization: "RMSNorm"

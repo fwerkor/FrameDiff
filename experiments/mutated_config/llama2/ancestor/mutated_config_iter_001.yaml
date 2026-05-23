@@ -4,7 +4,7 @@ base_config:
     hidden_size: 4096
     ffn_hidden_size: 11008
     num_attention_heads: 32
-    num_query_groups: 1
+    num_query_groups: 32
     tensor_model_parallel_size: 1
     pipeline_model_parallel_size: 1
     normalization: RMSNorm

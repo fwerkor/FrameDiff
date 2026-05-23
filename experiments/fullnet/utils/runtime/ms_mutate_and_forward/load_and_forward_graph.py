@@ -121,7 +121,6 @@ module = args.module
 node_num = args.node_num
 # config_dir = "model_config"
 config_dir = args.configs
-# rounds = 100
 rounds = args.rounds
 # mutating_num = 2
 mutating_num = args.mutnm
@@ -644,7 +643,6 @@ if __name__ == "__main__":
         save_config(config, output_path)
         # print(f"配置文件已成功生成: {output_path}")
 
-    rounds = 100
     os.makedirs(res_dir, exist_ok=True)
     log_file_path = os.path.join(res_dir, "log.txt")
     sys.stdout = Logger(log_file_path)
@@ -694,7 +692,7 @@ if __name__ == "__main__":
         metadata={"task": "fullnet_msa_graph", "mutation_iteration": iteration},
     )
 
-    print(f"\n当前第 {iteration}/{rounds} 次迭代")
+    print(f"\n当前变异迭代: {iteration}")
     
     file_name = f"mutated_config_iter_{iteration:03d}.yaml"  # 格式化文件名，例如 "mutated_config_iter_001.yaml"
     file_path = load_path
