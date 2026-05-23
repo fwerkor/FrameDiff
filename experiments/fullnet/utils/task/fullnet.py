@@ -1284,6 +1284,9 @@ def main(params):
                         if not prepare_ok or not ancestor_shared_weight.exists() or ancestor_shared_weight.stat().st_size <= 0:
                             stage_results[TRAIN_PREPARE] = "ERROR"
                             fail_current(f"{TRAIN_PREPARE} 失败或未产出共享权重: {files['runtime_log']}")
+                            model_result["status"] = "FAILED"
+                            model_result["reason"] = f"{TRAIN_PREPARE} 失败或未产出共享权重"
+                            skip_current_model = True
                             continue
                         copy_if_exists(ancestor_shared_weight, stage_dir / "shared_weight.pth")
                         stage_results[TRAIN_PREPARE] = "OK"

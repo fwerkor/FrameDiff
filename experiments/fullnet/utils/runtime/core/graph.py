@@ -75,6 +75,7 @@ def _extract_node_transformer_config(config_data):
     valid_fields = set(TransformerConfig.__dataclass_fields__.keys())
     filtered = {k: v for k, v in cfg.items() if k in valid_fields}
     _normalize_init_method(filtered)
+    _normalize_torch_dtype_fields(filtered)
     return filtered
 
 
@@ -88,6 +89,25 @@ def _normalize_init_method(config: dict) -> None:
         config["init_method"] = torch.nn.init.xavier_uniform_
     elif init_method == "torch.nn.init.xavier_uniform_":
         config["init_method"] = torch.nn.init.xavier_uniform_
+
+
+def _normalize_torch_dtype_fields(config: dict) -> None:
+    dtype_map = {
+        "torch.float16": torch.float16,
+        "torch.float32": torch.float32,
+        "torch.float64": torch.float64,
+        "torch.bfloat16": torch.bfloat16,
+        "torch.half": torch.half,
+        "float16": torch.float16,
+        "float32": torch.float32,
+        "float64": torch.float64,
+        "bfloat16": torch.bfloat16,
+        "half": torch.half,
+    }
+    for key in ("params_dtype", "autocast_dtype", "pipeline_dtype"):
+        value = config.get(key)
+        if isinstance(value, str) and value in dtype_map:
+            config[key] = dtype_map[value]
 
 
 def reshape_tensor_nd(
@@ -1478,15 +1498,7 @@ class Graph(LanguageModule):
 
             # 重新初始化Graph的配置
             _normalize_init_method(base_config['config'])
-
-            # 处理torch数据类型的字符串表示
-            if 'autocast_dtype' in base_config['config'] and isinstance(base_config['config']['autocast_dtype'], str):
-                if base_config['config']['autocast_dtype'] == 'torch.float16':
-                    base_config['config']['autocast_dtype'] = torch.float16
-                elif base_config['config']['autocast_dtype'] == 'torch.float32':
-                    base_config['config']['autocast_dtype'] = torch.float32
-                elif base_config['config']['autocast_dtype'] == 'torch.half':
-                    base_config['config']['autocast_dtype'] = torch.half
+            _normalize_torch_dtype_fields(base_config['config'])
 
             # ------------------------------------------------------------------
             # 一些历史生成的 yaml 中会包含 TransformerConfig 当前版本并不支持的字段，

@@ -204,6 +204,23 @@ class FullNetConfigTests(unittest.TestCase):
         self.assertIn("msa-baseline", markdown)
         self.assertIn("MSA baseline 失败", markdown)
 
+    def test_graph_load_normalizes_dtype_strings(self) -> None:
+        if importlib.util.find_spec("torch") is None:
+            self.skipTest("torch is not installed in this test environment")
+        import torch
+        from utils.runtime.core import graph
+
+        config = {
+            "params_dtype": "torch.float32",
+            "autocast_dtype": "torch.float16",
+            "pipeline_dtype": "torch.bfloat16",
+        }
+        graph._normalize_torch_dtype_fields(config)
+
+        self.assertIs(config["params_dtype"], torch.float32)
+        self.assertIs(config["autocast_dtype"], torch.float16)
+        self.assertIs(config["pipeline_dtype"], torch.bfloat16)
+
 
 class FullNetAnalysisTests(unittest.TestCase):
     def test_analyzer_reports_pta_msa_loss_delta(self) -> None:
