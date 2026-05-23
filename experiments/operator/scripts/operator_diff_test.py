@@ -1,12 +1,17 @@
+#!/usr/bin/env python3
+import sys
 import argparse
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "utils"))
+
 import torch
-from experiments.common.config_loader import get_config, reset_config
-from experiments.common.tensor_manager import TensorManager
-from experiments.common.tensor_io import save_tensor
-from experiments.common.weight_sync import sync_weights, save_pta_weights, set_msa_weights_from_pta
-from experiments.operator import operator_registry
+from common.config_loader import get_config, reset_config
+from common.tensor_manager import TensorManager
+from common.tensor_io import save_tensor, to_torch
+from common.weight_sync import sync_weights, save_pta_weights, set_msa_weights_from_pta
+import operator_registry
 
 OPERATOR_REGISTRY = operator_registry.OPERATOR_REGISTRY
 get_operator_factory = operator_registry.get_operator_factory
@@ -76,11 +81,7 @@ def run_rq1(backend_filter: str = None):
         if entry.get("skip"):
             print(f"Skipping {op_name} (marked as skip)")
             continue
-        if "msa" in backends and entry.get("skip_msa"):
-            print(f"Skipping {op_name} MSA (not supported)")
-            backends_to_run = [b for b in backends if b != "msa"]
-        else:
-            backends_to_run = backends
+        backends_to_run = backends
 
         print(f"\nOperator: {op_name}")
 

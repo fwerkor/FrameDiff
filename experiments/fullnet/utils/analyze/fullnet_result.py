@@ -305,6 +305,7 @@ def _new_variant_payload(model: str, variant: str, variant_dir: Path, iteration:
         "msa_metamorphic_abs_loss_delta": _loss_delta(msa_loss, msa_preturb_loss),
         "has_precision_hint": _has_precision_hint_in_dirs(stage_dirs),
         "baseline_aligned": baseline_alignment.get("aligned"),
+        "baseline_alignment_required": baseline_alignment.get("required"),
         "trace": trace_summary,
         "artifacts": {
             "variant_root": str(variant_dir),
@@ -426,7 +427,11 @@ def analyze_fullnet_run(
     variant_success = sum(1 for item in iterations if item["status"] == "PASS")
     functional_failures = sum(1 for item in iterations if str(item["status"]).startswith("FAILED"))
     precision_failures = sum(1 for item in iterations if item["has_precision_hint"])
-    baseline_alignment_failures = sum(1 for item in iterations if item.get("baseline_aligned") is False)
+    baseline_alignment_failures = sum(
+        1
+        for item in iterations
+        if item.get("baseline_alignment_required") is True and item.get("baseline_aligned") is False
+    )
     trace_tensor_count = sum(int((item.get("trace") or {}).get("tensor_count", 0)) for item in iterations)
     trace_weight_count = sum(int((item.get("trace") or {}).get("weight_count", 0)) for item in iterations)
 

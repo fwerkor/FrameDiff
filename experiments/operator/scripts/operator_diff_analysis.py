@@ -1,11 +1,16 @@
+#!/usr/bin/env python3
+import sys
 import json
 import argparse
 from pathlib import Path
 
-from experiments.common.config_loader import get_config, reset_config
-from experiments.common.tensor_io import load_tensor, to_torch
-from experiments.common.metrics import compute_diff_metrics
-from experiments.operator import operator_registry
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "utils"))
+
+from common.config_loader import get_config, reset_config
+from common.tensor_io import load_tensor, to_torch
+from common.metrics import compute_diff_metrics
+import operator_registry
 
 OPERATOR_REGISTRY = operator_registry.OPERATOR_REGISTRY
 
@@ -21,9 +26,6 @@ def run_analysis():
 
     for op_name, entry in OPERATOR_REGISTRY.items():
         if entry.get("skip"):
-            continue
-        if entry.get("skip_msa"):
-            print(f"\nOperator: {op_name} (MSA skipped, no diff analysis)")
             continue
 
         print(f"\nOperator: {op_name}")

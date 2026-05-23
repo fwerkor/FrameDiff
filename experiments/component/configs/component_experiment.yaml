@@ -2,7 +2,7 @@
 experiment:
   seed: 42
   device: "npu"
-  output_dir: "res/component"
+  output_dir: "res/component_level"
   num_iterations: 10
 
 # 扰动配置（RQ2 蜕变测试）

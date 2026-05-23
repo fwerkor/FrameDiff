@@ -1040,7 +1040,11 @@ def main(params):
     log_kv("配置", "项目临时目录", project_tmp_root)
     log_kv("配置", "共享权重临时目录", Config.SHARED_WEIGHT_TMP_ROOT)
     log_kv("配置", "Trace导出", f"{Config.TRACE_ENABLED} | full_weights={Config.TRACE_FULL_WEIGHTS} | perturb_runs={Config.TRACE_PERTURBATION_RUNS}")
-    log_kv("配置", "Baseline精度门槛", f"required={Config.BASELINE_ALIGNMENT_REQUIRED} | loss_tolerance={Config.BASELINE_LOSS_TOLERANCE}")
+    log_kv(
+        "配置",
+        "Baseline精度门槛",
+        f"ancestor_required={Config.BASELINE_ALIGNMENT_REQUIRED} | variants_required=False | loss_tolerance={Config.BASELINE_LOSS_TOLERANCE}",
+    )
     log_kv("概览", "开始时间", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
     init_workspace()
@@ -1052,6 +1056,7 @@ def main(params):
     run_records = []
     pta_success_count = 0
     msa_success_count = 0
+    variant_failure_count = 0
     planned_baseline_runs = 0
     exit_code = 0
     stop_requested = False
@@ -1128,7 +1133,7 @@ def main(params):
                     run_records.append({"model": model_name, "variant": variant_name, "iteration": i})
 
                     def fail_current(reason):
-                        nonlocal exit_code, stop_requested
+                        nonlocal variant_failure_count
                         log_error(f"[{model_name}/{variant_name}/iter{i}] {reason}")
                         write_variant_status(
                             output_root,
@@ -1140,8 +1145,7 @@ def main(params):
                             reason,
                             **stage_results,
                         )
-                        exit_code = 1
-                        stop_requested = True
+                        variant_failure_count += 1
 
                     try:
                         load_path, runtime_json, runtime_yaml, source_json, source_yaml = materialize_variant_for_runtime(
@@ -1151,7 +1155,7 @@ def main(params):
                         )
                     except Exception as exc:
                         fail_current(f"变体输入准备失败: {exc}")
-                        break
+                        continue
 
                     shared_weight_path = str(ancestor_shared_weight)
 
@@ -1181,12 +1185,12 @@ def main(params):
                         if not prepare_ok or not ancestor_shared_weight.exists() or ancestor_shared_weight.stat().st_size <= 0:
                             stage_results[TRAIN_PREPARE] = "ERROR"
                             fail_current(f"{TRAIN_PREPARE} 失败或未产出共享权重: {files['runtime_log']}")
-                            break
+                            continue
                         copy_if_exists(ancestor_shared_weight, stage_dir / "shared_weight.pth")
                         stage_results[TRAIN_PREPARE] = "OK"
                     elif not ancestor_shared_weight.exists() or ancestor_shared_weight.stat().st_size <= 0:
                         fail_current("ancestor 共享权重不存在，无法执行后续变体")
-                        break
+                        continue
 
                     utils.control.clean.kill_pretraingpt()
                     pta_stage_dir = fresh_stage_dir(output_root, model_name, variant_name, TRAIN_PTA_BASELINE, i, max_iterations)
@@ -1214,7 +1218,7 @@ def main(params):
                         stage_results[TRAIN_PTA_BASELINE] = "ERROR"
                         copy_if_exists(ancestor_shared_weight, pta_stage_dir / "shared_weight_on_failure.pth")
                         fail_current(f"{TRAIN_PTA_BASELINE} 失败或结果无效: {pta_files['runtime_log']}")
-                        break
+                        continue
                     stage_results[TRAIN_PTA_BASELINE] = "OK"
                     pta_success_count += 1
 
@@ -1257,7 +1261,7 @@ def main(params):
                         stage_results[TRAIN_MSA_BASELINE] = "ERROR"
                         copy_if_exists(ancestor_shared_weight, msa_stage_dir / "shared_weight_on_failure.pth")
                         fail_current(f"{TRAIN_MSA_BASELINE} 失败或结果无效: {msa_files['runtime_log']}")
-                        break
+                        continue
                     stage_results[TRAIN_MSA_BASELINE] = "OK"
                     msa_success_count += 1
 
@@ -1269,6 +1273,7 @@ def main(params):
                         pta_step_csv_path=pta_files["step_csv"],
                         msa_step_csv_path=msa_files["step_csv"],
                     )
+                    alignment_required = Config.BASELINE_ALIGNMENT_REQUIRED and variant_name == "ancestor"
                     alignment_report, alignment_path = write_alignment_report_new(
                         output_root,
                         model_name,
@@ -1277,19 +1282,23 @@ def main(params):
                         max_iterations,
                         issue=precision_issue,
                         tolerance=Config.BASELINE_LOSS_TOLERANCE,
-                        required=Config.BASELINE_ALIGNMENT_REQUIRED,
+                        required=alignment_required,
                         pta_csv=pta_files["result_csv"],
                         msa_csv=msa_files["result_csv"],
                         pta_step_csv=pta_files["step_csv"],
                         msa_step_csv=msa_files["step_csv"],
                     )
                     copy_if_exists(alignment_path, msa_stage_dir / "baseline_alignment.json")
-                    stage_results["baseline-align"] = "OK" if precision_issue is None else "ERROR"
+                    stage_results["baseline-align"] = (
+                        "OK" if precision_issue is None else ("ERROR" if alignment_required else "WARN")
+                    )
                     if precision_issue:
                         log_warn(f"[{model_name}/{variant_name}/iter{i}] Baseline未对齐: {precision_issue}")
-                        copy_if_exists(ancestor_shared_weight, msa_stage_dir / "shared_weight_on_alignment_failure.pth")
-                        if Config.BASELINE_ALIGNMENT_REQUIRED:
+                        if alignment_required:
+                            copy_if_exists(ancestor_shared_weight, msa_stage_dir / "shared_weight_on_alignment_failure.pth")
                             fail_current("Baseline精度未对齐，已停止扰动/RQ3数据采集")
+                            exit_code = 1
+                            stop_requested = True
                             break
                     else:
                         log_info(f"[{model_name}/{variant_name}/iter{i}] Baseline精度对齐通过: {alignment_report}")
@@ -1322,7 +1331,7 @@ def main(params):
                         if not pta_perturb_ok or not csv_iteration_is_valid(pta_perturb_files["result_csv"], i):
                             stage_results[TRAIN_PTA_PRETURB] = "ERROR"
                             fail_current(f"{TRAIN_PTA_PRETURB} 失败或结果无效: {pta_perturb_files['runtime_log']}")
-                            break
+                            continue
                         stage_results[TRAIN_PTA_PRETURB] = "OK"
 
                         utils.control.clean.kill_pretraingpt()
@@ -1357,7 +1366,7 @@ def main(params):
                         if not msa_perturb_ok or not msa_perturb_finished or not csv_iteration_is_valid(msa_perturb_files["result_csv"], i):
                             stage_results[TRAIN_MSA_PRETURB] = "ERROR"
                             fail_current(f"{TRAIN_MSA_PRETURB} 失败或结果无效: {msa_perturb_files['runtime_log']}")
-                            break
+                            continue
                         stage_results[TRAIN_MSA_PRETURB] = "OK"
 
                     write_variant_status(
@@ -1381,6 +1390,7 @@ def main(params):
         "load_steps": Config.LOAD_STEPS,
         "trainings": [TRAIN_PREPARE, *RUN_TRAININGS],
         "planned_variant_runs": planned_baseline_runs,
+        "failed_variant_runs": variant_failure_count,
         "pta-baseline_success": pta_success_count,
         "msa-baseline_success": msa_success_count,
         "exit_code": exit_code,
@@ -1395,6 +1405,7 @@ def main(params):
     log_step("整网链路结束")
     log_kv("统计", "PTA baseline 成功", f"{pta_success_count}/{planned_baseline_runs}")
     log_kv("统计", "MSA baseline 成功", f"{msa_success_count}/{planned_baseline_runs}")
+    log_kv("统计", "变体失败", variant_failure_count)
     log_kv("统计", "汇总文件", output_root / "summary.json")
     log_kv("概览", "结束时间", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     return exit_code

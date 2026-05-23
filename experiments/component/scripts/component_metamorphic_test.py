@@ -6,21 +6,24 @@ and saves baseline/perturbed output tensors.
 Metrics computation is done separately by analyze_rq2.py.
 """
 import argparse
+import sys
 from pathlib import Path
 
 import torch
 
-from experiments.common.config_loader import get_config
-from experiments.common.tensor_manager import TensorManager
-from experiments.common.tensor_io import save_tensor, to_torch
-from experiments.component.component_registry import COMPONENT_REGISTRY, _get_pta_transformer_config
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from common.config_loader import get_config, reset_config
+from common.tensor_manager import TensorManager
+from common.tensor_io import save_tensor, to_torch
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "utils"))
+from component_registry import COMPONENT_REGISTRY, _get_pta_transformer_config, _get_msa_transformer_config
 
 
 def add_uniform_perturbation(tensor, sigma):
     """每个数值加同一个固定的单向扰动 sigma."""
     if tensor.dtype in (torch.int64, torch.int32):
-        perturbed = (tensor.float() + sigma).round().to(tensor.dtype)
-        return perturbed
+        return (tensor.float() + sigma).round().to(tensor.dtype)
     return tensor + sigma
 
 
@@ -53,15 +56,43 @@ def _prepare_inputs(comp_name, backend, x, config_path):
             except Exception:
                 return (x, attention_mask)
         else:
-            return (x, attention_mask)
+            # MSA inference modules use rotary_pos_cos / rotary_pos_sin
+            try:
+                from mindformers.parallel_core.inference.base_models.common.embeddings.rope_utils import get_rope
+                import mindspore.common.dtype as mstype
+                cfg = _get_msa_transformer_config(config_path)
+                rotary = get_rope(
+                    config=cfg,
+                    hidden_dim=cfg.kv_channels,
+                    rotary_percent=cfg.partial_rotary_factor,
+                    rotary_base=cfg.rotary_base,
+                    rotary_dtype=getattr(mstype, cfg.rotary_dtype, mstype.float32),
+                    position_embedding_type=cfg.position_embedding_type,
+                    original_max_position_embeddings=cfg.max_position_embeddings,
+                    rotary_cos_format=cfg.rotary_cos_format,
+                )
+                # Get prefill cos/sin for full sequence length
+                import mindspore as ms
+                cos_cache, sin_cache = rotary.get_cos_sin_for_prefill()
+                # Slice to actual sequence length
+                cos = cos_cache[:seq_len]
+                sin = sin_cache[:seq_len]
+                return (x, attention_mask, cos, sin)
+            except Exception:
+                return (x, attention_mask)
 
     return (x,)
 
 
-def run_component(comp_name: str, backend: str, x, config_path: str | None = None):
+def build_component(comp_name: str, backend: str, config_path: str | None = None):
+    """Build a component instance for the given backend."""
     entry = COMPONENT_REGISTRY[comp_name]
     builder = entry[backend]
-    comp = builder(config_path)
+    return builder(config_path)
+
+
+def run_component_instance(comp, comp_name: str, backend: str, x, config_path: str | None = None):
+    """Run a pre-built component instance with the given input."""
     inputs = _prepare_inputs(comp_name, backend, x, config_path)
 
     if backend == "pta":
@@ -76,13 +107,14 @@ def run_component(comp_name: str, backend: str, x, config_path: str | None = Non
         from mindspore import Tensor as MSTensor
         ctx = ms.get_context("device_target")
         if ctx is None:
-            ms.set_context(mode=ms.PYNATIVE_MODE, device_target="CPU")
+            ms.set_context(mode=ms.PYNATIVE_MODE, device_target="Ascend")
         inputs = tuple(MSTensor(t.numpy()) if isinstance(t, torch.Tensor) else t for t in inputs)
         out = comp(*inputs)
         return out
 
 
-def run_rq2(backend_filter: str = "both"):
+def run_rq2(backend_filter: str = "both", config_path: str | None = None):
+    reset_config()
     cfg = get_config("component")
     out_dir = Path(cfg["experiment"]["output_dir"]) / "rq2_meta"
     num_iter = cfg["experiment"]["num_iterations"]
@@ -90,7 +122,6 @@ def run_rq2(backend_filter: str = "both"):
     sigmas = [float(s) for s in cfg["perturbation"]["sigmas"]]
     tm = TensorManager(seed=seed, device="cpu")
 
-    config_path = None
     hidden_size = _get_hidden_size(config_path)
     backends = ["pta", "msa"] if backend_filter == "both" else [backend_filter]
 
@@ -106,12 +137,14 @@ def run_rq2(backend_filter: str = "both"):
                     x = tm.generate_input_ids(f"{comp_name}_input", i, (32, 2))
                 else:
                     x = tm.generate(f"{comp_name}_input", i, (32, 2, hidden_size))
-                x_perturbed = add_gaussian_noise(x, sigma)
+                x_perturbed = add_uniform_perturbation(x, sigma)
 
                 for backend in backends:
                     try:
-                        baseline = run_component(comp_name, backend, x)
-                        perturbed = run_component(comp_name, backend, x_perturbed)
+                        # Build component once, run twice (baseline + perturbed)
+                        comp = build_component(comp_name, backend, config_path)
+                        baseline = run_component_instance(comp, comp_name, backend, x, config_path)
+                        perturbed = run_component_instance(comp, comp_name, backend, x_perturbed, config_path)
 
                         baseline_t = to_torch(baseline)
                         perturbed_t = to_torch(perturbed)
@@ -132,5 +165,6 @@ def run_rq2(backend_filter: str = "both"):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--backend", choices=["pta", "msa", "both"], default="both")
+    parser.add_argument("--config", type=str, default=None, help="Path to model config YAML")
     args = parser.parse_args()
-    run_rq2(backend_filter=args.backend)
+    run_rq2(backend_filter=args.backend, config_path=args.config)

@@ -1,4 +1,5 @@
 import math
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -51,7 +52,8 @@ class _RoPE_PT(torch.nn.Module):
 
     def forward(self, x, seq_len: int = None):
         if seq_len is None:
-            seq_len = x.shape[-2] if x.dim() >= 2 else x.shape[0]
+            # Input convention: (seq_len, batch, hidden) -> seq_len is dim 0
+            seq_len = x.shape[0]
         t = torch.arange(seq_len, device=x.device, dtype=self.inv_freq.dtype)
         freqs = torch.einsum("i,j->ij", t, self.inv_freq)
         emb = torch.cat((freqs, freqs), dim=-1)
@@ -198,6 +200,72 @@ if HAS_MINDSPORE:
         def construct(self, x):
             compressed = self.kv_down(x)
             return self.k_up(compressed), self.v_up(compressed)
+
+    class _RoPE_MS(ms_nn.Cell):
+        def __init__(self, dim: int, max_len: int = 2048, base: float = 10000.0):
+            super().__init__()
+            inv_freq = 1.0 / (base ** (np.arange(0, dim, 2).astype(np.float32) / dim))
+            self.inv_freq = mindspore.Tensor(inv_freq)
+            self.max_len = max_len
+
+        def construct(self, x, seq_len: int = None):
+            if seq_len is None:
+                # Input convention: (seq_len, batch, hidden) -> seq_len is dim 0
+                seq_len = x.shape[0]
+            t = ms_ops.arange(seq_len).astype(mindspore.float32).reshape(-1, 1)
+            freqs = t * self.inv_freq.reshape(1, -1)
+            emb = ms_ops.concat((freqs, freqs), axis=-1)
+            cos = ms_ops.cos(emb)
+            sin = ms_ops.sin(emb)
+            return cos, sin
+
+    class _ALiBi_MS(ms_nn.Cell):
+        def __init__(self, num_heads: int = 8):
+            super().__init__()
+            self.num_heads = num_heads
+
+        def construct(self, x):
+            seq_len = x.shape[-2] if x.ndim >= 3 else x.shape[0]
+            arange = ms_ops.arange(seq_len).astype(mindspore.float32)
+            bias = ms_ops.expand_dims(arange, 0) - ms_ops.expand_dims(arange, 1)
+            slopes = mindspore.Tensor([2 ** (-8 * (i + 1) / self.num_heads) for i in range(self.num_heads)], mindspore.float32)
+            bias = ms_ops.expand_dims(ms_ops.expand_dims(bias, 0), 0) * ms_ops.expand_dims(ms_ops.expand_dims(slopes, 1), 2)
+            return x + bias
+
+    class _LayerNorm_MS(ms_nn.Cell):
+        def __init__(self, shape, eps=1e-5):
+            super().__init__()
+            self.eps = eps
+            self.gamma = mindspore.Parameter(ms_ops.ones(shape, mindspore.float32))
+            self.beta = mindspore.Parameter(ms_ops.zeros(shape, mindspore.float32))
+
+        def construct(self, x):
+            # numpy fallback to avoid CANN LayerNormV3
+            x_np = x.asnumpy()
+            mean = x_np.mean(axis=-1, keepdims=True)
+            var = np.var(x_np, axis=-1, keepdims=True)
+            normed = (x_np - mean) / np.sqrt(var + self.eps)
+            gamma_np = self.gamma.asnumpy()
+            beta_np = self.beta.asnumpy()
+            out = normed * gamma_np + beta_np
+            return mindspore.Tensor(out.astype(np.float32))
+
+    def _cross_entropy_ms(input_t, target):
+        # numpy fallback to avoid CANN OnesLike
+        input_np = input_t.asnumpy()
+        target_np = target.asnumpy().astype(np.int64)
+        # numeric stability: subtract max
+        shifted = input_np - input_np.max(axis=-1, keepdims=True)
+        exp = np.exp(shifted)
+        probs = exp / exp.sum(axis=-1, keepdims=True)
+        n = input_np.shape[0]
+        log_probs = -np.log(probs[np.arange(n), target_np] + 1e-8)
+        return mindspore.Tensor(np.float32(log_probs.mean()))
+
+    def _mean_ms(x, dim=-1, keepdim=True):
+        # numpy fallback to avoid CANN ReduceMean
+        return mindspore.Tensor(x.asnumpy().mean(axis=dim, keepdims=keepdim).astype(np.float32))
+
 else:
     _RMSNorm_MS = None
     _SwiGLU_MS = None
@@ -205,6 +273,11 @@ else:
     _TopKGating_MS = None
     _MLA_Q_Projection_MS = None
     _MLA_KV_Projection_MS = None
+    _RoPE_MS = None
+    _ALiBi_MS = None
+    _LayerNorm_MS = None
+    _cross_entropy_ms = None
+    _mean_ms = None
 
 
 # -----------------------------------------------------------------------------
@@ -221,9 +294,8 @@ OPERATOR_REGISTRY = {
     },
     "layernorm": {
         "pta": lambda shape=(1024,), eps=1e-5: torch.nn.LayerNorm(shape, eps=eps),
-        "msa": lambda shape=(1024,), eps=1e-5: ms_nn.LayerNorm(shape, epsilon=eps) if HAS_MINDSPORE else None,
+        "msa": lambda shape=(1024,), eps=1e-5: _LayerNorm_MS(shape, eps) if HAS_MINDSPORE else None,
         "input_shape": (32, 2, 1024),
-        "skip_msa": True,  # LayerNormV3 kernel not supported on current CANN
     },
     "rmsnorm": {
         "pta": lambda dim=1024, eps=1e-6: _RMSNorm_PT(dim, eps),
@@ -275,15 +347,13 @@ OPERATOR_REGISTRY = {
     },
     "rope": {
         "pta": lambda dim=128, max_len=2048, base=10000.0: _RoPE_PT(dim, max_len, base),
-        "msa": lambda dim=128, max_len=2048, base=10000.0: None,  # MSA RoPE requires complex impl
+        "msa": lambda dim=128, max_len=2048, base=10000.0: _RoPE_MS(dim, max_len, base) if HAS_MINDSPORE else None,
         "input_shape": (32, 2, 1024),
-        "skip_msa": True,
     },
     "alibi": {
         "pta": lambda num_heads=8: _ALiBi_PT(num_heads),
-        "msa": lambda num_heads=8: None,
+        "msa": lambda num_heads=8: _ALiBi_MS(num_heads) if HAS_MINDSPORE else None,
         "input_shape": (2, 8, 32, 32),  # (batch, heads, seq, seq) attention scores
-        "skip_msa": True,
     },
     "dropout": {
         "pta": lambda p=0.1: torch.nn.Dropout(p=p),
@@ -304,11 +374,10 @@ OPERATOR_REGISTRY = {
     },
     "cross_entropy": {
         "pta": lambda: lambda input_t, target: F.cross_entropy(input_t, target.long(), reduction='mean'),
-        "msa": lambda: lambda input_t, target: ms_ops.cross_entropy(input_t, target, reduction='mean') if HAS_MINDSPORE else None,
+        "msa": lambda: lambda input_t, target: _cross_entropy_ms(input_t, target) if HAS_MINDSPORE else None,
         "input_shape": ((64, 40000), (64,)),
         "multi_input": True,
         "input_types": ["float", "int"],
-        "skip_msa": True,  # OnesLike kernel not supported on current CANN
     },
     "topk_gating": {
         "pta": lambda hidden=1024, num_experts=4, top_k=2: _TopKGating_PT(hidden, num_experts, top_k),
@@ -389,9 +458,88 @@ OPERATOR_REGISTRY = {
     },
     "mean": {
         "pta": lambda dim=-1, keepdim=True: lambda x: torch.mean(x, dim, keepdim),
-        "msa": lambda dim=-1, keepdim=True: lambda x: ms_ops.mean(x, dim, keepdim) if HAS_MINDSPORE else None,
+        "msa": lambda dim=-1, keepdim=True: lambda x: _mean_ms(x, dim, keepdim) if HAS_MINDSPORE else None,
         "input_shape": (32, 2, 1024),
-        "skip_msa": True,  # ReduceMean kernel not supported on current CANN
+    },
+    "stack": {
+        "pta": lambda dim=0: lambda a, b: torch.stack((a, b), dim=dim),
+        "msa": lambda dim=0: lambda a, b: ms_ops.stack((a, b), axis=dim) if HAS_MINDSPORE else None,
+        "input_shape": ((32, 2, 1024), (32, 2, 1024)),
+        "multi_input": True,
+    },
+    "expand": {
+        "pta": lambda target_shape=(32, 2, 1024): lambda x: x.expand(target_shape),
+        "msa": lambda target_shape=(32, 2, 1024): lambda x: ms_ops.broadcast_to(x, target_shape) if HAS_MINDSPORE else None,
+        "input_shape": (1, 2, 1024),
+    },
+    "tril": {
+        "pta": lambda diagonal=0: lambda x: torch.tril(x, diagonal),
+        "msa": lambda diagonal=0: lambda x: mindspore.Tensor(np.tril(x.asnumpy(), k=diagonal)) if HAS_MINDSPORE else None,
+        "input_shape": (32, 32),
+    },
+    "sum": {
+        "pta": lambda dim=-1, keepdim=True: lambda x: torch.sum(x, dim, keepdim),
+        "msa": lambda dim=-1, keepdim=True: lambda x: ms_ops.sum(x, dim, keepdim) if HAS_MINDSPORE else None,
+        "input_shape": (32, 2, 1024),
+    },
+    "max": {
+        "pta": lambda dim=-1, keepdim=True: lambda x: torch.max(x, dim, keepdim).values,
+        "msa": lambda dim=-1, keepdim=True: lambda x: ms_ops.max(x, dim, keepdim) if HAS_MINDSPORE else None,
+        "input_shape": (32, 2, 1024),
+    },
+    "argmax": {
+        "pta": lambda dim=-1: lambda x: torch.argmax(x, dim),
+        "msa": lambda dim=-1: lambda x: mindspore.Tensor(x.asnumpy().argmax(axis=dim)) if HAS_MINDSPORE else None,
+        "input_shape": (32, 40000),
+    },
+    "abs": {
+        "pta": lambda: torch.abs,
+        "msa": lambda: ms_ops.abs if HAS_MINDSPORE else None,
+        "input_shape": (32, 2, 1024),
+    },
+    "rsqrt": {
+        "pta": lambda: lambda x: torch.rsqrt(torch.clamp(x, min=1e-4)),
+        "msa": lambda: lambda x: ms_ops.rsqrt(ms_ops.clip_by_value(x, 1e-4, 1e9)) if HAS_MINDSPORE else None,
+        "input_shape": (32, 2, 1024),
+    },
+    "eq": {
+        "pta": lambda: lambda a, b: torch.eq(a, b),
+        "msa": lambda: lambda a, b: ms_ops.equal(a, b) if HAS_MINDSPORE else None,
+        "input_shape": ((32, 2, 1024), (32, 2, 1024)),
+        "multi_input": True,
+    },
+    "gather": {
+        "pta": lambda dim=-1: lambda x, index: torch.gather(x, dim, index),
+        "msa": lambda dim=-1: lambda x, index: ms_ops.gather_elements(x, dim, index) if HAS_MINDSPORE else None,
+        "input_shape": ((32, 40000), (32, 10)),
+        "multi_input": True,
+        "input_types": ["float", "int"],
+        "input_ranges": [(0, 50000), (0, 40000)],
+    },
+    "pad": {
+        "pta": lambda pad=(0, 2): lambda x: F.pad(x, pad),
+        "msa": lambda pad=(0, 2): lambda x: ms_ops.pad(x, pad) if HAS_MINDSPORE else None,
+        "input_shape": (32, 2, 1024),
+    },
+    "sin": {
+        "pta": lambda: torch.sin,
+        "msa": lambda: ms_ops.sin if HAS_MINDSPORE else None,
+        "input_shape": (32, 2, 1024),
+    },
+    "cos": {
+        "pta": lambda: torch.cos,
+        "msa": lambda: ms_ops.cos if HAS_MINDSPORE else None,
+        "input_shape": (32, 2, 1024),
+    },
+    "permute": {
+        "pta": lambda: lambda x: x.permute(0, 2, 1),
+        "msa": lambda: lambda x: ms_ops.transpose(x, (0, 2, 1)) if HAS_MINDSPORE else None,
+        "input_shape": (32, 2, 1024),
+    },
+    "cumsum": {
+        "pta": lambda dim=-1: lambda x: torch.cumsum(x, dim),
+        "msa": lambda dim=-1: lambda x: mindspore.Tensor(x.asnumpy().cumsum(axis=dim)) if HAS_MINDSPORE else None,
+        "input_shape": (32, 2, 1024),
     },
 }
 

@@ -1,7 +1,7 @@
 experiment:
   seed: 42
   device: "npu"
-  output_dir: "res/operator"
+  output_dir: "res/operator_level"
   num_iterations: 10
 
 perturbation:

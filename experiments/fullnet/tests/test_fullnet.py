@@ -94,9 +94,14 @@ class FullNetAnalysisTests(unittest.TestCase):
             pta_dir = variant_dir / "pta-baseline"
             msa_dir = variant_dir / "msa-baseline"
             msa_perturb_dir = variant_dir / "msa-preturb"
+            mutant_dir = output_root / "qwen2" / "mutant-a"
+            mutant_pta_dir = mutant_dir / "pta-baseline"
+            mutant_msa_dir = mutant_dir / "msa-baseline"
             pta_dir.mkdir(parents=True)
             msa_dir.mkdir(parents=True)
             msa_perturb_dir.mkdir(parents=True)
+            mutant_pta_dir.mkdir(parents=True)
+            mutant_msa_dir.mkdir(parents=True)
             (output_root / "summary.json").write_text(
                 json.dumps({"models": ["qwen2"], "iterations": 1}, ensure_ascii=False),
                 encoding="utf-8",
@@ -133,6 +138,44 @@ class FullNetAnalysisTests(unittest.TestCase):
                         "iteration": 1,
                         "aligned": False,
                         "required": True,
+                        "tolerance": 0.0,
+                        "issue": "diff",
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (mutant_dir / "status.json").write_text(
+                json.dumps(
+                    {
+                        "task_name": "fullnet",
+                        "model": "qwen2",
+                        "variant": "mutant-a",
+                        "iteration": 1,
+                        "overall_status": "PASS",
+                        "trainings": {
+                            "prepare": "SKIP",
+                            "pta-baseline": "OK",
+                            "msa-baseline": "OK",
+                            "pta-preturb": "OK",
+                            "msa-preturb": "OK",
+                            "baseline-align": "WARN",
+                        },
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            mutant_pta_dir.joinpath("execution.csv").write_text("Iteration,loss\n1,2.0\n", encoding="utf-8")
+            mutant_msa_dir.joinpath("execution.csv").write_text("Iteration,loss\n1,3.0\n", encoding="utf-8")
+            (mutant_dir / "baseline_alignment.json").write_text(
+                json.dumps(
+                    {
+                        "model": "qwen2",
+                        "variant": "mutant-a",
+                        "iteration": 1,
+                        "aligned": False,
+                        "required": False,
                         "tolerance": 0.0,
                         "issue": "diff",
                     },
@@ -189,19 +232,24 @@ class FullNetAnalysisTests(unittest.TestCase):
             result = analyze_fullnet_run(output_root, model_name="qwen2", planned_iterations=1)
             payload = json.loads(result.summary_json.read_text(encoding="utf-8"))
 
-        self.assertEqual(result.executed_iterations, 1)
-        self.assertEqual(result.variant_success_count, 1)
-        self.assertEqual(payload["iterations"][0]["model"], "qwen2")
-        self.assertEqual(payload["iterations"][0]["variant"], "ancestor")
-        self.assertAlmostEqual(payload["iterations"][0]["pta_msa_abs_loss_delta"], 0.25)
-        self.assertAlmostEqual(payload["iterations"][0]["msa_metamorphic_abs_loss_delta"], 0.25)
-        self.assertFalse(payload["iterations"][0]["baseline_aligned"])
+        ancestor = next(item for item in payload["iterations"] if item["variant"] == "ancestor")
+        mutant = next(item for item in payload["iterations"] if item["variant"] == "mutant-a")
+        self.assertEqual(result.executed_iterations, 2)
+        self.assertEqual(result.variant_success_count, 2)
+        self.assertEqual(ancestor["model"], "qwen2")
+        self.assertEqual(ancestor["variant"], "ancestor")
+        self.assertAlmostEqual(ancestor["pta_msa_abs_loss_delta"], 0.25)
+        self.assertAlmostEqual(ancestor["msa_metamorphic_abs_loss_delta"], 0.25)
+        self.assertFalse(ancestor["baseline_aligned"])
+        self.assertTrue(ancestor["baseline_alignment_required"])
+        self.assertFalse(mutant["baseline_aligned"])
+        self.assertFalse(mutant["baseline_alignment_required"])
         self.assertEqual(payload["baseline_alignment_failures"], 1)
-        self.assertEqual(payload["iterations"][0]["trace"]["tensor_count"], 1)
-        self.assertEqual(payload["iterations"][0]["trace"]["weight_count"], 1)
+        self.assertEqual(ancestor["trace"]["tensor_count"], 1)
+        self.assertEqual(ancestor["trace"]["weight_count"], 1)
         self.assertEqual(payload["trace_tensor_count"], 1)
         self.assertNotIn("mf" + "_failures", payload)
-        self.assertNotIn("pta_" + "m" + "f_abs_loss_delta", payload["iterations"][0])
+        self.assertNotIn("pta_" + "m" + "f_abs_loss_delta", ancestor)
 
     def test_precision_check_falls_back_when_step_series_missing(self) -> None:
         from utils.analyze.precision import find_preferred_loss_mismatch

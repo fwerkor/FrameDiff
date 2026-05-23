@@ -2,11 +2,15 @@
 """RQ2 analysis: compute metamorphic metrics from saved baseline/perturbed tensors."""
 import argparse
 import json
+import sys
 from pathlib import Path
 
-from experiments.common.config_loader import get_config
-from experiments.common.metrics import compute_metamorphic_metrics
-from experiments.common.tensor_io import load_tensor
+import torch
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from common.config_loader import get_config, reset_config
+from common.metrics import compute_metamorphic_metrics
+from common.tensor_io import load_tensor
 
 
 def analyze_rq2(output_dir: Path):
@@ -67,6 +71,7 @@ if __name__ == "__main__":
                         help="Path to rq2_meta output directory. Defaults to config value.")
     args = parser.parse_args()
 
+    reset_config()
     if args.output_dir:
         out_dir = Path(args.output_dir)
     else:

@@ -16,26 +16,26 @@ Reusable framework differential experiment workflows.
 Run modules from the repository root:
 
 ```bash
-python -m experiments.operator.run_diff_test --backend pta
-python -m experiments.operator.run_diff_test --backend msa
-python -m experiments.operator.analyze_diff_results
+python -m experiments.operator.scripts.operator_diff_test --backend pta
+python -m experiments.operator.scripts.operator_diff_test --backend msa
+python -m experiments.operator.scripts.operator_diff_analysis
 
-python -m experiments.operator.run_metamorphic_test --backend pta
-python -m experiments.operator.run_metamorphic_test --backend msa
-python -m experiments.operator.analyze_metamorphic_results
+python -m experiments.operator.scripts.operator_metamorphic_test --backend pta
+python -m experiments.operator.scripts.operator_metamorphic_test --backend msa
+python -m experiments.operator.scripts.operator_meta_analysis
 
-python -m experiments.component.run_diff_test --backend pta
-python -m experiments.component.run_diff_test --backend msa
-python -m experiments.component.analyze_diff_results
+python -m experiments.component.scripts.component_diff_test --backend pta
+python -m experiments.component.scripts.component_diff_test --backend msa
+python -m experiments.component.scripts.analyze_rq1
 
-python -m experiments.component.run_metamorphic_test --backend pta
-python -m experiments.component.run_metamorphic_test --backend msa
-python -m experiments.component.analyze_metamorphic_results
+python -m experiments.component.scripts.component_metamorphic_test --backend pta
+python -m experiments.component.scripts.component_metamorphic_test --backend msa
+python -m experiments.component.scripts.analyze_rq2
 
 python -m experiments.fullnet.fullnet models
 python -m experiments.fullnet.fullnet run --models qwen2 --iters 1 --load-steps 3 --dry-run
 ```
 
-The default output directories are configured in `experiments/operator/config.yaml`
-and `experiments/component/config.yaml`; relative paths are resolved from the
+The default output directories are configured in `experiments/operator/configs/operator_experiment.yaml`
+and `experiments/component/configs/component_experiment.yaml`; relative paths are resolved from the
 `experiments/` root.
