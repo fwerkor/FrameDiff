@@ -98,6 +98,18 @@ class FullNetConfigTests(unittest.TestCase):
             self.assertEqual(dist_cfg["tp"], 8)
             self.assertEqual(dist_cfg["npus_per_node"], 8)
             self.assertEqual(dist_cfg["world_size"], 8)
+
+            fullnet.Config.TARGET_TENSOR_PARALLEL_SIZE = 0
+            fullnet.Config.TARGET_PIPELINE_PARALLEL_SIZE = 0
+            fullnet.Config.TARGET_EXPERT_PARALLEL_SIZE = 0
+            fullnet.Config.TARGET_NPUS_PER_NODE = 0
+            fullnet.Config.TARGET_WORLD_SIZE = 0
+            fullnet.Config.ENABLE_DATA_PARALLEL = False
+            fullnet.configure_auto_parallel_from_models([str(PROJECT_ROOT.parent / "model_config" / "chatglm3.yaml")])
+            dist_cfg = fullnet.resolve_distributed_config()
+            self.assertEqual(dist_cfg["tp"], 8)
+            self.assertEqual(dist_cfg["npus_per_node"], 8)
+            self.assertEqual(dist_cfg["world_size"], 8)
         finally:
             if old_env is None:
                 os.environ.pop("ASCEND_RT_VISIBLE_DEVICES", None)

@@ -1,10 +1,10 @@
 base_config:
   config:
-    num_layers: 32
-    hidden_size: 4096
-    ffn_hidden_size: 11008
-    num_attention_heads: 32
-    num_query_groups: 32
+    num_layers: 16
+    hidden_size: 2048
+    ffn_hidden_size: 5632
+    num_attention_heads: 16
+    num_query_groups: 16
     tensor_model_parallel_size: 1
     pipeline_model_parallel_size: 1
     normalization: RMSNorm
@@ -15,7 +15,7 @@ base_config:
     init_method_std: 0.01
     init_method: torch.nn.init.xavier_uniform_
   vocab_size: 151936
-  max_sequence_length: 2048
+  max_sequence_length: 1024
   position_embedding_type: rope
   seq_len_interpolation_factor:
   rotary_base: 10000
@@ -205,185 +205,9 @@ graph_structure:
       state: none
       layer_limits:
       - Qwen2DecoderLayer
-      to:
-      - 18
-      from:
-      - 16
-      layer_nums: 1
-    18:
-      name: Decoderlayer17
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 19
-      from:
-      - 17
-      layer_nums: 1
-    19:
-      name: Decoderlayer18
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 20
-      from:
-      - 18
-      layer_nums: 1
-    20:
-      name: Decoderlayer19
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 21
-      from:
-      - 19
-      layer_nums: 1
-    21:
-      name: Decoderlayer20
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 22
-      from:
-      - 20
-      layer_nums: 1
-    22:
-      name: Decoderlayer21
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 23
-      from:
-      - 21
-      layer_nums: 1
-    23:
-      name: Decoderlayer22
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 24
-      from:
-      - 22
-      layer_nums: 1
-    24:
-      name: Decoderlayer23
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 25
-      from:
-      - 23
-      layer_nums: 1
-    25:
-      name: Decoderlayer24
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 26
-      from:
-      - 24
-      layer_nums: 1
-    26:
-      name: Decoderlayer25
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 27
-      from:
-      - 25
-      layer_nums: 1
-    27:
-      name: Decoderlayer26
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 28
-      from:
-      - 26
-      layer_nums: 1
-    28:
-      name: Decoderlayer27
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 29
-      from:
-      - 27
-      layer_nums: 1
-    29:
-      name: Decoderlayer28
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 30
-      from:
-      - 28
-      layer_nums: 1
-    30:
-      name: Decoderlayer29
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 31
-      from:
-      - 29
-      layer_nums: 1
-    31:
-      name: Decoderlayer30
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 32
-      from:
-      - 30
-      layer_nums: 1
-    32:
-      name: Decoderlayer31
-      params: {}
-      state: none
-      layer_limits:
-      - Qwen2DecoderLayer
-      to:
-      - 33
-      from:
-      - 31
-      layer_nums: 1
-    33:
-      name: Decoderlayer32
-      params: {}
-      state: des
-      layer_limits:
-      - Qwen2DecoderLayer
       to: []
       from:
-      - 32
+      - 16
       layer_nums: 1
 metadata:
   iteration: 1
@@ -392,6 +216,5 @@ metadata:
   generated_by: FrameDiff fullnet variant generator
   source_model: llama2
   source_path: model_config/llama2.yaml
-  note: Full-network load product; graph_structure expands to the model decoder 
-    depth.
+  note: Full-network load product; graph_structure expands to the model decoder depth.
   decoder_layers: 32

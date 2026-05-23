@@ -4,39 +4,37 @@
 # TransformerConfig - 只包含 Megatron-Core 原生支持的模型架构参数
 TransformerConfig:
   # ===== 基础模型架构 =====
-  num_layers: 28
-  hidden_size: 4096
-  ffn_hidden_size: 13696
-  num_attention_heads: 32
-  num_query_groups: 2
-  
+  num_layers: 16
+  hidden_size: 2048
+  ffn_hidden_size: 6912
+  num_attention_heads: 16
+  num_query_groups: 8
+
   # ===== 并行配置 =====
   tensor_model_parallel_size: 1        # 简化为单卡测试
   pipeline_model_parallel_size: 1      # 简化为单卡测试
   # pipeline_dtype: torch.float16      # 单卡时不需要
-  
   # ===== 基础配置 =====
   normalization: "RMSNorm"
   layernorm_epsilon: 0.00001
   attention_dropout: 0.0
   hidden_dropout: 0.0
-  add_bias_linear: False               # 禁用线性层偏置
+  add_bias_linear: false               # 禁用线性层偏置
   init_method_std: 0.01
-  add_qkv_bias: True                  # GLM特有：QKV偏置
+  add_qkv_bias: true                  # GLM特有：QKV偏置
 
 # 额外配置 - 不在 TransformerConfig 中的参数
 extra_config:
   # ===== 序列和位置编码 =====
-  seq_length: 8192
+  seq_length: 2048
   position_embedding_type: "rope"
-  max_position_embeddings: 8192
-  use_glm_rope: True                  # GLM特有的RoPE实现
+  max_position_embeddings: 2048
+  use_glm_rope: true                  # GLM特有的RoPE实现
   rotary_percent: 0.5                 # GLM特有：50%旋转
-  
   # ===== 批次配置 =====
   micro_batch_size: 1
-  global_batch_size: 32
-  
+  global_batch_size: 8
+
   # ===== 优化器配置 =====
   lr: 1.0e-6
   min_lr: 1.0e-8
@@ -47,28 +45,31 @@ extra_config:
   lr_warmup_fraction: 0.01
   lr_decay_style: "cosine"
   initial_loss_scale: 4096
-  
+
   # ===== ChatGLM特有配置 =====
   padded_vocab_size: 65024
-  use_distributed_optimizer: True
-  use_fused_rmsnorm: True
-  use_fused_swiglu: True
-  use_flash_attn: True
+  use_distributed_optimizer: true
+  use_fused_rmsnorm: true
+  use_fused_swiglu: true
+  use_flash_attn: true
 
 # GPT层规格配置
 get_gpt_layer_local_spec:
   num_experts: None                   # ChatGLM不使用MoE
-  moe_grouped_gemm: False
-  qk_layernorm: False
-  multi_latent_attention: False
+  moe_grouped_gemm: false
+  qk_layernorm: false
+  multi_latent_attention: false
   fp8: None
-  moe_use_legacy_grouped_gemm: False
+  moe_use_legacy_grouped_gemm: false
   normalization: "RMSNorm"
-  qk_l2_norm: False
+  qk_l2_norm: false
 
 # 输入配置
 input:
-  shape: [32, 1, 4096]               # 对应hidden_size
+  shape:                             # 对应hidden_size
+  - 32
+  - 1
+  - 2048
   dtype: torch.float32               # 统一使用float32
   device: "cuda"
 
