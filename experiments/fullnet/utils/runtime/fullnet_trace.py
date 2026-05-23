@@ -293,8 +293,6 @@ def _context_dir(root: Path, kind: str) -> Path:
     ctx = _context()
     return (
         root
-        / _safe_part(ctx["backend"])
-        / _safe_part(ctx["run"])
         / f"iter_{_safe_part(ctx['iteration'])}"
         / f"step_{_safe_part(ctx['step'])}"
         / kind

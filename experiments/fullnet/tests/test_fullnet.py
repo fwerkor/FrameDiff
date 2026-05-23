@@ -228,8 +228,8 @@ class FullNetAnalysisTests(unittest.TestCase):
                 encoding="utf-8",
             )
             trace_dir = pta_dir / "traces"
-            tensor_path = trace_dir / "pta" / "pta-baseline" / "iter_1" / "step_0" / "tensors" / "x.pt"
-            weight_path = trace_dir / "pta" / "pta-baseline" / "iter_1" / "step_0" / "weights" / "w.pt"
+            tensor_path = trace_dir / "iter_1" / "step_0" / "tensors" / "x.pt"
+            weight_path = trace_dir / "iter_1" / "step_0" / "weights" / "w.pt"
             tensor_path.parent.mkdir(parents=True)
             weight_path.parent.mkdir(parents=True)
             tensor_path.write_bytes(b"tensor")
