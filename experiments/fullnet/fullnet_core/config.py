@@ -8,6 +8,9 @@ from typing import Any
 from .models import available_models, validate_models
 from .paths import CONFIG_EXAMPLE_PATH, CONFIG_PATH
 
+FORCED_TOTAL_ITER = 1
+FORCED_LOAD_STEPS = 1
+
 
 DEFAULT_CONFIG: dict[str, Any] = {
     "entry": "fullnet",
@@ -16,8 +19,6 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "OUTPUT_ROOT": "output",
     "fullnet": {
         "MODELS": available_models() or ["qwen2"],
-        "TOTAL_ITER": 1,
-        "LOAD_STEPS": 3,
         "PERTURB_EPS": "1e-5",
         "BASELINE_LOSS_TOLERANCE": 0.0,
     },
@@ -52,6 +53,8 @@ _REMOVED_FULLNET_KEYS = {
     "SAVE_STEPS",
     "MUTATION_ROUNDS",
     "PERTURB_SIGMA",
+    "TOTAL_ITER",
+    "LOAD_STEPS",
 }
 
 
@@ -116,14 +119,8 @@ def build_run_config(
         fullnet["PERTURB_EPS"] = str(perturb_eps)
     if baseline_loss_tolerance is not None:
         fullnet["BASELINE_LOSS_TOLERANCE"] = float(baseline_loss_tolerance)
-    if total_iter is not None:
-        fullnet["TOTAL_ITER"] = max(1, int(total_iter))
-    else:
-        fullnet["TOTAL_ITER"] = max(1, int(fullnet.get("TOTAL_ITER", 1)))
-    if load_steps is not None:
-        fullnet["LOAD_STEPS"] = max(1, int(load_steps))
-    else:
-        fullnet["LOAD_STEPS"] = max(1, int(fullnet.get("LOAD_STEPS", 3)))
+    fullnet["TOTAL_ITER"] = FORCED_TOTAL_ITER
+    fullnet["LOAD_STEPS"] = FORCED_LOAD_STEPS
 
     if pta_path is not None:
         config["PTA_PATH"] = pta_path

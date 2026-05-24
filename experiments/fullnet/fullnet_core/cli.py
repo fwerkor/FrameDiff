@@ -25,8 +25,8 @@ def _add_common_run_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--msa-path", help="MSA 代码路径")
     parser.add_argument("--perturb-eps", help="单向输入扰动 epsilon，默认 1e-5")
     parser.add_argument("--baseline-loss-tolerance", type=float, help="PTA/MSA baseline loss 对齐容差，默认 0.0")
-    parser.add_argument("--iters", type=int, help="整网实验整体重复次数，默认 1")
-    parser.add_argument("--load-steps", type=int, help="load 模式训练 step 数，默认 3")
+    parser.add_argument("--iters", type=int, help=argparse.SUPPRESS)
+    parser.add_argument("--load-steps", type=int, help=argparse.SUPPRESS)
 
 
 def _config_from_args(args: argparse.Namespace) -> dict:
@@ -37,8 +37,6 @@ def _config_from_args(args: argparse.Namespace) -> dict:
         msa_path=getattr(args, "msa_path", None),
         perturb_eps=getattr(args, "perturb_eps", None),
         baseline_loss_tolerance=getattr(args, "baseline_loss_tolerance", None),
-        total_iter=getattr(args, "iters", None),
-        load_steps=getattr(args, "load_steps", None),
     )
 
 

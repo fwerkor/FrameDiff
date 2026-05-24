@@ -41,16 +41,27 @@ def _output_root(config: dict[str, Any]) -> Path:
     return OUTPUT_ROOT
 
 
+def _records_root(output_root: Path) -> Path:
+    raw = os.environ.get("FRAMEDIFF_FULLNET_RECORDS_ROOT") or os.environ.get("LMSV_RECORDS_ROOT")
+    if raw:
+        root = Path(raw).expanduser()
+        return root if root.is_absolute() else (PROJECT_ROOT / root).resolve()
+    return output_root.parent / "records"
+
+
 def create_output_dir(config: dict[str, Any]) -> Path:
     output_root = _output_root(config)
+    records_root = _records_root(output_root)
     output_root.mkdir(parents=True, exist_ok=True)
+    records_root.mkdir(parents=True, exist_ok=True)
 
-    with (output_root / "config.json").open("w", encoding="utf-8") as handle:
+    with (records_root / "config.json").open("w", encoding="utf-8") as handle:
         json.dump(config, handle, ensure_ascii=False, indent=2)
         handle.write("\n")
-    (output_root / "log.txt").write_text("", encoding="utf-8")
-    os.environ["LMSV_LOGPATH"] = str(output_root / "log.txt")
+    (records_root / "log.txt").write_text("", encoding="utf-8")
+    os.environ["LMSV_LOGPATH"] = str(records_root / "log.txt")
     os.environ["LMSV_OUTPATH"] = str(output_root)
+    os.environ["LMSV_RECORDS_ROOT"] = str(records_root)
     return output_root
 
 

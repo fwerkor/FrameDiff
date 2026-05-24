@@ -18,8 +18,6 @@
       "qwen3",
       "yi"
     ],
-    "TOTAL_ITER": 1,
-    "LOAD_STEPS": 3,
     "PERTURB_EPS": "1e-5",
     "BASELINE_LOSS_TOLERANCE": 0.0
   }

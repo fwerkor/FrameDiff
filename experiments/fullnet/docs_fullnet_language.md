@@ -20,7 +20,7 @@ The runner reads the selected model config and builds the corresponding decoder 
 
 ## Comparison Path
 
-The extracted workflow reads prepared variants from `../mutated_config/<model>/`. `ancestor` runs `prepare`; every variant then runs `pta-baseline`, `msa-baseline`, `pta-preturb`, and `msa-preturb` with the shared ancestor weight. The repeat count is configurable through `TOTAL_ITER` or `--iters` and defaults to `1`; load-mode steps default to `3`.
+The extracted workflow reads prepared variants from `../mutated_config/<model>/`. `ancestor` runs `prepare`; every variant then runs `pta-baseline`, `msa-baseline`, `pta-preturb`, and `msa-preturb` with the shared ancestor weight. The workflow always runs one outer iteration and one training step per stage; these counts are intentionally fixed and are not exposed through user config.
 
 ## Trace Controls
 
@@ -30,8 +30,8 @@ For paper experiments, component-level trace and full weight export are always e
 python fullnet.py run --models qwen2 glm4 --perturb-eps 1e-5
 ```
 
-This exports full tensors and module weights at component instrumentation points, plus `trace_index.jsonl` metadata for the 17 paper components, overall loss, variant records, and the five training labels.
+This exports tensor artifacts at component instrumentation points into the public `output/<model>/<variant>/<training>/*.pt` layout. Trace metadata (`trace_index.jsonl` and component manifests) stays under `records` with logs and copied configs.
 
 ## Analysis Scope
 
-The run writes `summary.json` and a console/Markdown overview with every model, variant, iteration, and training stage. The bundled analyzer summarizes executed model/variant runs, functional failures, precision hints, PTA-MSA loss deltas, baseline-vs-perturbation deltas, and trace coverage from the `output/<model>/<variant>/<training>` layout. Heavier delivery-project diagnostics were removed because they are not part of the current language-model paper workflow.
+The run writes `records/summary.json` and a console/Markdown overview with every model, variant, iteration, and training stage. The bundled analyzer summarizes executed model/variant runs, functional failures, precision hints, PTA-MSA loss deltas, baseline-vs-perturbation deltas, and trace coverage from the `records/<model>/<variant>/<training>` metadata layout while public tensors remain in `output`. Heavier delivery-project diagnostics were removed because they are not part of the current language-model paper workflow.

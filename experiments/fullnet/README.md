@@ -32,7 +32,7 @@ python fullnet.py run
 Preview the final runtime config without launching training:
 
 ```bash
-python fullnet.py run --models qwen2 --iters 1 --load-steps 3 --perturb-eps 1e-5 --dry-run
+python fullnet.py run --models qwen2 --perturb-eps 1e-5 --dry-run
 ```
 
 Rebuild the lightweight paper report for the latest run:
@@ -50,9 +50,9 @@ FrameDiff uses this slice for language-model full-network precision experiments:
 3. Run `pta-baseline` and `msa-baseline` for every variant using the same `ancestor` shared weight.
 4. Check PTA/MSA baseline loss alignment before collecting perturbation data.
 5. Run `pta-preturb` and `msa-preturb` with a one-way `+eps` tensor perturbation.
-6. Archive logs, scripts, variant inputs, step-level loss CSVs, full tensor/weight traces, and analysis artifacts under each training directory.
+6. Write public tensor artifacts under `output` and keep scripts, logs, CSVs, variant inputs, trace indexes, summaries, and analysis artifacts under `records`.
 
-The public config keeps PTA/MSA paths, output root, selected model, total repeat count (`TOTAL_ITER`, default `1`), load-mode steps (`LOAD_STEPS`, default `3`), `PERTURB_EPS`, and baseline loss tolerance. There is no runtime mutation step: each variant supplies `mutating.json` + `mutated_config.yaml` or the compatible numbered filenames. The trace index records 17 paper components, whole-network inputs/outputs, overall loss, variant metadata, PTA/MSA baselines, and perturbation data.
+The public config keeps PTA/MSA paths, output root, selected models, `PERTURB_EPS`, and baseline loss tolerance. Fullnet runs exactly one outer iteration and one training step per stage; these counts are fixed by the workflow rather than user config. There is no runtime mutation step: each variant supplies `mutating.json` + `mutated_config.yaml` or the compatible numbered filenames. Public tensor artifacts are kept separate from trace indexes and runtime records.
 
 ## Key Files
 
@@ -70,10 +70,10 @@ The public config keeps PTA/MSA paths, output root, selected model, total repeat
 
 ## Outputs
 
-Runs are archived under `output/<model>/<variant>/<training>/`, for example `output/qwen2/ancestor/pta-baseline`. If `TOTAL_ITER > 1`, each training directory contains `iter_<n>` children.
+Public DOI artifacts are archived under `output/<model>/<variant>/<training>/`, for example `output/qwen2/ancestor/pta-baseline/*.pt`. Shared ancestor weights are copied to `output/<model>/shared_weight.pth`. Runtime logs, scripts, copied configs, CSVs, trace indexes, summaries, and analysis files are written under the sibling `records/` tree.
 
 The analysis step writes:
 
-- `analysis/data/summary.json`
-- `analysis/summary.md`
-- `analysis/report.html`
+- `records/analysis/data/summary.json`
+- `records/analysis/summary.md`
+- `records/analysis/report.html`

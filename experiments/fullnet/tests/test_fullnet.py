@@ -36,7 +36,7 @@ class FullNetConfigTests(unittest.TestCase):
         self.assertEqual(config["entry"], "fullnet")
         self.assertEqual(config["fullnet"]["MODELS"], ["qwen2", "glm4"])
         self.assertEqual(config["fullnet"]["TOTAL_ITER"], 1)
-        self.assertEqual(config["fullnet"]["LOAD_STEPS"], 3)
+        self.assertEqual(config["fullnet"]["LOAD_STEPS"], 1)
         self.assertEqual(config["fullnet"]["PERTURB_EPS"], "1e-4")
         self.assertEqual(config["fullnet"]["BASELINE_LOSS_TOLERANCE"], 0.0)
         for token in blocked:
@@ -55,6 +55,32 @@ class FullNetConfigTests(unittest.TestCase):
         from fullnet_core.models import available_models
 
         self.assertEqual(DEFAULT_CONFIG["fullnet"]["MODELS"], available_models())
+
+    def test_prepare_trace_can_be_forced_off(self) -> None:
+        from utils.task import fullnet
+
+        old_trace = fullnet.Config.TRACE_ENABLED
+        old_env = os.environ.get("LMSV_FULLNET_TRACE")
+        try:
+            fullnet.Config.TRACE_ENABLED = True
+            os.environ["LMSV_FULLNET_TRACE"] = "1"
+
+            block = fullnet._build_trace_env_block(
+                iter_num=1,
+                trace_dir=Path("/tmp/fullnet-trace"),
+                backend="pta",
+                run_name="prepare",
+                trace_enabled=False,
+            )
+
+            self.assertIn("export LMSV_FULLNET_TRACE=0", block)
+            self.assertNotIn("LMSV_DEBUG_COMPARE", block)
+        finally:
+            fullnet.Config.TRACE_ENABLED = old_trace
+            if old_env is None:
+                os.environ.pop("LMSV_FULLNET_TRACE", None)
+            else:
+                os.environ["LMSV_FULLNET_TRACE"] = old_env
 
     def test_auto_parallel_uses_visible_cards_safely(self) -> None:
         from utils.task import fullnet
@@ -151,8 +177,8 @@ class FullNetConfigTests(unittest.TestCase):
         blocked = ("M" + "F", "COMPARE_" + "MODE", "TRACE", "PRECISION")
 
         self.assertEqual(config["fullnet"]["MODELS"], ["qwen2", "glm4"])
-        self.assertEqual(config["fullnet"]["TOTAL_ITER"], 2)
-        self.assertEqual(config["fullnet"]["LOAD_STEPS"], 4)
+        self.assertEqual(config["fullnet"]["TOTAL_ITER"], 1)
+        self.assertEqual(config["fullnet"]["LOAD_STEPS"], 1)
         self.assertEqual(config["fullnet"]["PERTURB_EPS"], "1e-5")
         for token in blocked:
             self.assertNotIn(token, encoded)
@@ -321,11 +347,11 @@ class FullNetAnalysisTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            trace_dir = pta_dir / "traces"
-            tensor_path = trace_dir / "iter_1" / "step_0" / "tensors" / "x.pt"
-            weight_path = trace_dir / "iter_1" / "step_0" / "weights" / "w.pt"
-            tensor_path.parent.mkdir(parents=True)
-            weight_path.parent.mkdir(parents=True)
+            trace_dir = pta_dir
+            tensor_path = trace_dir / "x.pt"
+            weight_path = trace_dir / "w_weight.pt"
+            tensor_path.parent.mkdir(parents=True, exist_ok=True)
+            weight_path.parent.mkdir(parents=True, exist_ok=True)
             tensor_path.write_bytes(b"tensor")
             weight_path.write_bytes(b"weights")
             (trace_dir / "trace_index.jsonl").write_text(
@@ -425,6 +451,7 @@ class FullNetTraceTests(unittest.TestCase):
         env_names = [
             "LMSV_FULLNET_TRACE",
             "LMSV_FULLNET_TRACE_DIR",
+            "LMSV_FULLNET_TRACE_RECORD_DIR",
             "LMSV_FULLNET_TRACE_BACKEND",
             "LMSV_FULLNET_TRACE_RUN",
             "LMSV_FULLNET_TRACE_ITER",
@@ -436,8 +463,10 @@ class FullNetTraceTests(unittest.TestCase):
         old_env = {name: os.environ.get(name) for name in env_names}
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
+                record_dir = str(Path(temp_dir) / "records")
                 os.environ["LMSV_FULLNET_TRACE"] = "1"
                 os.environ["LMSV_FULLNET_TRACE_DIR"] = temp_dir
+                os.environ["LMSV_FULLNET_TRACE_RECORD_DIR"] = record_dir
                 os.environ["LMSV_FULLNET_TRACE_BACKEND"] = "pta"
                 os.environ["LMSV_FULLNET_TRACE_RUN"] = "pta-baseline"
                 os.environ["LMSV_FULLNET_TRACE_ITER"] = "1"
@@ -466,9 +495,11 @@ class FullNetTraceTests(unittest.TestCase):
                 self.assertTrue(Path(tensor_path).exists())
                 self.assertTrue(Path(weight_path).exists())
                 self.assertTrue(torch.allclose(perturbed, torch.full((2,), 1e-5)))
-                index_path = Path(temp_dir) / "trace_index.jsonl"
+                self.assertEqual(Path(tensor_path).parent, Path(temp_dir))
+                self.assertEqual(Path(weight_path).parent, Path(temp_dir))
+                index_path = Path(record_dir) / "trace_index.jsonl"
                 rows = [json.loads(line) for line in index_path.read_text(encoding="utf-8").splitlines()]
-                self.assertTrue((Path(temp_dir) / "components.json").exists())
+                self.assertTrue((Path(record_dir) / "components.json").exists())
                 self.assertTrue(any(row.get("kind") == "tensor" for row in rows))
                 self.assertTrue(any(row.get("kind") == "weights" for row in rows))
                 self.assertTrue(any(row.get("event") == "loss" for row in rows))
@@ -488,6 +519,7 @@ class FullNetTraceTests(unittest.TestCase):
         env_names = [
             "LMSV_FULLNET_TRACE",
             "LMSV_FULLNET_TRACE_DIR",
+            "LMSV_FULLNET_TRACE_RECORD_DIR",
             "LMSV_FULLNET_TRACE_BACKEND",
             "LMSV_FULLNET_TRACE_RUN",
             "LMSV_FULLNET_TRACE_ITER",

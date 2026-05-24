@@ -90,6 +90,13 @@ def _trace_root() -> Path:
     return Path(raw).expanduser().resolve()
 
 
+def _trace_record_root() -> Path:
+    raw = os.getenv("LMSV_FULLNET_TRACE_RECORD_DIR")
+    if raw:
+        return Path(raw).expanduser().resolve()
+    return _trace_root()
+
+
 def _context() -> dict[str, Any]:
     return {
         "backend": os.getenv("LMSV_FULLNET_TRACE_BACKEND", "unknown"),
@@ -184,9 +191,10 @@ def _write_json(path: Path, payload: Any) -> None:
 
 
 def _append_index(root: Path, payload: dict[str, Any]) -> None:
-    root.mkdir(parents=True, exist_ok=True)
+    record_root = _trace_record_root()
+    record_root.mkdir(parents=True, exist_ok=True)
     with _LOCK:
-        with (root / "trace_index.jsonl").open("a", encoding="utf-8") as handle:
+        with (record_root / "trace_index.jsonl").open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n")
 
 
@@ -194,7 +202,8 @@ def trace_components_manifest(extra: dict[str, Any] | None = None) -> None:
     if not trace_enabled() or not is_rank0():
         return
     root = _trace_root()
-    root_key = str(root)
+    record_root = _trace_record_root()
+    root_key = str(record_root)
     with _LOCK:
         if root_key in _STATE["manifest_written"]:
             return
@@ -208,7 +217,7 @@ def trace_components_manifest(extra: dict[str, Any] | None = None) -> None:
     }
     if extra:
         payload["extra"] = extra
-    _write_json(root / "components.json", payload)
+    _write_json(record_root / "components.json", payload)
     trace_event("trace_manifest", {"component_count": len(COMPONENT_CATALOG)})
 
 
@@ -290,13 +299,7 @@ def _stats(value: Any) -> dict[str, float] | None:
 
 
 def _context_dir(root: Path, kind: str) -> Path:
-    ctx = _context()
-    return (
-        root
-        / f"iter_{_safe_part(ctx['iteration'])}"
-        / f"step_{_safe_part(ctx['step'])}"
-        / kind
-    )
+    return root
 
 
 def _save_tensor_file(path: Path, value: Any) -> str:

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -77,7 +78,7 @@ def _has_precision_hint(iter_dir: Path) -> bool:
 
 
 def _read_trace_summary(iter_dir: Path) -> dict[str, Any]:
-    trace_root = iter_dir / "traces"
+    trace_root = iter_dir if (iter_dir / "trace_index.jsonl").exists() else iter_dir / "traces"
     summary: dict[str, Any] = {
         "enabled": trace_root.exists(),
         "tensor_count": 0,
@@ -166,11 +167,11 @@ def _read_trace_summary(iter_dir: Path) -> dict[str, Any]:
         [
             path
             for path in trace_files
-            if path.is_file() and path.suffix in {".pt", ".npy"} and "/tensors/" in path.as_posix()
+            if path.is_file() and path.suffix in {".pt", ".npy"}
         ]
     )
     summary["weight_file_count"] = len(
-        [path for path in trace_files if path.is_file() and path.suffix == ".pt" and "/weights/" in path.as_posix()]
+        [path for path in trace_files if path.is_file() and path.suffix == ".pt" and "weight" in path.name]
     )
     return summary
 
@@ -412,17 +413,26 @@ def analyze_fullnet_run(
     planned_iterations: int | None = None,
 ) -> AnalysisArtifacts:
     output_root = Path(output_root).resolve()
-    analysis_dir = output_root / "analysis"
+    records_env = os.environ.get("LMSV_RECORDS_ROOT") or os.environ.get("FRAMEDIFF_FULLNET_RECORDS_ROOT")
+    if records_env:
+        records_root = Path(records_env).expanduser().resolve()
+    elif output_root.name == "output":
+        records_root = output_root.parent / "records"
+    else:
+        records_root = output_root
+    if not (records_root / "summary.json").exists():
+        records_root = output_root
+    analysis_dir = records_root / "analysis"
     data_dir = analysis_dir / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    run_summary = _load_json(output_root / "summary.json")
+    run_summary = _load_json(records_root / "summary.json") or _load_json(output_root / "summary.json")
     if model_name is None and isinstance(run_summary.get("models"), list):
         model_name = ",".join(str(item) for item in run_summary["models"])
     if planned_iterations is None and run_summary.get("iterations") is not None:
         planned_iterations = int(run_summary.get("iterations") or 0)
 
-    iterations = _new_layout_payloads(output_root)
+    iterations = _new_layout_payloads(records_root)
     executed = len(iterations)
     variant_success = sum(1 for item in iterations if item["status"] == "PASS")
     functional_failures = sum(1 for item in iterations if str(item["status"]).startswith("FAILED"))
