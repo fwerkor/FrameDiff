@@ -100,6 +100,13 @@ def seed_all(seed=42):
     model_helpers.seed_all(seed, np_module=np, torch_module=torch, torch_npu_module=torch_npu)
 
 
+def _env_flag(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 yaml = YAML()
 TEMPLATE_CONFIG_PATH = model_helpers.resolve_repo_path("assets/runtime/configs/template_config.yaml")
 STRUCTURE_CONFIG_PATH = model_helpers.resolve_repo_path("assets/runtime/configs/structure_config.yaml")
@@ -731,30 +738,36 @@ if __name__ == "__main__":
         for i in range(len(graph.nodes)):
             print(i, graph.nodes[i].id, graph.nodes[i].str_op)
 
-        from megatron.core.optimizer import get_megatron_optimizer, OptimizerConfig
-        from megatron.core.distributed import DistributedDataParallelConfig
-        from megatron.core.distributed import DistributedDataParallel as DDP
-
-        ddp_config = DistributedDataParallelConfig(use_distributed_optimizer=False)
+        train_update_enabled = _env_flag("LMSV_FULLNET_MSA_TRAIN_UPDATE", False)
         model_graph = [graph]
-        model = [
-            DDP(
-                model_graph[0].total_config["config"],
-                ddp_config,
-                model_chunk,
-                disable_bucketing=(model_chunk_idx > 0),
+        optimizer = None
+        if train_update_enabled:
+            from megatron.core.optimizer import get_megatron_optimizer, OptimizerConfig
+            from megatron.core.distributed import DistributedDataParallelConfig
+            from megatron.core.distributed import DistributedDataParallel as DDP
+
+            ddp_config = DistributedDataParallelConfig(use_distributed_optimizer=False)
+            model = [
+                DDP(
+                    model_graph[0].total_config["config"],
+                    ddp_config,
+                    model_chunk,
+                    disable_bucketing=(model_chunk_idx > 0),
+                )
+                for (model_chunk_idx, model_chunk) in enumerate(model_graph)
+            ]
+            optimizer_config = OptimizerConfig(
+                optimizer='adam',
+                lr=1e-4,
+                weight_decay=0.01,
             )
-            for (model_chunk_idx, model_chunk) in enumerate(model_graph)
-        ]
-        optimizer_config = OptimizerConfig(
-            optimizer='adam',
-            lr=1e-4,
-            weight_decay=0.01,
-        )
-        optimizer = get_megatron_optimizer(
-            config=optimizer_config,
-            model_chunks=model
-        )
+            optimizer = get_megatron_optimizer(
+                config=optimizer_config,
+                model_chunks=model
+            )
+        else:
+            print("MSA forward-only mode: skip DDP/optimizer setup")
+            trace_event("msa_forward_only_mode", {"train_update": False})
 
         print("开始forward")
         for step_idx in range(train_iters):
@@ -767,7 +780,8 @@ if __name__ == "__main__":
             if step_idx == 0:
                 print(f"\nForward过程完成！最终输出形状: {final_output.shape}")
             mutating_record["success"] = True
-            final_output.requires_grad_(True)
+            if train_update_enabled:
+                final_output.requires_grad_(True)
             loss = final_output.norm()
             step_loss_value = float(loss.detach().item())
             trace_tensor(
@@ -787,9 +801,10 @@ if __name__ == "__main__":
                 logged_loss = step_loss_value
                 emit_task_debug(iteration, final_output, loss.detach())
             print(f"step {step_idx + 1} loss计算结果：", step_loss_value)
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
+            if train_update_enabled:
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
             trace_event("msa_forward_step_end", {"iteration": iteration, "step": step_idx + 1, "loss": step_loss_value})
             step_end_mem = torch.npu.max_memory_allocated() / 1024 / 1024
             step_elapsed = time.time() - step_start_time
