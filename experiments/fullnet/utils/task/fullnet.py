@@ -47,7 +47,7 @@ class Config:
     PTA_MAX_RUNTIME = 6000
     MSA_MAX_RUNTIME = 6000
     LOG_INIT_WAIT = 240
-    LOG_STABLE_THRESHOLD = 300
+    LOG_STABLE_THRESHOLD = 600
     SAVE_ABNORMAL_WEIGHTS = True
     TARGET_TENSOR_PARALLEL_SIZE = 0
     TARGET_PIPELINE_PARALLEL_SIZE = 0
@@ -400,7 +400,7 @@ def wait_msa_finish_csv(iter_num, csv_path, label):
         total_timeout=Config.MSA_MAX_RUNTIME,
         init_wait=Config.LOG_INIT_WAIT,
         stable_threshold=Config.LOG_STABLE_THRESHOLD,
-        poll_interval=60,
+        poll_interval=120,
         log_info=log_info,
         log_error=log_error,
         success_checker=lambda: csv_iteration_is_valid(csv_path, iter_num),
@@ -751,7 +751,7 @@ def _apply_config(params):
     Config.PTA_MAX_RUNTIME = 6000
     Config.MSA_MAX_RUNTIME = 6000
     Config.LOG_INIT_WAIT = 240
-    Config.LOG_STABLE_THRESHOLD = 300
+    Config.LOG_STABLE_THRESHOLD = 600
     Config.TARGET_TENSOR_PARALLEL_SIZE = _parse_optional_positive_int(
         params.get("TARGET_TENSOR_PARALLEL_SIZE", Config.TARGET_TENSOR_PARALLEL_SIZE),
     )
