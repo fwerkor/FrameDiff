@@ -701,7 +701,6 @@ def build_msa_verify_load_cmd(
     export LMSV_SHARED_WEIGHT_MODE=load
     export LMSV_MSA_CSV_PATH={shlex.quote(str(Path(msa_csv_path).resolve()))}
     export LMSV_TRAIN_ITERS={train_iters}
-    export LMSV_FULLNET_MSA_TRAIN_UPDATE="${{LMSV_FULLNET_MSA_TRAIN_UPDATE:-0}}"
     {trace_block}
     {step_log_block}
     msrun $DISTRIBUTED_ARGS {shlex.quote(f"{RUNTIME_SCRIPT_REL}/submodule_entry.py")} \
