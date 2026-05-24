@@ -4,16 +4,16 @@
 # TransformerConfig - 只包含 Megatron-Core 原生支持的模型架构参数
 TransformerConfig:
   # ===== 基础模型架构 =====
-  num_layers: 24
+  num_layers: 16
   hidden_size: 896
-  ffn_hidden_size: 4864
-  num_attention_heads: 14
-  num_query_groups: 2
-  
+  ffn_hidden_size: 3072
+  num_attention_heads: 8
+  num_query_groups: 8
+
   # ===== 并行配置 =====
   tensor_model_parallel_size: 1
   pipeline_model_parallel_size: 1
-  
+
   # ===== 基础配置 =====
   normalization: "RMSNorm"
   layernorm_epsilon: 0.000001
@@ -25,16 +25,16 @@ TransformerConfig:
 # 额外配置 - 不在 TransformerConfig 中的参数
 extra_config:
   # ===== 序列和位置编码 =====
-  seq_length: 4096
+  seq_length: 1024
   position_embedding_type: "rope"
-  max_position_embeddings: 4096
+  max_position_embeddings: 1024
   rotary_base: 1000000
   use_rotary_position_embeddings: True
-  
+
   # ===== 批次配置 =====
-  micro_batch_size: 2
-  global_batch_size: 128
-  
+  micro_batch_size: 1
+  global_batch_size: 8
+
   # ===== 优化器配置 =====
   lr: 1.25e-6
   min_lr: 1.25e-7
@@ -47,7 +47,7 @@ extra_config:
   adam_beta1: 0.9
   adam_beta2: 0.95
   initial_loss_scale: 4096
-  
+
   # ===== Qwen2特有配置 =====
   padded_vocab_size: 151936
   use_distributed_optimizer: True

@@ -5,9 +5,9 @@
 TransformerConfig:
   # ===== 基础模型架构 =====
   num_layers: 16
-  hidden_size: 2048
-  ffn_hidden_size: 6912
-  num_attention_heads: 16
+  hidden_size: 1024
+  ffn_hidden_size: 3072
+  num_attention_heads: 8
   num_query_groups: 8
 
   # ===== 并行配置 =====
@@ -26,9 +26,9 @@ TransformerConfig:
 # 额外配置 - 不在 TransformerConfig 中的参数
 extra_config:
   # ===== 序列和位置编码 =====
-  seq_length: 2048
+  seq_length: 1024
   position_embedding_type: "rope"
-  max_position_embeddings: 2048
+  max_position_embeddings: 1024
   use_glm_rope: true                  # GLM特有的RoPE实现
   rotary_percent: 0.5                 # GLM特有：50%旋转
   # ===== 批次配置 =====
@@ -69,7 +69,7 @@ input:
   shape:                             # 对应hidden_size
   - 32
   - 1
-  - 2048
+  - 1024
   dtype: torch.float32               # 统一使用float32
   device: "cuda"
 

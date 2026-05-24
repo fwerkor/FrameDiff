@@ -6,42 +6,39 @@ TransformerConfig:
   # ===== 基础模型架构 =====
   num_layers: 8                        # 40 -> 8 (5倍缩小，适合测试)
   hidden_size: 1024                    # 5120 -> 1024 (5倍缩小)
-  ffn_hidden_size: 2739               # 13696 -> 2739 (保持2.67倍比例)
+  ffn_hidden_size: 2736               # 13696 -> 2739 (保持2.67倍比例)
   num_attention_heads: 8               # 40 -> 8 (5倍缩小)
-  
   # ===== 并行配置 =====
   tensor_model_parallel_size: 1        # 简化为单卡
   pipeline_model_parallel_size: 1      # 简化为单卡
-  sequence_parallel: False             # 禁用序列并行
-  
+  sequence_parallel: false             # 禁用序列并行
   # ===== 基础配置 =====
   normalization: "RMSNorm"             # RMSNorm归一化
   layernorm_epsilon: 0.000001
   attention_dropout: 0.0
   hidden_dropout: 0.0
-  add_bias_linear: False               # 禁用线性层偏置
-  gated_linear_unit: True              # SwiGLU激活函数
-  attention_softmax_in_fp32: True
-  masked_softmax_fusion: False
-  
+  add_bias_linear: false               # 禁用线性层偏置
+  gated_linear_unit: true              # SwiGLU激活函数
+  attention_softmax_in_fp32: true
+  masked_softmax_fusion: false
+
   # ===== 数据类型配置 =====
-  bf16: False                          # 暂时禁用以避免dtype问题
+  bf16: false                          # 暂时禁用以避免dtype问题
   params_dtype: torch.float32
-  
+
   # ===== 训练超参数 =====
   init_method_std: 0.01
 
 # 额外配置 - 不在 TransformerConfig 中的参数
+  num_query_groups: 8
 extra_config:
   # ===== 序列和位置编码 =====
   seq_length: 1024                     # 4096 -> 1024 (4倍缩小)
   position_embedding_type: "alibi"     # ALiBi位置编码 (Baichuan特色)
   max_position_embeddings: 1024        # 4096 -> 1024 (4倍缩小)
-  
   # ===== 批次配置 =====
   micro_batch_size: 1                  # 缩小batch size
   global_batch_size: 4                 # 缩小batch size
-  
   # ===== 优化器配置 =====
   lr: 1e-5
   min_lr: 1e-8
@@ -50,21 +47,21 @@ extra_config:
   adam_beta1: 0.9
   adam_beta2: 0.98
   adam_eps: 1.0e-8
-  
+
   # ===== Baichuan特有配置 =====
-  untie_embeddings_and_output_weights: True  # 解耦输入输出嵌入
+  untie_embeddings_and_output_weights: true  # 解耦输入输出嵌入
   make_vocab_size_divisible_by: 32
 
 # GPT层规格配置
 get_gpt_layer_local_spec:
   num_experts: None                    # Baichuan不使用MoE
-  moe_grouped_gemm: False
-  qk_layernorm: False                  # Baichuan不使用QK LayerNorm
-  multi_latent_attention: False        # Baichuan不使用MLA
+  moe_grouped_gemm: false
+  qk_layernorm: false                  # Baichuan不使用QK LayerNorm
+  multi_latent_attention: false        # Baichuan不使用MLA
   fp8: None
-  moe_use_legacy_grouped_gemm: False
+  moe_use_legacy_grouped_gemm: false
   normalization: "RMSNorm"
-  qk_l2_norm: False
+  qk_l2_norm: false
 
 # 输入配置
 input:
@@ -84,10 +81,9 @@ production_config:
     num_attention_heads: 40            # 原始注意力头数
     tensor_model_parallel_size: 8      # 原始TP
     pipeline_model_parallel_size: 1    # 原始PP
-    sequence_parallel: True            # 原始序列并行
-  
+    sequence_parallel: true            # 原始序列并行
   extra_config:
     seq_length: 4096                   # 原始序列长度
     max_position_embeddings: 4096      # 原始位置编码
     micro_batch_size: 2                # 原始微批次
-    global_batch_size: 128             # 原始全局批次 
+    global_batch_size: 128             # 原始全局批次

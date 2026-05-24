@@ -8,24 +8,22 @@ TransformerConfig:
   hidden_size: 1024                  # 减少隐藏维度 (原6144 -> 1024)
   ffn_hidden_size: 2048              # 大幅减少FFN隐藏维度 (原32768 -> 2048)
   num_attention_heads: 8             # 减少注意力头数 (原48 -> 8)
-  num_query_groups: 2                # 减少查询组数 (原8 -> 2)
-  
+  num_query_groups: 8                # 减少查询组数 (原8 -> 2)
   # ===== 并行配置 =====
   tensor_model_parallel_size: 1        # 简化为单卡测试
   pipeline_model_parallel_size: 1      # 简化为单卡测试，避免pipeline_dtype问题
-  
   # ===== MoE配置 - 减少专家数量 =====
   num_moe_experts: 4                 # 减少专家数量 (原8 -> 4)
   moe_router_topk: 2
   moe_router_load_balancing_type: "aux_loss"
   moe_aux_loss_coeff: 0.02
-  
+
   # ===== 基础配置 =====
   normalization: "RMSNorm"
   layernorm_epsilon: 0.00001
   attention_dropout: 0.0
   hidden_dropout: 0.0
-  add_bias_linear: False               # MoE不支持bias，必须设置为False
+  add_bias_linear: false               # MoE不支持bias，必须设置为False
   init_method_std: 0.02
 
 # 额外配置 - 不在 TransformerConfig 中的参数
@@ -35,11 +33,11 @@ extra_config:
   position_embedding_type: "rope"
   max_position_embeddings: 1024      # 相应减少最大位置编码 (原8192 -> 1024)
   rotary_base: 10000
-  
+
   # ===== 批次配置 =====
   micro_batch_size: 1
   global_batch_size: 32
-  
+
   # ===== 优化器配置 =====
   lr: 1e-5
   min_lr: 1.0e-6
@@ -48,26 +46,26 @@ extra_config:
   lr_warmup_iters: 2
   lr_decay_style: "cosine"
   train_iters: 2000
-  
+
   # ===== Grok特有配置 =====
   expert_model_parallel_size: 1       # 移动到这里
   vocab_size: 131072
-  use_distributed_optimizer: True
-  use_fused_rmsnorm: True
-  use_fused_rotary_pos_emb: True
-  use_fused_swiglu: True
-  use_flash_attn: True
+  use_distributed_optimizer: true
+  use_fused_rmsnorm: true
+  use_fused_rotary_pos_emb: true
+  use_fused_swiglu: true
+  use_flash_attn: true
 
 # GPT层规格配置
 get_gpt_layer_local_spec:
   num_experts: 4                      # 对应MoE专家数 (减少到4)
-  moe_grouped_gemm: False             # 禁用grouped_gemm，避免依赖问题
-  qk_layernorm: False
-  multi_latent_attention: False
+  moe_grouped_gemm: false             # 禁用grouped_gemm，避免依赖问题
+  qk_layernorm: false
+  multi_latent_attention: false
   fp8: None
-  moe_use_legacy_grouped_gemm: True   # 使用legacy实现
+  moe_use_legacy_grouped_gemm: true   # 使用legacy实现
   normalization: "RMSNorm"
-  qk_l2_norm: False
+  qk_l2_norm: false
 
 # 输入配置
 input:

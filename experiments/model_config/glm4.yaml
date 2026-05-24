@@ -8,31 +8,28 @@ TransformerConfig:
   hidden_size: 1024                    # 4096 -> 1024 (4倍缩小)
   ffn_hidden_size: 3424               # 13696 -> 3424 (保持3.34倍比例)
   num_attention_heads: 8               # 32 -> 8 (4倍缩小)
-  
   # ===== Group Query Attention 配置 =====
-  num_query_groups: 1                  # 2 -> 1 (保持极端比例，8:1)
-  
+  num_query_groups: 8                  # 2 -> 1 (保持极端比例，8:1)
   # ===== 并行配置 =====
   tensor_model_parallel_size: 1        # 简化为单卡
   pipeline_model_parallel_size: 1      # 简化为单卡
-  sequence_parallel: False             # 禁用序列并行
-  
+  sequence_parallel: false             # 禁用序列并行
   # ===== 基础配置 =====
   normalization: "RMSNorm"             # RMSNorm归一化
   layernorm_epsilon: 0.00000015625     # GLM特有的极小epsilon值
   attention_dropout: 0.0               # 避免随机性
   hidden_dropout: 0.0
-  add_bias_linear: False               # 禁用线性层偏置
-  add_qkv_bias: True                   # GLM特有：启用QKV偏置
-  gated_linear_unit: True              # SwiGLU激活函数
-  attention_softmax_in_fp32: True
-  masked_softmax_fusion: False
-  
+  add_bias_linear: false               # 禁用线性层偏置
+  add_qkv_bias: true                   # GLM特有：启用QKV偏置
+  gated_linear_unit: true              # SwiGLU激活函数
+  attention_softmax_in_fp32: true
+  masked_softmax_fusion: false
+
   # ===== 数据类型配置 =====
-  bf16: False                          # 暂时禁用以避免dtype问题
+  bf16: false                          # 暂时禁用以避免dtype问题
   params_dtype: torch.float32
   pipeline_dtype: torch.float32
-  
+
   # ===== 训练超参数 =====
   init_method_std: 0.01
 
@@ -42,18 +39,16 @@ extra_config:
   seq_length: 2048                     # 8192 -> 2048 (4倍缩小)
   position_embedding_type: "rope"      # RoPE位置编码
   max_position_embeddings: 2048        # 8192 -> 2048 (4倍缩小)
-  use_glm_rope: True                   # GLM特有的RoPE实现
+  use_glm_rope: true                   # GLM特有的RoPE实现
   rotary_percent: 0.5                  # GLM特有：50%旋转
-  no_rope_fusion: True                 # 禁用RoPE融合
-  
+  no_rope_fusion: true                 # 禁用RoPE融合
   # ===== 批次配置 =====
   micro_batch_size: 1                  # 保持小batch
   global_batch_size: 4                 # 缩小全局batch
-  
   # ===== 词汇表配置 =====
   padded_vocab_size: 37888             # 151552 -> 37888 (4倍缩小)
   make_vocab_size_divisible_by: 1
-  
+
   # ===== 优化器配置 =====
   lr: 1.25e-6
   min_lr: 1.25e-7
@@ -65,30 +60,30 @@ extra_config:
   lr_decay_style: "cosine"
   initial_loss_scale: 4096
   train_iters: 2000
-  
+
   # ===== GLM4特有配置 =====
-  untie_embeddings_and_output_weights: True  # 解耦输入输出嵌入
-  group_query_attention: True          # Group Query Attention特性
-  use_flash_attn: True                 # Flash Attention
-  use_fused_rmsnorm: True              # 融合RMSNorm
-  use_fused_swiglu: True               # 融合SwiGLU
-  overlap_grad_reduce: True            # 梯度重叠
-  overlap_param_gather: True           # 参数聚集重叠
-  use_distributed_optimizer: True     # 分布式优化器
-  no_gradient_accumulation_fusion: True # 禁用梯度累积融合
-  no_bias_swiglu_fusion: True          # 禁用偏置SwiGLU融合
+  untie_embeddings_and_output_weights: true  # 解耦输入输出嵌入
+  group_query_attention: true          # Group Query Attention特性
+  use_flash_attn: true                 # Flash Attention
+  use_fused_rmsnorm: true              # 融合RMSNorm
+  use_fused_swiglu: true               # 融合SwiGLU
+  overlap_grad_reduce: true            # 梯度重叠
+  overlap_param_gather: true           # 参数聚集重叠
+  use_distributed_optimizer: true     # 分布式优化器
+  no_gradient_accumulation_fusion: true # 禁用梯度累积融合
+  no_bias_swiglu_fusion: true          # 禁用偏置SwiGLU融合
   tokenizer_type: "PretrainedFromHF"   # HuggingFace分词器
 
 # GPT层规格配置
 get_gpt_layer_local_spec:
   num_experts: None                    # GLM4不使用MoE
-  moe_grouped_gemm: False
-  qk_layernorm: False                  # GLM4不使用QK LayerNorm
-  multi_latent_attention: False        # GLM4不使用MLA
+  moe_grouped_gemm: false
+  qk_layernorm: false                  # GLM4不使用QK LayerNorm
+  multi_latent_attention: false        # GLM4不使用MLA
   fp8: None
-  moe_use_legacy_grouped_gemm: False
+  moe_use_legacy_grouped_gemm: false
   normalization: "RMSNorm"
-  qk_l2_norm: False
+  qk_l2_norm: false
 
 # 输入配置
 input:
@@ -109,15 +104,14 @@ production_config:
     num_query_groups: 2                # 原始Query Groups (极端GQA: 16:1)
     tensor_model_parallel_size: 2      # 原始TP
     pipeline_model_parallel_size: 2    # 原始PP
-    sequence_parallel: True            # 原始序列并行
+    sequence_parallel: true            # 原始序列并行
     layernorm_epsilon: 1.5625e-07      # GLM特有的极小epsilon
-    add_qkv_bias: True                 # GLM特有的QKV偏置
-  
+    add_qkv_bias: true                 # GLM特有的QKV偏置
   extra_config:
     seq_length: 8192                   # 原始序列长度
     max_position_embeddings: 8192      # 原始位置编码
-    use_glm_rope: True                 # GLM特有的RoPE
+    use_glm_rope: true                 # GLM特有的RoPE
     rotary_percent: 0.5                # GLM特有的50%旋转
     padded_vocab_size: 151552          # 原始词汇表大小
     micro_batch_size: 1                # 原始微批次
-    global_batch_size: 64             # 原始全局批次 
+    global_batch_size: 64             # 原始全局批次

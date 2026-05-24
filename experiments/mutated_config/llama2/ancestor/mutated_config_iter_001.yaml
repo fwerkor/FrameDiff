@@ -1,10 +1,10 @@
 base_config:
   config:
     num_layers: 16
-    hidden_size: 2048
-    ffn_hidden_size: 5632
-    num_attention_heads: 16
-    num_query_groups: 16
+    hidden_size: 1024
+    ffn_hidden_size: 3072
+    num_attention_heads: 8
+    num_query_groups: 8
     tensor_model_parallel_size: 1
     pipeline_model_parallel_size: 1
     normalization: RMSNorm

@@ -4,7 +4,7 @@ base_config:
     hidden_size: 1024
     ffn_hidden_size: 3424
     num_attention_heads: 8
-    num_query_groups: 1
+    num_query_groups: 8
     tensor_model_parallel_size: 1
     pipeline_model_parallel_size: 1
     sequence_parallel: false
@@ -136,6 +136,5 @@ metadata:
   generated_by: FrameDiff fullnet variant generator
   source_model: glm4
   source_path: model_config/glm4.yaml
-  note: Full-network load product; graph_structure expands to the model decoder 
-    depth.
+  note: Full-network load product; graph_structure expands to the model decoder depth.
   decoder_layers: 8

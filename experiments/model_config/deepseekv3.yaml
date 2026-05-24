@@ -37,7 +37,7 @@ MLATransformerConfig:
   moe_router_topk: 8                   # 保持不变
   # moe_ffn_hidden_size: 256            # 2048 -> 256 (8倍缩小)
   moe_router_load_balancing_type: "aux_loss"
-  moe_router_pre_softmax: True
+  moe_router_pre_softmax: true
   # moe_router_score_function: "sigmoid"
   # moe_router_enable_expert_bias: True
   moe_aux_loss_coeff: 0.0001
@@ -48,32 +48,31 @@ MLATransformerConfig:
   layernorm_epsilon: 0.000001
   attention_dropout: 0.0
   hidden_dropout: 0.0
-  add_bias_linear: False
-  gated_linear_unit: True              # SwiGLU激活
-  attention_softmax_in_fp32: True
-  masked_softmax_fusion: False
+  add_bias_linear: false
+  gated_linear_unit: true              # SwiGLU激活
+  attention_softmax_in_fp32: true
+  masked_softmax_fusion: false
 
   # ===== 数据类型配置 =====
-  bf16: False                          # 暂时禁用以避免dtype问题
+  bf16: false                          # 暂时禁用以避免dtype问题
   params_dtype: torch.float32
   pipeline_dtype: torch.float32
 
   # ===== 训练配置 =====
   init_method_std: 0.01
-  sequence_parallel: False             # 简化配置
+  sequence_parallel: false             # 简化配置
 
-  moe_grouped_gemm: False
+  moe_grouped_gemm: false
 
 # 额外配置 - 不在 MLATransformerConfig 中的参数
+  num_query_groups: 8
 extra_config:
   # ===== 序列和位置编码 =====
   seq_length: 4096                     # 序列长度
   position_embedding_type: "rope"      # RoPE位置编码
-  
   # ===== 批次配置 =====
   micro_batch_size: 1
   global_batch_size: 8                 # 适配单机8卡整网变异默认world_size，避免DP=8时Megatron整除断言失败
-  
   # ===== 优化器配置 =====
   lr: 3e-6
   min_lr: 3e-7
@@ -82,23 +81,23 @@ extra_config:
   adam_beta1: 0.9
   adam_beta2: 0.95
   adam_eps: 1.0e-8
-  
+
   # ===== DeepSeekV3特有配置 =====
   expert_model_parallel_size: 1        # 移动到这里
-  untie_embeddings_and_output_weights: True
+  untie_embeddings_and_output_weights: true
   make_vocab_size_divisible_by: 64
   vocab_size: 129280
 
 # GPT层规格配置
 get_gpt_layer_local_spec:
   num_experts: 32                      # 对应MoE专家数
-  moe_grouped_gemm: False
-  qk_layernorm: False                  # 暂时禁用以简化配置
-  multi_latent_attention: False        # 暂时禁用MLA
+  moe_grouped_gemm: false
+  qk_layernorm: false                  # 暂时禁用以简化配置
+  multi_latent_attention: false        # 暂时禁用MLA
   fp8: None
-  moe_use_legacy_grouped_gemm: False
+  moe_use_legacy_grouped_gemm: false
   normalization: "RMSNorm"
-  qk_l2_norm: False                     # DeepSeekV3特有的L2归一化
+  qk_l2_norm: false                     # DeepSeekV3特有的L2归一化
 
 # 输入配置
 input:
@@ -123,15 +122,15 @@ production_config:
     kv_lora_rank: 512
     num_moe_experts: 256
     moe_ffn_hidden_size: 2048
-  
+
   extra_config:
     seq_length: 4096
     max_position_embeddings: 163840
     micro_batch_size: 2
     global_batch_size: 2048
     vocab_size: 129280
-  
+
   get_gpt_layer_local_spec:
     num_experts: 256
-    moe_grouped_gemm: True
-    multi_latent_attention: True
+    moe_grouped_gemm: true
+    multi_latent_attention: true

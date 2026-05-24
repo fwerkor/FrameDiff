@@ -8,41 +8,37 @@ TransformerConfig:
   hidden_size: 1024                    # 2560 -> 1024 (2.5倍缩小)
   ffn_hidden_size: 4096               # 保持4倍关系
   num_attention_heads: 16              # 32 -> 16 (2倍缩小)
-  
   # ===== 并行配置 =====
   tensor_model_parallel_size: 1        # 简化为单卡
   pipeline_model_parallel_size: 1      # 简化为单卡
-  sequence_parallel: False             # 禁用序列并行
-  
+  sequence_parallel: false             # 禁用序列并行
   # ===== PanguAlpha特色配置 =====
   normalization: "LayerNorm"           # PanguAlpha使用标准LayerNorm
   layernorm_epsilon: 0.00001
   attention_dropout: 0.0               # LMSV对齐验证中固定为0，避免随机性
   hidden_dropout: 0.0                  # 与attention_dropout保持一致
-  add_bias_linear: True                # PanguAlpha使用偏置
-  gated_linear_unit: False             # 使用标准MLP，非Gated
-  attention_softmax_in_fp32: True
-  masked_softmax_fusion: False
-  
+  add_bias_linear: true                # PanguAlpha使用偏置
+  gated_linear_unit: false             # 使用标准MLP，非Gated
+  attention_softmax_in_fp32: true
+  masked_softmax_fusion: false
+
   # ===== 数据类型配置 =====
-  bf16: False                          # 暂时禁用bf16避免数据类型问题
+  bf16: false                          # 暂时禁用bf16避免数据类型问题
   params_dtype: torch.float32          # 使用float32来调试
-  
   # ===== 训练超参数 =====
   init_method_std: 0.02
 
 # 额外配置 - 不在 TransformerConfig 中的参数
+  num_query_groups: 8
 extra_config:
   # ===== 序列和词汇配置 =====
   seq_length: 1024                     # 默认序列长度
   vocab_size: 40000                    # PanguAlpha默认词汇表大小
   max_position_embeddings: 1024        # 最大位置编码
   position_embedding_type: "learned_absolute"   # 学习的位置编码（非RoPE）
-  
   # ===== 批次配置 =====
   micro_batch_size: 1                  # 微批次大小
   global_batch_size: 8                 # 全局批次大小
-  
   # ===== 优化器配置 =====
   lr: 1e-4                            # 学习率
   min_lr: 1e-6                        # 最小学习率
@@ -51,35 +47,32 @@ extra_config:
   adam_beta1: 0.9                     # Adam beta1
   adam_beta2: 0.999                   # Adam beta2
   adam_eps: 1.0e-8                    # Adam epsilon
-  
   # ===== PanguAlpha特有配置 =====
   hidden_act: "fast_gelu"             # PanguAlpha特色激活函数
-  post_layernorm_residual: False      # 使用pre-layernorm
+  post_layernorm_residual: false      # 使用pre-layernorm
   eod_token: 6                        # 文档结束标记
   pad_token: 6                        # 填充标记
-  use_past: False                     # 不使用过去状态（训练模式）
-  eod_reset: True                     # 遇到EOD时重置
-  
+  use_past: false                     # 不使用过去状态（训练模式）
+  eod_reset: true                     # 遇到EOD时重置
   # ===== MoE配置（可选） =====
-  use_moe: False                      # 是否使用专家混合
+  use_moe: false                      # 是否使用专家混合
   expert_num: 4                       # 专家数量
   per_token_num_experts_chosen: 1     # 每个token选择的专家数
-  
   # ===== 特殊嵌入配置 =====
-  use_top_query_embedding: True       # PanguAlpha特色：顶层查询嵌入
-  untie_embeddings_and_output_weights: False  # 嵌入权重绑定
+  use_top_query_embedding: true       # PanguAlpha特色：顶层查询嵌入
+  untie_embeddings_and_output_weights: false  # 嵌入权重绑定
   make_vocab_size_divisible_by: 128   # 词汇表大小对齐
 
 # GPT层规格配置
 get_gpt_layer_local_spec:
   num_experts: None                   # PanguAlpha基础版本不使用MoE
-  moe_grouped_gemm: False
-  qk_layernorm: False                 # PanguAlpha不使用QK LayerNorm
-  multi_latent_attention: False       # PanguAlpha不使用MLA
+  moe_grouped_gemm: false
+  qk_layernorm: false                 # PanguAlpha不使用QK LayerNorm
+  multi_latent_attention: false       # PanguAlpha不使用MLA
   fp8: None
-  moe_use_legacy_grouped_gemm: False
+  moe_use_legacy_grouped_gemm: false
   normalization: "LayerNorm"          # 使用标准LayerNorm
-  qk_l2_norm: False
+  qk_l2_norm: false
 
 # 输入配置
 input:
@@ -101,25 +94,24 @@ production_configs:
       num_attention_heads: 40         # 原始注意力头数
       tensor_model_parallel_size: 8   # 原始TP
       pipeline_model_parallel_size: 1 # 原始PP
-      sequence_parallel: False        # 原始序列并行
+      sequence_parallel: false        # 原始序列并行
       normalization: "LayerNorm"      # PanguAlpha使用标准LayerNorm
       layernorm_epsilon: 1e-5
       attention_dropout: 0.0
       hidden_dropout: 0.0
-      add_bias_linear: True
-      gated_linear_unit: False
-      attention_softmax_in_fp32: True
-      masked_softmax_fusion: False
-      bf16: False                     # 修复数据类型问题
+      add_bias_linear: true
+      gated_linear_unit: false
+      attention_softmax_in_fp32: true
+      masked_softmax_fusion: false
+      bf16: false                     # 修复数据类型问题
       params_dtype: torch.float32     # 使用float32调试
       init_method_std: 0.02
-    
+
     extra_config:
       seq_length: 1024               # 原始序列长度
       max_position_embeddings: 1024  # 原始位置编码
       micro_batch_size: 16           # 原始微批次
       global_batch_size: 128         # 原始全局批次
-  
   # PanguAlpha-2.6B 配置
   pangu_2_6b:
     TransformerConfig:
@@ -129,26 +121,26 @@ production_configs:
       num_attention_heads: 32         # 原始注意力头数
       tensor_model_parallel_size: 8   # 原始TP
       pipeline_model_parallel_size: 1 # 原始PP
-      sequence_parallel: False        # 原始序列并行
+      sequence_parallel: false        # 原始序列并行
       normalization: "LayerNorm"      # PanguAlpha使用标准LayerNorm
       layernorm_epsilon: 1e-5
       attention_dropout: 0.0
       hidden_dropout: 0.0
-      add_bias_linear: True
-      gated_linear_unit: False
-      attention_softmax_in_fp32: True
-      masked_softmax_fusion: False
-      bf16: False                     # 修复数据类型问题
+      add_bias_linear: true
+      gated_linear_unit: false
+      attention_softmax_in_fp32: true
+      masked_softmax_fusion: false
+      bf16: false                     # 修复数据类型问题
       params_dtype: torch.float32     # 使用float32调试
       init_method_std: 0.02
-    
+
     extra_config:
       seq_length: 1024               # 原始序列长度
       max_position_embeddings: 1024  # 原始位置编码
       micro_batch_size: 16           # 原始微批次
       global_batch_size: 128         # 原始全局批次
 
-  # PanguAlpha-1.3B 配置  
+  # PanguAlpha-1.3B 配置
   pangu_1_3b:
     TransformerConfig:
       num_layers: 16                  # 原始层数
@@ -157,19 +149,19 @@ production_configs:
       num_attention_heads: 32         # 原始注意力头数
       tensor_model_parallel_size: 1   # 原始TP
       pipeline_model_parallel_size: 1 # 原始PP
-      sequence_parallel: False        # 原始序列并行
+      sequence_parallel: false        # 原始序列并行
       normalization: "LayerNorm"      # PanguAlpha使用标准LayerNorm
       layernorm_epsilon: 1e-5
       attention_dropout: 0.0
       hidden_dropout: 0.0
-      add_bias_linear: True
-      gated_linear_unit: False
-      attention_softmax_in_fp32: True
-      masked_softmax_fusion: False
-      bf16: False                     # 修复数据类型问题
+      add_bias_linear: true
+      gated_linear_unit: false
+      attention_softmax_in_fp32: true
+      masked_softmax_fusion: false
+      bf16: false                     # 修复数据类型问题
       params_dtype: torch.float32     # 使用float32调试
       init_method_std: 0.02
-    
+
     extra_config:
       seq_length: 1024               # 原始序列长度
       max_position_embeddings: 1024  # 原始位置编码

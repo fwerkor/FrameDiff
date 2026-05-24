@@ -1,9 +1,9 @@
 base_config:
   config:
     num_layers: 16
-    hidden_size: 2048
-    ffn_hidden_size: 6912
-    num_attention_heads: 16
+    hidden_size: 1024
+    ffn_hidden_size: 3072
+    num_attention_heads: 8
     num_query_groups: 8
     tensor_model_parallel_size: 1
     pipeline_model_parallel_size: 1
@@ -16,7 +16,7 @@ base_config:
     add_qkv_bias: true
     init_method: torch.nn.init.xavier_uniform_
   vocab_size: 65024
-  max_sequence_length: 2048
+  max_sequence_length: 1024
   position_embedding_type: rope
   seq_len_interpolation_factor:
   rotary_base: 10000

@@ -6,32 +6,29 @@ TransformerConfig:
   # ===== 基础模型架构 =====
   num_layers: 12                       # 60 -> 12 (5倍缩小，适合测试)
   hidden_size: 1024                    # 7168 -> 1024 (7倍缩小)
-  ffn_hidden_size: 2926               # 20480 -> 2926 (保持2.86倍比例)
+  ffn_hidden_size: 2928               # 20480 -> 2926 (保持2.86倍比例)
   num_attention_heads: 8               # 56 -> 8 (7倍缩小)
-  
   # ===== Group Query Attention 配置 =====
-  num_query_groups: 2                  # 8 -> 2 (4倍缩小，保持4:1比例)
-  
+  num_query_groups: 8                  # 8 -> 2 (4倍缩小，保持4:1比例)
   # ===== 并行配置 =====
   tensor_model_parallel_size: 1        # 简化为单卡
   pipeline_model_parallel_size: 1      # 简化为单卡
-  sequence_parallel: False             # 禁用序列并行
-  
+  sequence_parallel: false             # 禁用序列并行
   # ===== 基础配置 =====
   normalization: "RMSNorm"             # RMSNorm归一化
   layernorm_epsilon: 0.000001
   attention_dropout: 0.0
   hidden_dropout: 0.0
-  add_bias_linear: False               # 禁用线性层偏置
-  gated_linear_unit: True              # SwiGLU激活函数
-  attention_softmax_in_fp32: True
-  masked_softmax_fusion: False
-  
+  add_bias_linear: false               # 禁用线性层偏置
+  gated_linear_unit: true              # SwiGLU激活函数
+  attention_softmax_in_fp32: true
+  masked_softmax_fusion: false
+
   # ===== 数据类型配置 =====
-  bf16: False                          # 暂时禁用以避免dtype问题
+  bf16: false                          # 暂时禁用以避免dtype问题
   params_dtype: torch.float32
   pipeline_dtype: "torch.bfloat16"
-  
+
   # ===== 训练超参数 =====
   init_method_std: 0.01
 
@@ -41,14 +38,12 @@ extra_config:
   seq_length: 1024                     # 4096 -> 1024 (4倍缩小)
   position_embedding_type: "rope"      # RoPE位置编码
   max_position_embeddings: 1024        # 4096 -> 1024 (4倍缩小)
-  use_rotary_position_embeddings: True
-  use_fused_rotary_pos_emb: True
+  use_rotary_position_embeddings: true
+  use_fused_rotary_pos_emb: true
   rotary_base: 5000000                 # 特殊的高base值，支持长上下文
-  
   # ===== 批次配置 =====
   micro_batch_size: 1                  # 缩小batch size
   global_batch_size: 4                 # 缩小batch size
-  
   # ===== 优化器配置 =====
   lr: 1.0e-7
   min_lr: 1.0e-8
@@ -59,26 +54,26 @@ extra_config:
   lr_warmup_fraction: 0.01
   lr_decay_style: "cosine"
   initial_loss_scale: 8188.0
-  
+
   # ===== Yi特有配置 =====
-  untie_embeddings_and_output_weights: True  # 解耦输入输出嵌入
+  untie_embeddings_and_output_weights: true  # 解耦输入输出嵌入
   make_vocab_size_divisible_by: 1
-  group_query_attention: True          # Group Query Attention特性
-  use_flash_attn: True
-  use_fused_rmsnorm: True
-  no_gradient_accumulation_fusion: True
+  group_query_attention: true          # Group Query Attention特性
+  use_flash_attn: true
+  use_fused_rmsnorm: true
+  no_gradient_accumulation_fusion: true
   tokenizer_type: "Llama2Tokenizer"
 
 # GPT层规格配置
 get_gpt_layer_local_spec:
   num_experts: None                    # Yi不使用MoE
-  moe_grouped_gemm: False
-  qk_layernorm: False                  # Yi不使用QK LayerNorm
-  multi_latent_attention: False        # Yi不使用MLA
+  moe_grouped_gemm: false
+  qk_layernorm: false                  # Yi不使用QK LayerNorm
+  multi_latent_attention: false        # Yi不使用MLA
   fp8: None
-  moe_use_legacy_grouped_gemm: False
+  moe_use_legacy_grouped_gemm: false
   normalization: "RMSNorm"
-  qk_l2_norm: False
+  qk_l2_norm: false
 
 # 输入配置
 input:
@@ -99,8 +94,7 @@ production_config:
     num_query_groups: 8                # 原始Query Groups (GQA)
     tensor_model_parallel_size: 8      # 原始TP
     pipeline_model_parallel_size: 2    # 原始PP
-    sequence_parallel: True            # 原始序列并行
-  
+    sequence_parallel: true            # 原始序列并行
   extra_config:
     seq_length: 4096                   # 原始序列长度
     max_position_embeddings: 4096      # 原始位置编码
@@ -108,4 +102,3 @@ production_config:
     micro_batch_size: 2                # 原始微批次
     global_batch_size: 1024           # 原始全局批次
 
- 

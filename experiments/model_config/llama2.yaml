@@ -5,10 +5,10 @@
 TransformerConfig:
   # ===== 基础模型架构 =====
   num_layers: 16
-  hidden_size: 2048
-  ffn_hidden_size: 5632
-  num_attention_heads: 16
-  num_query_groups: 16
+  hidden_size: 1024
+  ffn_hidden_size: 3072
+  num_attention_heads: 8
+  num_query_groups: 8
 
   # ===== 并行配置 =====
   tensor_model_parallel_size: 1
@@ -63,7 +63,7 @@ input:
   shape:                             # 对应hidden_size
   - 32
   - 1
-  - 2048
+  - 1024
   dtype: torch.float32               # 统一使用float32
   device: "cuda"
 

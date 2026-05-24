@@ -82,11 +82,11 @@ class FullNetConfigTests(unittest.TestCase):
             fullnet.configure_auto_parallel_from_models([str(PROJECT_ROOT.parent / "model_config" / "qwen2.yaml")])
             dist_cfg = fullnet.resolve_distributed_config()
 
-            self.assertEqual(dist_cfg["tp"], 2)
+            self.assertEqual(dist_cfg["tp"], 8)
             self.assertEqual(dist_cfg["pp"], 1)
             self.assertEqual(dist_cfg["ep"], 1)
-            self.assertEqual(dist_cfg["npus_per_node"], 2)
-            self.assertEqual(dist_cfg["world_size"], 2)
+            self.assertEqual(dist_cfg["npus_per_node"], 8)
+            self.assertEqual(dist_cfg["world_size"], 8)
 
             fullnet.Config.ENABLE_DATA_PARALLEL = True
             dist_cfg = fullnet.resolve_distributed_config()

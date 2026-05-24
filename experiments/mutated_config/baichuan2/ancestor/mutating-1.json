@@ -15,7 +15,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -31,7 +31,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -73,12 +74,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -92,7 +94,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -108,7 +110,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -150,12 +153,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -178,7 +182,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -194,7 +198,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -236,12 +241,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -255,7 +261,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -271,7 +277,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -313,12 +320,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -341,7 +349,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -357,7 +365,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -399,12 +408,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -418,7 +428,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -434,7 +444,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -476,12 +487,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -504,7 +516,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -520,7 +532,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -562,12 +575,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -581,7 +595,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -597,7 +611,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -639,12 +654,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -667,7 +683,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -683,7 +699,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -725,12 +742,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -744,7 +762,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -760,7 +778,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -802,12 +821,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -830,7 +850,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -846,7 +866,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -888,12 +909,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -907,7 +929,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -923,7 +945,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -965,12 +988,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -993,7 +1017,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1009,7 +1033,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -1051,12 +1076,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -1070,7 +1096,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1086,7 +1112,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -1128,12 +1155,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -1156,7 +1184,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1172,7 +1200,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -1214,12 +1243,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -1233,7 +1263,7 @@
             "TransformerConfig": {
                 "num_layers": 8,
                 "hidden_size": 1024,
-                "ffn_hidden_size": 2739,
+                "ffn_hidden_size": 2736,
                 "num_attention_heads": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1249,7 +1279,8 @@
                 "bf16": false,
                 "params_dtype": "torch.float32",
                 "init_method_std": 0.01,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 1024,
@@ -1291,12 +1322,13 @@
                 "TransformerConfig": {
                     "num_layers": 40,
                     "hidden_size": 5120,
-                    "ffn_hidden_size": 13696,
+                    "ffn_hidden_size": 2736,
                     "num_attention_heads": 40,
                     "tensor_model_parallel_size": 8,
                     "pipeline_model_parallel_size": 1,
                     "sequence_parallel": true,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,

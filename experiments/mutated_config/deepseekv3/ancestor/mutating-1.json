@@ -39,7 +39,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -91,7 +92,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -135,7 +137,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -187,7 +190,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -240,7 +244,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -292,7 +297,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -336,7 +342,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -388,7 +395,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -441,7 +449,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -493,7 +502,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -537,7 +547,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -589,7 +600,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -642,7 +654,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -694,7 +707,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -738,7 +752,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -790,7 +805,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -843,7 +859,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -895,7 +912,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -939,7 +957,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -991,7 +1010,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -1044,7 +1064,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -1096,7 +1117,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -1140,7 +1162,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -1192,7 +1215,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -1245,7 +1269,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -1297,7 +1322,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -1341,7 +1367,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -1393,7 +1420,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -1446,7 +1474,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -1498,7 +1527,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,
@@ -1542,7 +1572,8 @@
                 "init_method_std": 0.01,
                 "sequence_parallel": false,
                 "moe_grouped_gemm": false,
-                "init_method": "torch.nn.init.xavier_uniform_"
+                "init_method": "torch.nn.init.xavier_uniform_",
+                "num_query_groups": 8
             },
             "extra_config": {
                 "seq_length": 4096,
@@ -1594,7 +1625,8 @@
                     "kv_lora_rank": 512,
                     "num_moe_experts": 256,
                     "moe_ffn_hidden_size": 2048,
-                    "init_method": "torch.nn.init.xavier_uniform_"
+                    "init_method": "torch.nn.init.xavier_uniform_",
+                    "num_query_groups": 8
                 },
                 "extra_config": {
                     "seq_length": 4096,

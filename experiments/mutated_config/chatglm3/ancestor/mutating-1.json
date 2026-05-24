@@ -14,9 +14,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -30,9 +30,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -76,9 +76,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -92,9 +92,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -147,9 +147,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -163,9 +163,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -209,9 +209,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -225,9 +225,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -280,9 +280,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -296,9 +296,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -342,9 +342,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -358,9 +358,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -413,9 +413,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -429,9 +429,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -475,9 +475,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -491,9 +491,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -546,9 +546,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -562,9 +562,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -608,9 +608,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -624,9 +624,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -679,9 +679,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -695,9 +695,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -741,9 +741,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -757,9 +757,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -812,9 +812,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -828,9 +828,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -874,9 +874,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -890,9 +890,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -945,9 +945,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -961,9 +961,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1007,9 +1007,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1023,9 +1023,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1078,9 +1078,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1094,9 +1094,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1140,9 +1140,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1156,9 +1156,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1211,9 +1211,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1227,9 +1227,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1273,9 +1273,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1289,9 +1289,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1344,9 +1344,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1360,9 +1360,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1406,9 +1406,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1422,9 +1422,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1477,9 +1477,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1493,9 +1493,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1539,9 +1539,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1555,9 +1555,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1610,9 +1610,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1626,9 +1626,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1672,9 +1672,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1688,9 +1688,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1743,9 +1743,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1759,9 +1759,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1805,9 +1805,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1821,9 +1821,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1876,9 +1876,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1892,9 +1892,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -1938,9 +1938,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -1954,9 +1954,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2009,9 +2009,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2025,9 +2025,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2071,9 +2071,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2087,9 +2087,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2142,9 +2142,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2158,9 +2158,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2204,9 +2204,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2220,9 +2220,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2275,9 +2275,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2291,9 +2291,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2337,9 +2337,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2353,9 +2353,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2408,9 +2408,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2424,9 +2424,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2470,9 +2470,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2486,9 +2486,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2541,9 +2541,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2557,9 +2557,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2603,9 +2603,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2619,9 +2619,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2674,9 +2674,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2690,9 +2690,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2736,9 +2736,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2752,9 +2752,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2807,9 +2807,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2823,9 +2823,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2869,9 +2869,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2885,9 +2885,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -2940,9 +2940,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -2956,9 +2956,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -3002,9 +3002,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -3018,9 +3018,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -3073,9 +3073,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -3089,9 +3089,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -3135,9 +3135,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -3151,9 +3151,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -3206,9 +3206,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -3222,9 +3222,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -3268,9 +3268,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -3284,9 +3284,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -3339,9 +3339,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -3355,9 +3355,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -3401,9 +3401,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -3417,9 +3417,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -3472,9 +3472,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -3488,9 +3488,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -3534,9 +3534,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -3550,9 +3550,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -3605,9 +3605,9 @@
         "before": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -3621,9 +3621,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,
@@ -3667,9 +3667,9 @@
         "after": {
             "TransformerConfig": {
                 "num_layers": 16,
-                "hidden_size": 2048,
-                "ffn_hidden_size": 6912,
-                "num_attention_heads": 16,
+                "hidden_size": 1024,
+                "ffn_hidden_size": 3072,
+                "num_attention_heads": 8,
                 "num_query_groups": 8,
                 "tensor_model_parallel_size": 1,
                 "pipeline_model_parallel_size": 1,
@@ -3683,9 +3683,9 @@
                 "init_method": "torch.nn.init.xavier_uniform_"
             },
             "extra_config": {
-                "seq_length": 2048,
+                "seq_length": 1024,
                 "position_embedding_type": "rope",
-                "max_position_embeddings": 2048,
+                "max_position_embeddings": 1024,
                 "use_glm_rope": true,
                 "rotary_percent": 0.5,
                 "micro_batch_size": 1,

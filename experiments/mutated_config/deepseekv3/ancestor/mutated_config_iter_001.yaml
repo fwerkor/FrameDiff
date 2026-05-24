@@ -27,6 +27,7 @@ base_config:
     sequence_parallel: false
     moe_grouped_gemm: false
     init_method: torch.nn.init.xavier_uniform_
+    num_query_groups: 8
   vocab_size: 129280
   max_sequence_length: 4096
   position_embedding_type: rope
@@ -141,6 +142,5 @@ metadata:
   generated_by: FrameDiff fullnet variant generator
   source_model: deepseekv3
   source_path: model_config/deepseekv3.yaml
-  note: Full-network load product; graph_structure expands to the model decoder 
-    depth.
+  note: Full-network load product; graph_structure expands to the model decoder depth.
   decoder_layers: 8
