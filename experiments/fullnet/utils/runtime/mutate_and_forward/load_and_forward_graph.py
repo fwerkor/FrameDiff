@@ -152,6 +152,13 @@ def seed_all(seed=42):
     model_helpers.seed_all(seed, np_module=np, torch_module=torch, torch_npu_module=torch_npu)
 
 
+def _env_flag(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _to_jsonable(value):
     if isinstance(value, (str, int, float, bool)) or value is None:
         return value
@@ -930,10 +937,6 @@ if __name__ == "__main__":
             dump_decoder_runtime_config(graph, res_dir)
             sync_decoder_alignment_to_mutation_json(graph, res_dir)
             print("开始forward")
-        
-        from megatron.core.optimizer import get_megatron_optimizer, OptimizerConfig
-        from megatron.core.distributed import DistributedDataParallelConfig
-        from megatron.core.distributed import DistributedDataParallel as DDP
 
         # 将模型移动到 NPU，确保参数和梯度在同一设备上
         device = torch.device("npu" if torch.npu.is_available() else "cpu")
@@ -941,20 +944,36 @@ if __name__ == "__main__":
         if args.rank == 0:
             print(f"模型已移动到设备: {device}")
 
-        ddp_config = DistributedDataParallelConfig(use_distributed_optimizer=False)
+        train_update_enabled = _env_flag("LMSV_FULLNET_PTA_TRAIN_UPDATE", False)
         model_graph = [graph]
+        optimizer = None
+        if train_update_enabled:
+            from megatron.core.optimizer import get_megatron_optimizer, OptimizerConfig
+            from megatron.core.distributed import DistributedDataParallelConfig
+            from megatron.core.distributed import DistributedDataParallel as DDP
 
-        model = [DDP(model_graph[0].total_config["config"], ddp_config, model_chunk, disable_bucketing=(model_chunk_idx > 0))
-         for (model_chunk_idx, model_chunk) in enumerate(model_graph)]
-        optimizer_config = OptimizerConfig(
-            optimizer='adam',
-            lr=1e-4,
-            weight_decay=0.01,
-        )
-        optimizer = get_megatron_optimizer(
-            config=optimizer_config,
-            model_chunks=model
-        )
+            ddp_config = DistributedDataParallelConfig(use_distributed_optimizer=False)
+            model = [
+                DDP(
+                    model_graph[0].total_config["config"],
+                    ddp_config,
+                    model_chunk,
+                    disable_bucketing=(model_chunk_idx > 0),
+                )
+                for (model_chunk_idx, model_chunk) in enumerate(model_graph)
+            ]
+            optimizer_config = OptimizerConfig(
+                optimizer='adam',
+                lr=1e-4,
+                weight_decay=0.01,
+            )
+            optimizer = get_megatron_optimizer(
+                config=optimizer_config,
+                model_chunks=model,
+            )
+        elif args.rank == 0:
+            print("PTA forward-only mode: skip DDP/optimizer setup")
+            trace_event("pta_forward_only_mode", {"train_update": False})
         
         for step_idx in range(train_iters):
             set_debug_step(step_idx)
@@ -966,7 +985,8 @@ if __name__ == "__main__":
             if step_idx == 0 and args.rank == 0:
                 print(f"\nForward过程完成！最终输出形状: {final_output.shape}")
             mutating_record["success"] = True
-            final_output.requires_grad_(True)
+            if train_update_enabled:
+                final_output.requires_grad_(True)
             loss = final_output.norm()
             trace_tensor(
                 0,
@@ -987,9 +1007,10 @@ if __name__ == "__main__":
                 if args.rank == 0:
                     print("记录到CSV的loss（首次forward）:", float(logged_loss))
             print("norm计算结果", loss)
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
+            if train_update_enabled:
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
             trace_event("pta_forward_step_end", {"iteration": iteration, "step": step_idx + 1, "loss": float(loss.detach().item())})
             step_end_mem = torch.npu.max_memory_allocated() / 1024 / 1024
             step_elapsed = time.time() - step_start_time

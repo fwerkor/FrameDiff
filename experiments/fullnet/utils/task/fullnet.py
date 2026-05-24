@@ -531,6 +531,7 @@ def build_pta_verify_stage_cmd(
     export LMSV_SHARED_WEIGHT_MODE={shlex.quote(shared_mode)}
     export LMSV_PTA_CSV_PATH={shlex.quote(str(Path(pta_csv_path).resolve()))}
     export LMSV_TRAIN_ITERS={train_iters}
+    export LMSV_FULLNET_PTA_TRAIN_UPDATE="${{LMSV_FULLNET_PTA_TRAIN_UPDATE:-0}}"
     {trace_block}
     {step_log_block}
     torchrun $DISTRIBUTED_ARGS {shlex.quote(f"{RUNTIME_SCRIPT_REL}/submodule_entry.py")} \
