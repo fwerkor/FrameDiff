@@ -68,7 +68,8 @@ MLATransformerConfig:
   num_query_groups: 8
 extra_config:
   # ===== 序列和位置编码 =====
-  seq_length: 4096                     # 序列长度
+  seq_length: 1024                     # 序列长度
+  max_position_embeddings: 1024
   position_embedding_type: "rope"      # RoPE位置编码
   # ===== 批次配置 =====
   micro_batch_size: 1

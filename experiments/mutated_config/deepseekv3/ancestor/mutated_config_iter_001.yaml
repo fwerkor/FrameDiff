@@ -29,7 +29,7 @@ base_config:
     init_method: torch.nn.init.xavier_uniform_
     num_query_groups: 8
   vocab_size: 129280
-  max_sequence_length: 4096
+  max_sequence_length: 1024
   position_embedding_type: rope
   seq_len_interpolation_factor:
   rotary_base: 10000
