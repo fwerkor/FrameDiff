@@ -851,8 +851,6 @@ if __name__ == "__main__":
             with open(csv_path, mode='w', newline='') as csv_file:
                 writer = csv.writer(csv_file)
                 writer.writerow(["Iteration", "Execution Time (s)", "NPU Memory (MB)", "loss"])
-    if dist.is_available() and dist.is_initialized():
-        dist.barrier()
     step_csv_path = resolve_step_log_csv()
     train_iters = resolve_train_iters(args)
     
