@@ -454,6 +454,9 @@ class FullNetTraceTests(unittest.TestCase):
         class DotProductAttention:
             pass
 
+        class TransformerLayer:
+            pass
+
         class Config:
             multi_latent_attention = False
             num_moe_experts = 4
@@ -480,6 +483,14 @@ class FullNetTraceTests(unittest.TestCase):
         self.assertEqual(
             classify_fullnet_component("decoder_1.mlp.router", MoERouter()),
             (16, "moe_ffn_block"),
+        )
+        self.assertEqual(
+            classify_fullnet_component("decoder_1.layers.0", TransformerLayer()),
+            (14, "decoder_block"),
+        )
+        self.assertEqual(
+            classify_fullnet_component("block0.layer0.output", TransformerLayer()),
+            (14, "decoder_block"),
         )
 
     @unittest.skipUnless(importlib.util.find_spec("torch") is not None, "torch unavailable")

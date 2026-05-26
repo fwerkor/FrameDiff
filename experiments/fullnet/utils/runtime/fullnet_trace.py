@@ -57,7 +57,12 @@ def classify_fullnet_component(module_name: Any, module: Any | None = None) -> t
 
     if "output_layer" in lower_name or "lm_head" in lower_name:
         return 15, "output_layer"
-    if lower_name.startswith("decoder_") and "." not in lower_name:
+    if (
+        lower_name.startswith("decoder_") and "." not in lower_name
+        or "transformerlayer" in type_name
+        or "decoderlayer" in type_name
+        or "block0.layer0" in lower_name
+    ):
         return 14, "decoder_block"
 
     # Leaf operators must win over parent names such as
