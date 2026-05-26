@@ -442,6 +442,46 @@ class FullNetAnalysisTests(unittest.TestCase):
 
 
 class FullNetTraceTests(unittest.TestCase):
+    def test_fullnet_component_classifier_uses_specific_leaf_components(self) -> None:
+        from utils.runtime.fullnet_trace import classify_fullnet_component
+
+        class IdentityOp:
+            pass
+
+        class Dropout:
+            pass
+
+        class DotProductAttention:
+            pass
+
+        class Config:
+            multi_latent_attention = False
+            num_moe_experts = 4
+
+        class MoERouter:
+            config = Config()
+
+        self.assertEqual(
+            classify_fullnet_component("decoder_1.cross_attention", IdentityOp()),
+            (10, "residual_elementwise_operator"),
+        )
+        self.assertEqual(
+            classify_fullnet_component("decoder_1.self_attention.core_attention.scale_mask_softmax", object()),
+            (7, "softmax_operator"),
+        )
+        self.assertEqual(
+            classify_fullnet_component("decoder_1.self_attention.core_attention.attention_dropout", Dropout()),
+            (10, "residual_elementwise_operator"),
+        )
+        self.assertEqual(
+            classify_fullnet_component("decoder_1.self_attention.core_attention", DotProductAttention()),
+            (5, "attention_core_operator"),
+        )
+        self.assertEqual(
+            classify_fullnet_component("decoder_1.mlp.router", MoERouter()),
+            (16, "moe_ffn_block"),
+        )
+
     @unittest.skipUnless(importlib.util.find_spec("torch") is not None, "torch unavailable")
     def test_trace_exports_full_tensor_and_weights(self) -> None:
         import torch

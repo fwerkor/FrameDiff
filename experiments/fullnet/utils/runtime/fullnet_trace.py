@@ -42,6 +42,75 @@ _STATE = {
 _LOCK = threading.Lock()
 
 
+def classify_fullnet_component(module_name: Any, module: Any | None = None) -> tuple[int, str]:
+    """Map a runtime module hook to the paper component catalog."""
+    lower_name = str(module_name or "").lower()
+    type_name = type(module).__name__.lower() if module is not None else ""
+    cfg = getattr(module, "config", None)
+    is_identity = type_name in {"identityop", "identityfuncop"} or type_name.startswith("identity")
+    is_mla = bool(getattr(cfg, "multi_latent_attention", False) or "mla" in lower_name or "mla" in type_name)
+    try:
+        num_moe_experts = int(getattr(cfg, "num_moe_experts", 0) or 0)
+    except (TypeError, ValueError):
+        num_moe_experts = 0
+    is_moe = bool("moe" in lower_name or "moe" in type_name or num_moe_experts > 0)
+
+    if "output_layer" in lower_name or "lm_head" in lower_name:
+        return 15, "output_layer"
+    if lower_name.startswith("decoder_") and "." not in lower_name:
+        return 14, "decoder_block"
+
+    # Leaf operators must win over parent names such as
+    # decoder_0.self_attention.core_attention.scale_mask_softmax.
+    if (
+        "self_attn_bda" in lower_name
+        or "cross_attn_bda" in lower_name
+        or "mlp_bda" in lower_name
+        or "bias_dropout" in lower_name
+        or "dropout_add" in lower_name
+        or "residual" in lower_name
+        or "dropout" in lower_name
+        or "dropout" in type_name
+    ):
+        return 10, "residual_elementwise_operator"
+    if "scale_mask_softmax" in lower_name or "softmax" in lower_name or "softmax" in type_name:
+        return 7, "softmax_operator"
+    if "gelu" in lower_name or "geglu" in lower_name or "gelu" in type_name:
+        return 8, "gelu_activation_operator"
+    if "silu" in lower_name or "swiglu" in lower_name or "swiglu" in type_name:
+        return 9, "silu_swiglu_activation_operator"
+
+    if (
+        "word_embeddings" in lower_name
+        or "position_embeddings" in lower_name
+        or "tokentype_embeddings" in lower_name
+        or ("embedding" in type_name and "language" not in type_name)
+    ):
+        return 1, "embedding_operator"
+    if "embedding" in lower_name:
+        return 11, "embedding_layer"
+
+    if "cross_attention" in lower_name or "crossattention" in type_name:
+        if is_identity:
+            return 10, "residual_elementwise_operator"
+        return (17, "mla_self_attention_block") if is_mla else (12, "self_attention_block")
+    if "core_attention" in lower_name or "dot_product_attention" in lower_name:
+        return 5, "attention_core_operator"
+    if "flash" in lower_name or "flash" in type_name:
+        return 6, "flash_attention_operator"
+    if "layernorm" in lower_name or "layer_norm" in lower_name or "norm" in lower_name:
+        return 2, "normalization_operator"
+    if "linear" in lower_name or "linear" in type_name or "columnparallel" in type_name or "rowparallel" in type_name:
+        return 3, "linear_operator"
+    if "router" in lower_name or "dispatcher" in lower_name:
+        return (16, "moe_ffn_block") if is_moe else (-1, "unknown_component")
+    if "mlp" in lower_name or "ffn" in lower_name or "expert" in lower_name:
+        return (16, "moe_ffn_block") if is_moe else (13, "ffn_block")
+    if "self_attention" in lower_name or "selfattention" in type_name or "attention" in type_name:
+        return (17, "mla_self_attention_block") if is_mla else (12, "self_attention_block")
+    return -1, "unknown_component"
+
+
 def _env_flag(name: str, default: bool = False) -> bool:
     value = os.getenv(name)
     if value is None:

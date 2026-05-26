@@ -52,6 +52,7 @@ from utils.runtime.debug_utils import (
 )
 from utils.runtime.fullnet_trace import (
     COMPONENT_CATALOG,
+    classify_fullnet_component,
     maybe_perturb_tensor,
     trace_components_manifest,
     trace_event,
@@ -475,43 +476,7 @@ class Graph(LanguageModule):
             return None
 
         def _component_for_module(module_name, module):
-            lower_name = str(module_name or "").lower()
-            type_name = type(module).__name__.lower() if module is not None else ""
-            cfg = getattr(module, "config", None)
-            is_mla = bool(getattr(cfg, "multi_latent_attention", False) or "mla" in lower_name or "mla" in type_name)
-            try:
-                num_moe_experts = int(getattr(cfg, "num_moe_experts", 0) or 0)
-            except (TypeError, ValueError):
-                num_moe_experts = 0
-            is_moe = bool("moe" in lower_name or "moe" in type_name or num_moe_experts > 0)
-
-            if "output_layer" in lower_name or "lm_head" in lower_name:
-                return 15, "output_layer"
-            if lower_name.startswith("decoder_") and "." not in lower_name:
-                return 14, "decoder_block"
-            if "embedding" in lower_name:
-                return 11, "embedding_layer"
-            if "core_attention" in lower_name or "dot_product_attention" in lower_name:
-                return 5, "attention_core_operator"
-            if "flash" in lower_name or "flash" in type_name:
-                return 6, "flash_attention_operator"
-            if "softmax" in lower_name or "softmax" in type_name:
-                return 7, "softmax_operator"
-            if "layernorm" in lower_name or "layer_norm" in lower_name or "norm" in lower_name:
-                return 2, "normalization_operator"
-            if "linear" in lower_name or "linear" in type_name or "columnparallel" in type_name or "rowparallel" in type_name:
-                return 3, "linear_operator"
-            if "mlp" in lower_name or "ffn" in lower_name or "expert" in lower_name:
-                return (16, "moe_ffn_block") if is_moe else (13, "ffn_block")
-            if "self_attention" in lower_name or "attention" in type_name:
-                return (17, "mla_self_attention_block") if is_mla else (12, "self_attention_block")
-            if "dropout" in lower_name or "residual" in lower_name:
-                return 10, "residual_elementwise_operator"
-            if "gelu" in lower_name or "gelu" in type_name:
-                return 8, "gelu_activation_operator"
-            if "silu" in lower_name or "swiglu" in lower_name or "swiglu" in type_name:
-                return 9, "silu_swiglu_activation_operator"
-            return -1, "unknown_component"
+            return classify_fullnet_component(module_name, module)
 
         def _component_for_name(component_name):
             for component in COMPONENT_CATALOG:
@@ -916,6 +881,11 @@ class Graph(LanguageModule):
             """保存模块的输入输出和参数"""
             try:
                 component_id, component_name = _component_for_module(module_name, module)
+                module_extra = {
+                    "module_name": module_name,
+                    "module_type": type(module).__name__,
+                    "resolved_component": component_name,
+                }
                 _write(f"\n--- Module IO: {module_name} ---\n")
                 
                 # 记录输入
@@ -951,7 +921,7 @@ class Graph(LanguageModule):
                     input,
                     stage="module_input",
                     node_id=node_id,
-                    extra={"module_name": module_name},
+                    extra=module_extra,
                 )
                 _trace_io(
                     component_id,
@@ -960,7 +930,7 @@ class Graph(LanguageModule):
                     output,
                     stage="module_output",
                     node_id=node_id,
-                    extra={"module_name": module_name},
+                    extra=module_extra,
                 )
                 _trace_weight(
                     component_id,
@@ -969,6 +939,7 @@ class Graph(LanguageModule):
                     stage="module_weights",
                     node_id=node_id,
                     module_name=module_name,
+                    extra=module_extra,
                 )
                         
             except Exception as e:
