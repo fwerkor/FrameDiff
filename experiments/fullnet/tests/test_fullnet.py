@@ -74,7 +74,7 @@ class FullNetConfigTests(unittest.TestCase):
             )
 
             self.assertIn("export LMSV_FULLNET_TRACE=0", block)
-            self.assertNotIn("LMSV_DEBUG_COMPARE", block)
+            self.assertIn("export LMSV_DEBUG_COMPARE=0", block)
         finally:
             fullnet.Config.TRACE_ENABLED = old_trace
             if old_env is None:

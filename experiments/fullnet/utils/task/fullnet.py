@@ -350,6 +350,8 @@ def _build_trace_env_block(
         lines.append(f"export LMSV_FULLNET_PERTURB_SEED={shlex.quote(str(Config.TRACE_PERTURB_SEED))}")
     if should_trace:
         lines.append("export LMSV_DEBUG_COMPARE=${LMSV_DEBUG_COMPARE:-1}")
+    else:
+        lines.append("export LMSV_DEBUG_COMPARE=0")
     return "\n    ".join(lines)
 
 
