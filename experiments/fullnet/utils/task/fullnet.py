@@ -1036,26 +1036,12 @@ def list_model_variants(model_name):
     return variants
 
 
-def _first_existing(candidates):
-    for candidate in candidates:
-        if candidate.exists() and candidate.stat().st_size > 0:
-            return candidate
-    return None
-
-
 def resolve_variant_files(variant_dir):
-    json_candidates = [variant_dir / "mutating.json"]
-    json_candidates.extend(
-        sorted(path for path in variant_dir.glob("mutating-*.json") if "-err" not in path.name)
-    )
-    yaml_candidates = [variant_dir / "mutated_config.yaml"]
-    yaml_candidates.extend(sorted(variant_dir.glob("mutated_config_iter_*.yaml")))
-
-    json_path = _first_existing(json_candidates)
-    yaml_path = _first_existing(yaml_candidates)
-    if json_path is None or yaml_path is None:
+    json_path = variant_dir / "mutating.json"
+    yaml_path = variant_dir / "mutated_config.yaml"
+    if not json_path.exists() or json_path.stat().st_size <= 0 or not yaml_path.exists() or yaml_path.stat().st_size <= 0:
         raise FileNotFoundError(
-            f"变体缺少 mutating.json/mutated_config.yaml 或兼容编号文件: {variant_dir}"
+            f"变体缺少 mutating.json/mutated_config.yaml: {variant_dir}"
         )
     return json_path, yaml_path
 

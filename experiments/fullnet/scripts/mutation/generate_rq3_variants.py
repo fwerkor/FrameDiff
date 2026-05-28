@@ -453,11 +453,11 @@ def update_yaml_metadata(yaml_doc: dict[str, Any], variant: Variant, features: d
 def copy_ancestor_canonical(model_dir: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     ancestor_dir = model_dir / "ancestor"
     source_yaml = ancestor_dir / "mutated_config.yaml"
-    if not source_yaml.exists():
-        source_yaml = ancestor_dir / "mutated_config_iter_001.yaml"
     source_json = ancestor_dir / "mutating.json"
-    if not source_json.exists():
-        source_json = ancestor_dir / "mutating-1.json"
+    if not source_yaml.exists() or not source_json.exists():
+        raise FileNotFoundError(
+            f"{ancestor_dir} must contain canonical mutating.json and mutated_config.yaml"
+        )
     ancestor_yaml = load_yaml(source_yaml)
     ancestor_json = read_json(source_json)
 
