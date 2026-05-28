@@ -1,0 +1,2724 @@
+{
+  "0": {
+    "mutated": true,
+    "before": {},
+    "after": {
+      "TransformerConfig": {
+        "num_attention_heads": 8
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    }
+  },
+  "1": {
+    "mutated": true,
+    "before": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 16,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "after": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 8,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "pangu.yaml"
+  },
+  "2": {
+    "mutated": true,
+    "before": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 16,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "after": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 8,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "pangu.yaml"
+  },
+  "3": {
+    "mutated": true,
+    "before": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 16,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "after": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 8,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "pangu.yaml"
+  },
+  "4": {
+    "mutated": true,
+    "before": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 16,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "after": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 8,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "pangu.yaml"
+  },
+  "5": {
+    "mutated": true,
+    "before": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 16,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "after": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 8,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "pangu.yaml"
+  },
+  "6": {
+    "mutated": true,
+    "before": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 16,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "after": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 8,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "pangu.yaml"
+  },
+  "7": {
+    "mutated": true,
+    "before": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 16,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "after": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 8,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "pangu.yaml"
+  },
+  "8": {
+    "mutated": true,
+    "before": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 16,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "after": {
+      "TransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "ffn_hidden_size": 4096,
+        "num_attention_heads": 8,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "sequence_parallel": false,
+        "normalization": "LayerNorm",
+        "layernorm_epsilon": 1e-05,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": true,
+        "gated_linear_unit": false,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "init_method_std": 0.02,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "vocab_size": 40000,
+        "max_position_embeddings": 1024,
+        "position_embedding_type": "learned_absolute",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 0.0001,
+        "min_lr": 1e-06,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.999,
+        "adam_eps": 1e-08,
+        "hidden_act": "fast_gelu",
+        "post_layernorm_residual": false,
+        "eod_token": 6,
+        "pad_token": 6,
+        "use_past": false,
+        "eod_reset": true,
+        "use_moe": false,
+        "expert_num": 4,
+        "per_token_num_experts_chosen": 1,
+        "use_top_query_embedding": true,
+        "untie_embeddings_and_output_weights": false,
+        "make_vocab_size_divisible_by": 128
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": "None",
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "LayerNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          32,
+          2,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_configs": {
+        "pangu_13b": {
+          "TransformerConfig": {
+            "num_layers": 40,
+            "hidden_size": 5120,
+            "ffn_hidden_size": 20480,
+            "num_attention_heads": 40,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_2_6b": {
+          "TransformerConfig": {
+            "num_layers": 32,
+            "hidden_size": 2560,
+            "ffn_hidden_size": 10240,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 8,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        },
+        "pangu_1_3b": {
+          "TransformerConfig": {
+            "num_layers": 16,
+            "hidden_size": 1024,
+            "ffn_hidden_size": 4096,
+            "num_attention_heads": 32,
+            "tensor_model_parallel_size": 1,
+            "pipeline_model_parallel_size": 1,
+            "sequence_parallel": false,
+            "normalization": "LayerNorm",
+            "layernorm_epsilon": 1e-05,
+            "attention_dropout": 0.0,
+            "hidden_dropout": 0.0,
+            "add_bias_linear": true,
+            "gated_linear_unit": false,
+            "attention_softmax_in_fp32": true,
+            "masked_softmax_fusion": false,
+            "bf16": false,
+            "params_dtype": "torch.float32",
+            "init_method_std": 0.02,
+            "init_method": "torch.nn.init.xavier_uniform_",
+            "num_query_groups": 8
+          },
+          "extra_config": {
+            "seq_length": 1024,
+            "max_position_embeddings": 1024,
+            "micro_batch_size": 16,
+            "global_batch_size": 128
+          }
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "pangu.yaml"
+  },
+  "success": true,
+  "forward_skipped": false,
+  "baseline": true,
+  "mutation_num": 0,
+  "note": "Full-network variant with 8 decoder layers; missing decoder records are filled from pangu.yaml.",
+  "variant_name": "config_num_attention_heads_half",
+  "category": "model_structure",
+  "scope": "config",
+  "single_point": true,
+  "shape_preserving": false,
+  "crash_risk": "high",
+  "mutation": {
+    "key": "num_attention_heads",
+    "before": 16,
+    "after": 8
+  },
+  "apply_to": [
+    "pta",
+    "msa"
+  ],
+  "runtime_overrides": {
+    "env": {},
+    "runtime_args": [],
+    "launcher": {},
+    "optimizer_env": {},
+    "runtime_control": {}
+  },
+  "notes": ""
+}

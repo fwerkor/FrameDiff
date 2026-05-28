@@ -1,0 +1,1684 @@
+{
+  "0": {
+    "mutated": true,
+    "before": {},
+    "after": {
+      "TransformerConfig": {
+        "moe_router_load_balancing_type": "aux_loss"
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    }
+  },
+  "1": {
+    "mutated": true,
+    "before": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "after": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "deepseekv3.yaml"
+  },
+  "2": {
+    "mutated": true,
+    "before": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "after": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "deepseekv3.yaml"
+  },
+  "3": {
+    "mutated": true,
+    "before": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "after": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "deepseekv3.yaml"
+  },
+  "4": {
+    "mutated": true,
+    "before": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "after": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "deepseekv3.yaml"
+  },
+  "5": {
+    "mutated": true,
+    "before": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "after": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "deepseekv3.yaml"
+  },
+  "6": {
+    "mutated": true,
+    "before": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "after": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "deepseekv3.yaml"
+  },
+  "7": {
+    "mutated": true,
+    "before": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "after": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "deepseekv3.yaml"
+  },
+  "8": {
+    "mutated": true,
+    "before": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "after": {
+      "MLATransformerConfig": {
+        "num_layers": 8,
+        "hidden_size": 1024,
+        "num_attention_heads": 16,
+        "ffn_hidden_size": 2624,
+        "tensor_model_parallel_size": 1,
+        "pipeline_model_parallel_size": 1,
+        "num_moe_experts": 32,
+        "moe_router_topk": 8,
+        "moe_router_load_balancing_type": "aux_loss",
+        "moe_router_pre_softmax": true,
+        "moe_aux_loss_coeff": 0.0001,
+        "moe_router_num_groups": 1,
+        "normalization": "RMSNorm",
+        "layernorm_epsilon": 1e-06,
+        "attention_dropout": 0.0,
+        "hidden_dropout": 0.0,
+        "add_bias_linear": false,
+        "gated_linear_unit": true,
+        "attention_softmax_in_fp32": true,
+        "masked_softmax_fusion": false,
+        "bf16": false,
+        "params_dtype": "torch.float32",
+        "pipeline_dtype": "torch.float32",
+        "init_method_std": 0.01,
+        "sequence_parallel": false,
+        "moe_grouped_gemm": false,
+        "init_method": "torch.nn.init.xavier_uniform_",
+        "num_query_groups": 8
+      },
+      "extra_config": {
+        "seq_length": 1024,
+        "position_embedding_type": "rope",
+        "micro_batch_size": 1,
+        "global_batch_size": 8,
+        "lr": 3e-06,
+        "min_lr": 3e-07,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.95,
+        "adam_eps": 1e-08,
+        "expert_model_parallel_size": 1,
+        "untie_embeddings_and_output_weights": true,
+        "make_vocab_size_divisible_by": 64,
+        "vocab_size": 129280
+      },
+      "get_gpt_layer_local_spec": {
+        "num_experts": 32,
+        "moe_grouped_gemm": false,
+        "qk_layernorm": false,
+        "multi_latent_attention": false,
+        "fp8": "None",
+        "moe_use_legacy_grouped_gemm": false,
+        "normalization": "RMSNorm",
+        "qk_l2_norm": false
+      },
+      "input": {
+        "shape": [
+          256,
+          1,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "device": "cuda"
+      },
+      "attention_mask": "default",
+      "production_config": {
+        "MLATransformerConfig": {
+          "num_layers": 64,
+          "hidden_size": 7168,
+          "num_attention_heads": 128,
+          "ffn_hidden_size": 18432,
+          "tensor_model_parallel_size": 4,
+          "pipeline_model_parallel_size": 8,
+          "expert_model_parallel_size": 8,
+          "q_lora_rank": 1536,
+          "kv_lora_rank": 512,
+          "num_moe_experts": 256,
+          "moe_ffn_hidden_size": 2048,
+          "init_method": "torch.nn.init.xavier_uniform_",
+          "num_query_groups": 8
+        },
+        "extra_config": {
+          "seq_length": 1024,
+          "max_position_embeddings": 1024,
+          "micro_batch_size": 2,
+          "global_batch_size": 2048,
+          "vocab_size": 129280
+        },
+        "get_gpt_layer_local_spec": {
+          "num_experts": 256,
+          "moe_grouped_gemm": true,
+          "multi_latent_attention": true
+        }
+      }
+    },
+    "diff": {
+      "created": {},
+      "deleted": [],
+      "modified": {}
+    },
+    "source_file": "deepseekv3.yaml"
+  },
+  "success": true,
+  "forward_skipped": false,
+  "baseline": true,
+  "mutation_num": 0,
+  "note": "Full-network variant with 8 decoder layers; missing decoder records are filled from deepseekv3.yaml.",
+  "variant_name": "moe_router_load_balancing_aux_loss",
+  "category": "training_hyperparameter",
+  "scope": "config",
+  "single_point": true,
+  "shape_preserving": true,
+  "crash_risk": "medium",
+  "mutation": {
+    "key": "moe_router_load_balancing_type",
+    "before": "aux_loss",
+    "after": "aux_loss"
+  },
+  "apply_to": [
+    "pta",
+    "msa"
+  ],
+  "runtime_overrides": {
+    "env": {},
+    "runtime_args": [],
+    "launcher": {},
+    "optimizer_env": {},
+    "runtime_control": {}
+  },
+  "notes": ""
+}

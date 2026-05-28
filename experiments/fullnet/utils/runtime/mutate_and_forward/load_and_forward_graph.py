@@ -98,6 +98,18 @@ TEMPLATE_CONFIG_PATH = model_helpers.resolve_repo_path("assets/runtime/configs/t
 STRUCTURE_CONFIG_PATH = model_helpers.resolve_repo_path("assets/runtime/configs/structure_config.yaml")
 
 
+def _read_float_env(name: str, default: float) -> float:
+    raw = os.environ.get(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        if args.rank == 0:
+            print(f"[RQ3] 忽略非法{name}={raw!r}，使用默认值 {default}")
+        return default
+
+
 def _normalize_graph_node_indices(graph):
     """Convert legacy 1-based graph indices to 0-based only when needed."""
     node_keys = sorted(graph.nodes.keys())
@@ -944,10 +956,14 @@ if __name__ == "__main__":
 
         model = [DDP(model_graph[0].total_config["config"], ddp_config, model_chunk, disable_bucketing=(model_chunk_idx > 0))
          for (model_chunk_idx, model_chunk) in enumerate(model_graph)]
+        optimizer_lr = _read_float_env("LMSV_RQ3_LR", 1e-4)
+        optimizer_weight_decay = _read_float_env("LMSV_RQ3_WEIGHT_DECAY", 0.01)
+        if args.rank == 0:
+            print(f"[RQ3] optimizer lr={optimizer_lr} weight_decay={optimizer_weight_decay}")
         optimizer_config = OptimizerConfig(
             optimizer='adam',
-            lr=1e-4,
-            weight_decay=0.01,
+            lr=optimizer_lr,
+            weight_decay=optimizer_weight_decay,
         )
         optimizer = get_megatron_optimizer(
             config=optimizer_config,

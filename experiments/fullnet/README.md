@@ -52,7 +52,9 @@ FrameDiff uses this slice for language-model full-network precision experiments:
 5. Run `pta-preturb` and `msa-preturb` with a one-way `+eps` tensor perturbation.
 6. Write public tensor artifacts under `output` and keep scripts, logs, CSVs, variant inputs, trace indexes, summaries, and analysis artifacts under `records`.
 
-The public config keeps PTA/MSA paths, output root, selected models, `PERTURB_EPS`, and baseline loss tolerance. Fullnet runs exactly one outer iteration and one training step per stage; these counts are fixed by the workflow rather than user config. There is no runtime mutation step: each variant supplies `mutating.json` + `mutated_config.yaml` or the compatible numbered filenames. Public tensor artifacts are kept separate from trace indexes and runtime records.
+The public config keeps PTA/MSA paths, output root, selected models, iteration count, load-step count, `PERTURB_EPS`, and baseline loss tolerance. There is no runtime mutation step: each variant supplies `mutating.json` + `mutated_config.yaml`. Public tensor artifacts are kept separate from trace indexes and runtime records.
+
+RQ3 variants are pre-generated under `../mutated_config/<model>/<variant>/`, with `ancestor` and all enabled variants as sibling directories. `mutating.json` is both experiment metadata and the source for runtime overrides; it keeps the legacy numeric node records required by `Graph.load()` and adds `runtime_overrides` for environment variables, GPT runtime args, launcher parallelism, optimizer knobs, and per-variant runtime controls. The generated manifests record common variants plus model-specific MoE, MLA, GQA, MLP fusion, and structure variants, along with skipped variants that are not applicable to that model.
 
 ## Key Files
 

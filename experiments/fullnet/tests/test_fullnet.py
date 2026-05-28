@@ -92,6 +92,7 @@ class FullNetConfigTests(unittest.TestCase):
                 "TARGET_TENSOR_PARALLEL_SIZE",
                 "TARGET_PIPELINE_PARALLEL_SIZE",
                 "TARGET_EXPERT_PARALLEL_SIZE",
+                "TARGET_CONTEXT_PARALLEL_SIZE",
                 "TARGET_NPUS_PER_NODE",
                 "TARGET_WORLD_SIZE",
                 "ENABLE_DATA_PARALLEL",
@@ -102,6 +103,7 @@ class FullNetConfigTests(unittest.TestCase):
             fullnet.Config.TARGET_TENSOR_PARALLEL_SIZE = 0
             fullnet.Config.TARGET_PIPELINE_PARALLEL_SIZE = 0
             fullnet.Config.TARGET_EXPERT_PARALLEL_SIZE = 0
+            fullnet.Config.TARGET_CONTEXT_PARALLEL_SIZE = 0
             fullnet.Config.TARGET_NPUS_PER_NODE = 0
             fullnet.Config.TARGET_WORLD_SIZE = 0
             fullnet.Config.ENABLE_DATA_PARALLEL = False
@@ -122,6 +124,7 @@ class FullNetConfigTests(unittest.TestCase):
             fullnet.Config.TARGET_TENSOR_PARALLEL_SIZE = 0
             fullnet.Config.TARGET_PIPELINE_PARALLEL_SIZE = 0
             fullnet.Config.TARGET_EXPERT_PARALLEL_SIZE = 0
+            fullnet.Config.TARGET_CONTEXT_PARALLEL_SIZE = 0
             fullnet.Config.TARGET_NPUS_PER_NODE = 0
             fullnet.Config.TARGET_WORLD_SIZE = 0
             fullnet.Config.ENABLE_DATA_PARALLEL = False
@@ -134,6 +137,7 @@ class FullNetConfigTests(unittest.TestCase):
             fullnet.Config.TARGET_TENSOR_PARALLEL_SIZE = 0
             fullnet.Config.TARGET_PIPELINE_PARALLEL_SIZE = 0
             fullnet.Config.TARGET_EXPERT_PARALLEL_SIZE = 0
+            fullnet.Config.TARGET_CONTEXT_PARALLEL_SIZE = 0
             fullnet.Config.TARGET_NPUS_PER_NODE = 0
             fullnet.Config.TARGET_WORLD_SIZE = 0
             fullnet.Config.ENABLE_DATA_PARALLEL = False
@@ -149,6 +153,37 @@ class FullNetConfigTests(unittest.TestCase):
                 os.environ["ASCEND_RT_VISIBLE_DEVICES"] = old_env
             for name, value in old_values.items():
                 setattr(fullnet.Config, name, value)
+
+    def test_variant_runtime_overrides_are_injected(self) -> None:
+        from utils.task import fullnet
+
+        cmd = fullnet.build_pta_verify_stage_cmd(
+            1,
+            "-c model_config -r 1 --mutnm 0 -n 1 -m model_config/qwen2.yaml",
+            "res/qwen2/mutating-1.json",
+            "pta",
+            "/tmp/pta",
+            "/tmp/shared.pth",
+            "load",
+            1,
+            runtime_args_list=["--bf16", "--sequence-parallel"],
+            launcher_overrides={
+                "TARGET_TENSOR_PARALLEL_SIZE": 2,
+                "TARGET_CONTEXT_PARALLEL_SIZE": 2,
+                "TARGET_WORLD_SIZE": 4,
+                "TARGET_NPUS_PER_NODE": 4,
+            },
+            env_overrides={"HCCL_DETERMINISTIC": False, "CUDA_DEVICE_MAX_CONNECTIONS": "default"},
+            optimizer_env={"LMSV_RQ3_LR": "3e-4"},
+        )
+
+        self.assertIn("--bf16", cmd)
+        self.assertIn("--sequence-parallel", cmd)
+        self.assertIn("--context-parallel-size 2", cmd)
+        self.assertIn("NPUS_PER_NODE=4", cmd)
+        self.assertIn("export HCCL_DETERMINISTIC=false", cmd)
+        self.assertIn("unset CUDA_DEVICE_MAX_CONNECTIONS", cmd)
+        self.assertIn("export LMSV_RQ3_LR=3e-4", cmd)
 
     def test_cli_dry_run_outputs_fullnet_config(self) -> None:
         result = subprocess.run(

@@ -20,7 +20,9 @@ The runner reads the selected model config and builds the corresponding decoder 
 
 ## Comparison Path
 
-The extracted workflow reads prepared variants from `../mutated_config/<model>/`. `ancestor` runs `prepare`; every variant then runs `pta-baseline`, `msa-baseline`, `pta-preturb`, and `msa-preturb` with the shared ancestor weight. The workflow always runs one outer iteration and one training step per stage; these counts are intentionally fixed and are not exposed through user config.
+The extracted workflow reads prepared variants from `../mutated_config/<model>/`. `ancestor` runs `prepare`; every enabled variant then runs `pta-baseline`, `msa-baseline`, `pta-preturb`, and `msa-preturb` with the shared ancestor weight.
+
+RQ3 variants are stored as sibling directories beside `ancestor`. Each variant supplies `mutating.json` and `mutated_config.yaml`; `mutating.json` preserves the legacy node records required by graph loading and adds paper metadata plus `runtime_overrides` for runtime args, launcher settings, environment variables, optimizer settings, and runtime controls. Per-model manifests record generated variants and skipped model-inapplicable variants.
 
 ## Trace Controls
 

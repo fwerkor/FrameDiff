@@ -1,0 +1,19 @@
+{
+  "model_count": 12,
+  "models": [
+    "baichuan2",
+    "chatglm3",
+    "codellama",
+    "deepseekv3",
+    "glm4",
+    "grok1",
+    "llama2",
+    "mixtral",
+    "pangu",
+    "qwen2",
+    "qwen3",
+    "yi"
+  ],
+  "total_variant_count": 468,
+  "generated_at": "2026-05-28T11:25:25"
+}
