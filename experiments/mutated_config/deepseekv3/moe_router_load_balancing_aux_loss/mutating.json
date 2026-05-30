@@ -1659,7 +1659,7 @@
   "mutation_num": 0,
   "note": "Full-network variant with 8 decoder layers; missing decoder records are filled from deepseekv3.yaml.",
   "variant_name": "moe_router_load_balancing_aux_loss",
-  "category": "training_hyperparameter",
+  "category": "model_structure",
   "scope": "config",
   "single_point": true,
   "shape_preserving": true,

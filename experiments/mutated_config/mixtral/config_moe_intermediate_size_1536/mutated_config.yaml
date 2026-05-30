@@ -92,7 +92,7 @@ metadata:
   note: Full-network load product; graph_structure expands to the model decoder depth.
   decoder_layers: 4
   variant_name: config_moe_intermediate_size_1536
-  category: training_hyperparameter
+  category: model_structure
   scope: config
   single_point: true
   shape_preserving: true
@@ -101,4 +101,4 @@ metadata:
     key: moe_intermediate_size
     before: null
     after: 1536
-  generated_at: '2026-05-28T11:25:24'
+  generated_at: '2026-05-30T12:23:27'

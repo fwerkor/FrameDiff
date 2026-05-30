@@ -182,7 +182,7 @@ metadata:
   note: Full-network load product; graph_structure expands to the model decoder depth.
   decoder_layers: 12
   variant_name: linear_bias_off
-  category: training_hyperparameter
+  category: model_structure
   scope: config
   single_point: true
   shape_preserving: true
@@ -191,4 +191,4 @@ metadata:
     key: add_bias_linear
     before: false
     after: false
-  generated_at: '2026-05-28T11:25:25'
+  generated_at: '2026-05-30T12:23:29'

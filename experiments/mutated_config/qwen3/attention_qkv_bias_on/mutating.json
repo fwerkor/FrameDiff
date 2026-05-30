@@ -3827,7 +3827,7 @@
   "mutation_num": 0,
   "note": "Full-network variant with 28 decoder layers; missing decoder records are filled from qwen3.yaml.",
   "variant_name": "attention_qkv_bias_on",
-  "category": "training_hyperparameter",
+  "category": "model_structure",
   "scope": "config",
   "single_point": true,
   "shape_preserving": true,

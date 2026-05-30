@@ -220,7 +220,7 @@ metadata:
   note: Full-network load product; graph_structure expands to the model decoder depth.
   decoder_layers: 28
   variant_name: attention_qkv_bias_off
-  category: training_hyperparameter
+  category: model_structure
   scope: config
   single_point: true
   shape_preserving: true
@@ -229,4 +229,4 @@ metadata:
     key: add_qkv_bias
     before: true
     after: false
-  generated_at: '2026-05-28T11:25:22'
+  generated_at: '2026-05-30T12:23:25'

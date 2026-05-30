@@ -96,4 +96,4 @@ metadata:
     key: ffn_hidden_size
     before: 2048
     after: 1536
-  generated_at: '2026-05-28T11:25:22'
+  generated_at: '2026-05-30T12:23:25'

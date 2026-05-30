@@ -2323,7 +2323,7 @@
   "mutation_num": 0,
   "note": "Full-network variant with 12 decoder layers; missing decoder records are filled from yi.yaml.",
   "variant_name": "attention_qkv_bias_off",
-  "category": "training_hyperparameter",
+  "category": "model_structure",
   "scope": "config",
   "single_point": true,
   "shape_preserving": true,

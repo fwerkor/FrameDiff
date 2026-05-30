@@ -951,20 +951,31 @@ if __name__ == "__main__":
         if args.rank == 0:
             print(f"模型已移动到设备: {device}")
 
-        ddp_config = DistributedDataParallelConfig(use_distributed_optimizer=False)
+        use_distributed_optimizer = bool(getattr(args, "use_distributed_optimizer", False))
+        reuse_fp32_param = bool(getattr(args, "reuse_fp32_param", False))
+        ddp_config = DistributedDataParallelConfig(use_distributed_optimizer=use_distributed_optimizer)
         model_graph = [graph]
 
         model = [DDP(model_graph[0].total_config["config"], ddp_config, model_chunk, disable_bucketing=(model_chunk_idx > 0))
          for (model_chunk_idx, model_chunk) in enumerate(model_graph)]
         optimizer_lr = _read_float_env("LMSV_RQ3_LR", 1e-4)
         optimizer_weight_decay = _read_float_env("LMSV_RQ3_WEIGHT_DECAY", 0.01)
+        optimizer_kwargs = {
+            "optimizer": 'adam',
+            "lr": optimizer_lr,
+            "weight_decay": optimizer_weight_decay,
+        }
+        optimizer_fields = getattr(OptimizerConfig, "__dataclass_fields__", {}) or {}
+        if "use_distributed_optimizer" in optimizer_fields:
+            optimizer_kwargs["use_distributed_optimizer"] = use_distributed_optimizer
+        if "reuse_fp32_param" in optimizer_fields:
+            optimizer_kwargs["reuse_fp32_param"] = reuse_fp32_param
         if args.rank == 0:
-            print(f"[RQ3] optimizer lr={optimizer_lr} weight_decay={optimizer_weight_decay}")
-        optimizer_config = OptimizerConfig(
-            optimizer='adam',
-            lr=optimizer_lr,
-            weight_decay=optimizer_weight_decay,
-        )
+            print(
+                f"[RQ3] optimizer lr={optimizer_lr} weight_decay={optimizer_weight_decay} "
+                f"use_distributed_optimizer={use_distributed_optimizer} reuse_fp32_param={reuse_fp32_param}"
+            )
+        optimizer_config = OptimizerConfig(**optimizer_kwargs)
         optimizer = get_megatron_optimizer(
             config=optimizer_config,
             model_chunks=model

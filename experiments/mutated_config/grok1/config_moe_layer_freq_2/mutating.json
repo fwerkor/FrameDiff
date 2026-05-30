@@ -571,7 +571,7 @@
   "mutation_num": 0,
   "note": "Full-network variant with 4 decoder layers; missing decoder records are filled from grok1.yaml.",
   "variant_name": "config_moe_layer_freq_2",
-  "category": "training_hyperparameter",
+  "category": "model_structure",
   "scope": "config",
   "single_point": true,
   "shape_preserving": true,

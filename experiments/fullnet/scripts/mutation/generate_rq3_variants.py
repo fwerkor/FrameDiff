@@ -125,6 +125,7 @@ def set_json_extra_key(mutating_doc: dict[str, Any], key: str, value: Any) -> No
         extra_cfg = after.setdefault("extra_config", {})
         if isinstance(extra_cfg, dict):
             extra_cfg[key] = value
+            record["mutated"] = True
 
 
 def set_json_spec_key(mutating_doc: dict[str, Any], key: str, value: Any) -> None:
@@ -137,6 +138,7 @@ def set_json_spec_key(mutating_doc: dict[str, Any], key: str, value: Any) -> Non
         spec_cfg = after.setdefault("get_gpt_layer_local_spec", {})
         if isinstance(spec_cfg, dict):
             spec_cfg[key] = value
+            record["mutated"] = True
 
 
 def set_config_key(key: str, value: Any, *, extra_key: str | None = None, spec_key: str | None = None) -> Callable:
@@ -156,6 +158,26 @@ def set_base_key(key: str, value: Any, *, extra_key: str | None = None) -> Calla
         set_yaml_base_key(yaml_doc, key, value)
         if extra_key:
             set_json_extra_key(mutating_doc, extra_key, value)
+
+    return _apply
+
+
+def set_yaml_extra_key(doc: dict[str, Any], key: str, value: Any) -> None:
+    doc.setdefault("extra_config", {})[key] = value
+
+
+def set_extra_config_key(key: str, value: Any) -> Callable:
+    def _apply(yaml_doc: dict[str, Any], mutating_doc: dict[str, Any]) -> None:
+        set_yaml_extra_key(yaml_doc, key, value)
+        set_json_extra_key(mutating_doc, key, value)
+
+    return _apply
+
+
+def set_base_position_embedding(value: str) -> Callable:
+    def _apply(yaml_doc: dict[str, Any], mutating_doc: dict[str, Any]) -> None:
+        set_yaml_base_key(yaml_doc, "position_embedding_type", value)
+        set_json_extra_key(mutating_doc, "position_embedding_type", value)
 
     return _apply
 
@@ -248,7 +270,30 @@ def env_variant(name: str, env: dict[str, Any], key: str, after: Any) -> Variant
 def runtime_control_variant(name: str, control: dict[str, Any], key: str, after: Any) -> Variant:
     overrides = default_overrides()
     overrides["runtime_control"] = control
-    return Variant(name, "training_hyperparameter", "runtime_control", key, after, runtime_overrides=overrides)
+    return Variant(name, "training_config", "runtime_control", key, after, runtime_overrides=overrides)
+
+
+def config_optimizer_variant(
+    name: str,
+    env: dict[str, Any],
+    key: str,
+    after: Any,
+    *,
+    apply: Callable[[dict[str, Any], dict[str, Any]], None] | None = None,
+    risk: str = "medium",
+) -> Variant:
+    overrides = default_overrides()
+    overrides["optimizer_env"] = env
+    return Variant(
+        name,
+        "training_config",
+        "config",
+        key,
+        after,
+        apply=apply,
+        runtime_overrides=overrides,
+        crash_risk=risk,
+    )
 
 
 def has_moe(features: dict[str, Any]) -> bool:
@@ -275,6 +320,14 @@ def has_swiglu(features: dict[str, Any]) -> bool:
         for source in (features["transformer"], features["extra"])
         for key in ("gated_linear_unit", "swiglu", "use_fused_swiglu", "bias_swiglu_fusion", "bias_activation_fusion", "use_fused_mlp")
     )
+
+
+def model_is(name: str) -> Callable[[dict[str, Any]], bool]:
+    return lambda features: features.get("model_name") == name
+
+
+def never_generate(_features: dict[str, Any]) -> bool:
+    return False
 
 
 def tp_valid(tp: int) -> Callable[[dict[str, Any]], bool]:
@@ -340,9 +393,9 @@ def ffn_scaled_apply(features: dict[str, Any]) -> Callable:
 def build_variants(features: dict[str, Any]) -> list[Variant]:
     cfg = features["yaml_config"]
     heads = as_int(cfg.get("num_attention_heads"), 1)
-    groups = as_int(cfg.get("num_query_groups"), heads)
     base_kv = max(1, as_int(cfg.get("kv_channels"), as_int(cfg.get("hidden_size"), heads) // max(1, heads)))
     variants: list[Variant] = [
+        # Factor 1: runtime optimization mechanisms.
         runtime_args_variant("runtime_flash_attn_on", ["--use-flash-attn"], "use_flash_attn", risk="high"),
         runtime_args_variant("runtime_softmax_fp32_on", ["--attention-softmax-in-fp32"], "attention_softmax_in_fp32"),
         runtime_args_variant("runtime_masked_softmax_fusion_off", ["--no-masked-softmax-fusion"], "masked_softmax_fusion"),
@@ -357,6 +410,8 @@ def build_variants(features: dict[str, Any]) -> list[Variant]:
         runtime_args_variant("runtime_recompute_granularity_full", ["--recompute-granularity", "full"], "recompute_granularity", risk="medium"),
         runtime_args_variant("runtime_recompute_method_uniform", ["--recompute-method", "uniform"], "recompute_method", risk="medium"),
         runtime_args_variant("runtime_recompute_num_layers_1", ["--recompute-num-layers", "1"], "recompute_num_layers", risk="medium"),
+
+        # Factor 2: parallel strategies.
         launcher_variant("parallel_tp1", {"TARGET_TENSOR_PARALLEL_SIZE": 1}, "tensor_parallel_size", 1, risk="low", condition=tp_valid(1)),
         launcher_variant("parallel_tp2", {"TARGET_TENSOR_PARALLEL_SIZE": 2}, "tensor_parallel_size", 2, risk="medium", condition=tp_valid(2)),
         launcher_variant("parallel_tp4", {"TARGET_TENSOR_PARALLEL_SIZE": 4}, "tensor_parallel_size", 4, risk="high", condition=tp_valid(4)),
@@ -365,25 +420,45 @@ def build_variants(features: dict[str, Any]) -> list[Variant]:
         launcher_variant("parallel_data_parallel_2", {"TARGET_TENSOR_PARALLEL_SIZE": 1, "TARGET_PIPELINE_PARALLEL_SIZE": 1, "TARGET_EXPERT_PARALLEL_SIZE": 1, "TARGET_CONTEXT_PARALLEL_SIZE": 1, "TARGET_WORLD_SIZE": 2, "TARGET_NPUS_PER_NODE": 2, "ENABLE_DATA_PARALLEL": True}, "data_parallel_size", 2, risk="high"),
         runtime_args_variant("runtime_sequence_parallel_on", ["--sequence-parallel"], "sequence_parallel", risk="medium"),
         launcher_variant("parallel_context_parallel_2", {"TARGET_CONTEXT_PARALLEL_SIZE": 2, "TARGET_WORLD_SIZE": 2, "TARGET_NPUS_PER_NODE": 2}, "context_parallel_size", 2, risk="high"),
-        Variant("moe_router_load_balancing_none", "training_hyperparameter", "config", "moe_router_load_balancing_type", "none", apply=set_config_key("moe_router_load_balancing_type", "none"), condition=has_moe, crash_risk="high"),
-        Variant("moe_router_load_balancing_aux_loss", "training_hyperparameter", "config", "moe_router_load_balancing_type", "aux_loss", apply=set_config_key("moe_router_load_balancing_type", "aux_loss"), condition=has_moe, crash_risk="medium"),
-        Variant("moe_router_pre_softmax_on", "training_hyperparameter", "config", "moe_router_pre_softmax", True, apply=set_config_key("moe_router_pre_softmax", True), condition=has_moe, crash_risk="medium"),
-        Variant("moe_router_pre_softmax_off", "training_hyperparameter", "config", "moe_router_pre_softmax", False, apply=set_config_key("moe_router_pre_softmax", False), condition=has_moe, crash_risk="medium"),
-        Variant("config_first_k_dense_replace_0", "training_hyperparameter", "config", "first_k_dense_replace", 0, apply=set_config_key("first_k_dense_replace", 0), condition=has_moe, crash_risk="high"),
-        Variant("config_moe_layer_freq_2", "training_hyperparameter", "config", "moe_layer_freq", 2, apply=set_config_key("moe_layer_freq", 2), condition=has_moe, crash_risk="high"),
-        Variant("config_n_shared_experts_2", "training_hyperparameter", "config", "n_shared_experts", 2, apply=set_config_key("n_shared_experts", 2), condition=has_moe, crash_risk="high"),
-        Variant("config_num_moe_experts_8", "training_hyperparameter", "config", "num_moe_experts", 8, apply=set_config_key("num_moe_experts", 8, spec_key="num_experts"), condition=has_moe, crash_risk="high"),
-        Variant("config_moe_intermediate_size_1536", "training_hyperparameter", "config", "moe_intermediate_size", 1536, apply=set_config_key("moe_ffn_hidden_size", 1536), condition=has_moe, crash_risk="high", before=lambda f: simple_before(f, "moe_ffn_hidden_size")),
-        Variant("linear_bias_on", "training_hyperparameter", "config", "add_bias_linear", True, apply=set_config_key("add_bias_linear", True), crash_risk="medium", notes="MoE models may force add_bias_linear=false"),
-        Variant("linear_bias_off", "training_hyperparameter", "config", "add_bias_linear", False, apply=set_config_key("add_bias_linear", False), crash_risk="low"),
-        Variant("attention_qkv_bias_on", "training_hyperparameter", "config", "add_qkv_bias", True, apply=set_config_key("add_qkv_bias", True), crash_risk="medium"),
-        Variant("attention_qkv_bias_off", "training_hyperparameter", "config", "add_qkv_bias", False, apply=set_config_key("add_qkv_bias", False), crash_risk="medium"),
+
+        # Factor 3: training configuration.
+        Variant("moe_aux_loss_coeff_0", "training_config", "config", "moe_aux_loss_coeff", 0, apply=set_config_key("moe_aux_loss_coeff", 0), condition=has_moe, crash_risk="medium"),
+        Variant("moe_aux_loss_coeff_1e_2", "training_config", "config", "moe_aux_loss_coeff", 0.01, apply=set_config_key("moe_aux_loss_coeff", 0.01), condition=has_moe, crash_risk="medium"),
+        Variant("config_moe_device_level_aux_loss_coeff_0_03", "training_config", "config", "moe_device_level_aux_loss_coeff", 0.03, apply=set_config_key("moe_device_level_aux_loss_coeff", 0.03), condition=has_moe, crash_risk="medium"),
+        Variant("config_moe_comm_aux_loss_coeff_0_01", "training_config", "config", "moe_comm_aux_loss_coeff", 0.01, apply=set_config_key("moe_comm_aux_loss_coeff", 0.01), condition=has_moe, crash_risk="medium"),
+        Variant("config_seq_aux_on", "training_config", "config", "seq_aux", True, apply=set_config_key("seq_aux", True), condition=has_moe, crash_risk="medium"),
+        config_optimizer_variant("train_lr_1e_3", {"LMSV_RQ3_LR": "1e-3"}, "lr", 1e-3, apply=set_extra_config_key("lr", 1e-3), risk="medium"),
+        config_optimizer_variant("train_weight_decay_0", {"LMSV_RQ3_WEIGHT_DECAY": "0"}, "weight_decay", 0, apply=set_extra_config_key("weight_decay", 0), risk="medium"),
+        Variant("config_layernorm_eps_1e_7", "training_config", "config", "layernorm_epsilon", 1e-7, apply=set_config_key("layernorm_epsilon", 1e-7), crash_risk="medium"),
+
+        # Factor 4: numerical precision control.
         runtime_args_variant("precision_bf16_on", ["--bf16"], "bf16", risk="medium"),
         runtime_args_variant("precision_fp16_on", ["--fp16"], "fp16", risk="high"),
         runtime_args_variant("precision_accumulate_grads_fp32_on", ["--accumulate-allreduce-grads-in-fp32"], "accumulate_allreduce_grads_in_fp32", risk="medium"),
         runtime_args_variant("precision_fp32_residual_on", ["--fp32-residual-connection"], "fp32_residual_connection", risk="medium"),
+        runtime_args_variant("runtime_use_distributed_optimizer_on", ["--use-distributed-optimizer"], "use_distributed_optimizer", risk="high"),
+        runtime_args_variant("runtime_reuse_fp32_param_on", ["--reuse-fp32-param"], "reuse_fp32_param", risk="high"),
         Variant("config_normalization_layernorm", "precision_control", "config", "normalization", "LayerNorm", apply=set_config_key("normalization", "LayerNorm", spec_key="normalization"), crash_risk="medium"),
         Variant("config_qk_layernorm_on", "precision_control", "config", "qk_layernorm", True, apply=set_config_key("qk_layernorm", True, spec_key="qk_layernorm"), crash_risk="medium"),
+        Variant("config_embedding_multiplier_scale_78_38", "precision_control", "config", "embedding_multiplier_scale", 78.38, apply=set_config_key("embedding_multiplier_scale", 78.38), condition=model_is("grok1"), crash_risk="high", notes="Grok-1 numeric scaling variant"),
+        Variant("config_output_multiplier_scale_0_57", "precision_control", "config", "output_multiplier_scale", 0.57, apply=set_config_key("output_multiplier_scale", 0.57), condition=model_is("grok1"), crash_risk="high", notes="Grok-1 numeric scaling variant"),
+
+        # Factor 5: model structure configuration.
+        Variant("config_first_k_dense_replace_0", "model_structure", "config", "first_k_dense_replace", 0, apply=set_config_key("first_k_dense_replace", 0), condition=has_moe, crash_risk="high"),
+        Variant("config_moe_layer_freq_2", "model_structure", "config", "moe_layer_freq", 2, apply=set_config_key("moe_layer_freq", 2), condition=has_moe, crash_risk="high"),
+        Variant("config_n_shared_experts_2", "model_structure", "config", "n_shared_experts", 2, apply=set_config_key("n_shared_experts", 2), condition=has_moe, crash_risk="high"),
+        Variant("config_num_moe_experts_8", "model_structure", "config", "num_moe_experts", 8, apply=set_config_key("num_moe_experts", 8, spec_key="num_experts"), condition=has_moe, crash_risk="high"),
+        Variant("config_moe_intermediate_size_1536", "model_structure", "config", "moe_intermediate_size", 1536, apply=set_config_key("moe_ffn_hidden_size", 1536), condition=has_moe, crash_risk="high", before=lambda f: simple_before(f, "moe_ffn_hidden_size")),
+        Variant("moe_router_load_balancing_none", "model_structure", "config", "moe_router_load_balancing_type", "none", apply=set_config_key("moe_router_load_balancing_type", "none"), condition=has_moe, crash_risk="high"),
+        Variant("moe_router_load_balancing_aux_loss", "model_structure", "config", "moe_router_load_balancing_type", "aux_loss", apply=set_config_key("moe_router_load_balancing_type", "aux_loss"), condition=has_moe, crash_risk="medium"),
+        Variant("moe_router_pre_softmax_on", "model_structure", "config", "moe_router_pre_softmax", True, apply=set_config_key("moe_router_pre_softmax", True), condition=has_moe, crash_risk="medium"),
+        Variant("moe_router_pre_softmax_off", "model_structure", "config", "moe_router_pre_softmax", False, apply=set_config_key("moe_router_pre_softmax", False), condition=has_moe, crash_risk="medium"),
+        Variant("config_input_jitter_on", "model_structure", "config", "input_jitter", True, apply=set_config_key("input_jitter", True), condition=model_is("deepseekv3"), crash_risk="high", notes="DeepSeekV3 MoE router jitter variant"),
+        Variant("linear_bias_on", "model_structure", "config", "add_bias_linear", True, apply=set_config_key("add_bias_linear", True), crash_risk="medium", notes="MoE models may force add_bias_linear=false"),
+        Variant("linear_bias_off", "model_structure", "config", "add_bias_linear", False, apply=set_config_key("add_bias_linear", False), crash_risk="low"),
+        Variant("attention_qkv_bias_on", "model_structure", "config", "add_qkv_bias", True, apply=set_config_key("add_qkv_bias", True), crash_risk="medium"),
+        Variant("attention_qkv_bias_off", "model_structure", "config", "add_qkv_bias", False, apply=set_config_key("add_qkv_bias", False), crash_risk="medium"),
+        Variant("config_position_embedding_learned", "model_structure", "config", "position_embedding_type", "learned_absolute", apply=set_base_position_embedding("learned_absolute"), condition=never_generate, crash_risk="high", notes="disabled: current script constraints only allow rope prepared variants"),
         Variant("mla_qk_head_dim_scaled_0_75", "model_structure", "config", "qk_head_dim", round_down_multiple(int(base_kv * 0.75), 8), apply=set_config_key("qk_head_dim", round_down_multiple(int(base_kv * 0.75), 8)), condition=has_mla, crash_risk="high", shape_preserving=False),
         Variant("mla_v_head_dim_scaled_0_75", "model_structure", "config", "v_head_dim", round_down_multiple(int(base_kv * 0.75), 8), apply=set_config_key("v_head_dim", round_down_multiple(int(base_kv * 0.75), 8)), condition=has_mla, crash_risk="high", shape_preserving=False),
         Variant("mla_q_lora_rank_scaled_0_5", "model_structure", "config", "q_lora_rank", 96, apply=set_config_key("q_lora_rank", 96), condition=has_mla, crash_risk="high", shape_preserving=False),
@@ -400,7 +475,6 @@ def build_variants(features: dict[str, Any]) -> list[Variant]:
         Variant("mlp_gated_linear_unit_toggle", "model_structure", "config", "gated_linear_unit", not bool(cfg.get("gated_linear_unit", False)), apply=set_config_key("gated_linear_unit", not bool(cfg.get("gated_linear_unit", False))), condition=lambda f: "gated_linear_unit" in f["yaml_config"], crash_risk="high", shape_preserving=False),
     ]
     return variants
-
 
 def annotate_mutating_doc(mutating_doc: dict[str, Any], variant: Variant, features: dict[str, Any]) -> None:
     overrides = copy.deepcopy(default_overrides())
@@ -506,6 +580,7 @@ def generate_model(model_name: str) -> dict[str, Any]:
     model_doc = load_yaml(MODEL_CONFIG_ROOT / f"{model_name}.yaml")
     section_name, transformer, extra, spec = active_sections(model_doc)
     features = {
+        "model_name": model_name,
         "section_name": section_name,
         "transformer": transformer,
         "extra": extra,

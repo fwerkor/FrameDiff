@@ -91,7 +91,7 @@ metadata:
   note: Full-network load product; graph_structure expands to the model decoder depth.
   decoder_layers: 4
   variant_name: config_num_moe_experts_8
-  category: training_hyperparameter
+  category: model_structure
   scope: config
   single_point: true
   shape_preserving: true
@@ -100,4 +100,4 @@ metadata:
     key: num_moe_experts
     before: 4
     after: 8
-  generated_at: '2026-05-28T11:25:24'
+  generated_at: '2026-05-30T12:23:27'

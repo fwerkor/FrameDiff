@@ -1667,7 +1667,7 @@
   "mutation_num": 0,
   "note": "Full-network variant with 8 decoder layers; missing decoder records are filled from deepseekv3.yaml.",
   "variant_name": "config_moe_intermediate_size_1536",
-  "category": "training_hyperparameter",
+  "category": "model_structure",
   "scope": "config",
   "single_point": true,
   "shape_preserving": true,

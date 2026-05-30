@@ -1,6 +1,6 @@
 {
   "model": "chatglm3",
-  "variant_count": 35,
+  "variant_count": 40,
   "variants": [
     {
       "variant": "ancestor",
@@ -163,34 +163,26 @@
       "shape_preserving": true
     },
     {
-      "variant": "linear_bias_on",
-      "category": "training_hyperparameter",
+      "variant": "train_lr_1e_3",
+      "category": "training_config",
       "scope": "config",
-      "mutation_key": "add_bias_linear",
+      "mutation_key": "lr",
       "crash_risk": "medium",
       "shape_preserving": true
     },
     {
-      "variant": "linear_bias_off",
-      "category": "training_hyperparameter",
+      "variant": "train_weight_decay_0",
+      "category": "training_config",
       "scope": "config",
-      "mutation_key": "add_bias_linear",
-      "crash_risk": "low",
-      "shape_preserving": true
-    },
-    {
-      "variant": "attention_qkv_bias_on",
-      "category": "training_hyperparameter",
-      "scope": "config",
-      "mutation_key": "add_qkv_bias",
+      "mutation_key": "weight_decay",
       "crash_risk": "medium",
       "shape_preserving": true
     },
     {
-      "variant": "attention_qkv_bias_off",
-      "category": "training_hyperparameter",
+      "variant": "config_layernorm_eps_1e_7",
+      "category": "training_config",
       "scope": "config",
-      "mutation_key": "add_qkv_bias",
+      "mutation_key": "layernorm_epsilon",
       "crash_risk": "medium",
       "shape_preserving": true
     },
@@ -227,6 +219,22 @@
       "shape_preserving": true
     },
     {
+      "variant": "runtime_use_distributed_optimizer_on",
+      "category": "runtime_optimization",
+      "scope": "runtime_args",
+      "mutation_key": "use_distributed_optimizer",
+      "crash_risk": "high",
+      "shape_preserving": true
+    },
+    {
+      "variant": "runtime_reuse_fp32_param_on",
+      "category": "runtime_optimization",
+      "scope": "runtime_args",
+      "mutation_key": "reuse_fp32_param",
+      "crash_risk": "high",
+      "shape_preserving": true
+    },
+    {
       "variant": "config_normalization_layernorm",
       "category": "precision_control",
       "scope": "config",
@@ -239,6 +247,38 @@
       "category": "precision_control",
       "scope": "config",
       "mutation_key": "qk_layernorm",
+      "crash_risk": "medium",
+      "shape_preserving": true
+    },
+    {
+      "variant": "linear_bias_on",
+      "category": "model_structure",
+      "scope": "config",
+      "mutation_key": "add_bias_linear",
+      "crash_risk": "medium",
+      "shape_preserving": true
+    },
+    {
+      "variant": "linear_bias_off",
+      "category": "model_structure",
+      "scope": "config",
+      "mutation_key": "add_bias_linear",
+      "crash_risk": "low",
+      "shape_preserving": true
+    },
+    {
+      "variant": "attention_qkv_bias_on",
+      "category": "model_structure",
+      "scope": "config",
+      "mutation_key": "add_qkv_bias",
+      "crash_risk": "medium",
+      "shape_preserving": true
+    },
+    {
+      "variant": "attention_qkv_bias_off",
+      "category": "model_structure",
+      "scope": "config",
+      "mutation_key": "add_qkv_bias",
       "crash_risk": "medium",
       "shape_preserving": true
     },
@@ -312,44 +352,71 @@
       "shape_preserving": true
     },
     {
-      "variant": "moe_router_load_balancing_none",
-      "category": "training_hyperparameter",
+      "variant": "moe_aux_loss_coeff_0",
+      "category": "training_config",
       "scope": "config",
-      "mutation_key": "moe_router_load_balancing_type",
+      "mutation_key": "moe_aux_loss_coeff",
+      "reason": "not_applicable_to_model_or_parallel_constraints",
+      "crash_risk": "medium",
+      "shape_preserving": true
+    },
+    {
+      "variant": "moe_aux_loss_coeff_1e_2",
+      "category": "training_config",
+      "scope": "config",
+      "mutation_key": "moe_aux_loss_coeff",
+      "reason": "not_applicable_to_model_or_parallel_constraints",
+      "crash_risk": "medium",
+      "shape_preserving": true
+    },
+    {
+      "variant": "config_moe_device_level_aux_loss_coeff_0_03",
+      "category": "training_config",
+      "scope": "config",
+      "mutation_key": "moe_device_level_aux_loss_coeff",
+      "reason": "not_applicable_to_model_or_parallel_constraints",
+      "crash_risk": "medium",
+      "shape_preserving": true
+    },
+    {
+      "variant": "config_moe_comm_aux_loss_coeff_0_01",
+      "category": "training_config",
+      "scope": "config",
+      "mutation_key": "moe_comm_aux_loss_coeff",
+      "reason": "not_applicable_to_model_or_parallel_constraints",
+      "crash_risk": "medium",
+      "shape_preserving": true
+    },
+    {
+      "variant": "config_seq_aux_on",
+      "category": "training_config",
+      "scope": "config",
+      "mutation_key": "seq_aux",
+      "reason": "not_applicable_to_model_or_parallel_constraints",
+      "crash_risk": "medium",
+      "shape_preserving": true
+    },
+    {
+      "variant": "config_embedding_multiplier_scale_78_38",
+      "category": "precision_control",
+      "scope": "config",
+      "mutation_key": "embedding_multiplier_scale",
       "reason": "not_applicable_to_model_or_parallel_constraints",
       "crash_risk": "high",
       "shape_preserving": true
     },
     {
-      "variant": "moe_router_load_balancing_aux_loss",
-      "category": "training_hyperparameter",
+      "variant": "config_output_multiplier_scale_0_57",
+      "category": "precision_control",
       "scope": "config",
-      "mutation_key": "moe_router_load_balancing_type",
+      "mutation_key": "output_multiplier_scale",
       "reason": "not_applicable_to_model_or_parallel_constraints",
-      "crash_risk": "medium",
-      "shape_preserving": true
-    },
-    {
-      "variant": "moe_router_pre_softmax_on",
-      "category": "training_hyperparameter",
-      "scope": "config",
-      "mutation_key": "moe_router_pre_softmax",
-      "reason": "not_applicable_to_model_or_parallel_constraints",
-      "crash_risk": "medium",
-      "shape_preserving": true
-    },
-    {
-      "variant": "moe_router_pre_softmax_off",
-      "category": "training_hyperparameter",
-      "scope": "config",
-      "mutation_key": "moe_router_pre_softmax",
-      "reason": "not_applicable_to_model_or_parallel_constraints",
-      "crash_risk": "medium",
+      "crash_risk": "high",
       "shape_preserving": true
     },
     {
       "variant": "config_first_k_dense_replace_0",
-      "category": "training_hyperparameter",
+      "category": "model_structure",
       "scope": "config",
       "mutation_key": "first_k_dense_replace",
       "reason": "not_applicable_to_model_or_parallel_constraints",
@@ -358,7 +425,7 @@
     },
     {
       "variant": "config_moe_layer_freq_2",
-      "category": "training_hyperparameter",
+      "category": "model_structure",
       "scope": "config",
       "mutation_key": "moe_layer_freq",
       "reason": "not_applicable_to_model_or_parallel_constraints",
@@ -367,7 +434,7 @@
     },
     {
       "variant": "config_n_shared_experts_2",
-      "category": "training_hyperparameter",
+      "category": "model_structure",
       "scope": "config",
       "mutation_key": "n_shared_experts",
       "reason": "not_applicable_to_model_or_parallel_constraints",
@@ -376,7 +443,7 @@
     },
     {
       "variant": "config_num_moe_experts_8",
-      "category": "training_hyperparameter",
+      "category": "model_structure",
       "scope": "config",
       "mutation_key": "num_moe_experts",
       "reason": "not_applicable_to_model_or_parallel_constraints",
@@ -385,9 +452,63 @@
     },
     {
       "variant": "config_moe_intermediate_size_1536",
-      "category": "training_hyperparameter",
+      "category": "model_structure",
       "scope": "config",
       "mutation_key": "moe_intermediate_size",
+      "reason": "not_applicable_to_model_or_parallel_constraints",
+      "crash_risk": "high",
+      "shape_preserving": true
+    },
+    {
+      "variant": "moe_router_load_balancing_none",
+      "category": "model_structure",
+      "scope": "config",
+      "mutation_key": "moe_router_load_balancing_type",
+      "reason": "not_applicable_to_model_or_parallel_constraints",
+      "crash_risk": "high",
+      "shape_preserving": true
+    },
+    {
+      "variant": "moe_router_load_balancing_aux_loss",
+      "category": "model_structure",
+      "scope": "config",
+      "mutation_key": "moe_router_load_balancing_type",
+      "reason": "not_applicable_to_model_or_parallel_constraints",
+      "crash_risk": "medium",
+      "shape_preserving": true
+    },
+    {
+      "variant": "moe_router_pre_softmax_on",
+      "category": "model_structure",
+      "scope": "config",
+      "mutation_key": "moe_router_pre_softmax",
+      "reason": "not_applicable_to_model_or_parallel_constraints",
+      "crash_risk": "medium",
+      "shape_preserving": true
+    },
+    {
+      "variant": "moe_router_pre_softmax_off",
+      "category": "model_structure",
+      "scope": "config",
+      "mutation_key": "moe_router_pre_softmax",
+      "reason": "not_applicable_to_model_or_parallel_constraints",
+      "crash_risk": "medium",
+      "shape_preserving": true
+    },
+    {
+      "variant": "config_input_jitter_on",
+      "category": "model_structure",
+      "scope": "config",
+      "mutation_key": "input_jitter",
+      "reason": "not_applicable_to_model_or_parallel_constraints",
+      "crash_risk": "high",
+      "shape_preserving": true
+    },
+    {
+      "variant": "config_position_embedding_learned",
+      "category": "model_structure",
+      "scope": "config",
+      "mutation_key": "position_embedding_type",
       "reason": "not_applicable_to_model_or_parallel_constraints",
       "crash_risk": "high",
       "shape_preserving": true
@@ -484,5 +605,5 @@
     "has_qkv_bias": true,
     "has_linear_bias": true
   },
-  "generated_at": "2026-05-28T11:25:22"
+  "generated_at": "2026-05-30T12:23:25"
 }

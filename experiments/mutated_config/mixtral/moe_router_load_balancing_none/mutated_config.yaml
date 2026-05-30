@@ -91,7 +91,7 @@ metadata:
   note: Full-network load product; graph_structure expands to the model decoder depth.
   decoder_layers: 4
   variant_name: moe_router_load_balancing_none
-  category: training_hyperparameter
+  category: model_structure
   scope: config
   single_point: true
   shape_preserving: true
@@ -100,4 +100,4 @@ metadata:
     key: moe_router_load_balancing_type
     before: aux_loss
     after: none
-  generated_at: '2026-05-28T11:25:24'
+  generated_at: '2026-05-30T12:23:27'

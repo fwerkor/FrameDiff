@@ -579,7 +579,7 @@
   "mutation_num": 0,
   "note": "Full-network variant with 4 decoder layers; missing decoder records are filled from mixtral.yaml.",
   "variant_name": "config_first_k_dense_replace_0",
-  "category": "training_hyperparameter",
+  "category": "model_structure",
   "scope": "config",
   "single_point": true,
   "shape_preserving": true,
