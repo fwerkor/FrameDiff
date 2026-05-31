@@ -10,6 +10,7 @@ import re
 import subprocess
 import shutil
 import shlex
+import time
 from datetime import datetime
 from pathlib import Path
 import yaml
@@ -1294,6 +1295,160 @@ def stage_files(stage_dir, record_stage_dir=None):
     }
 
 
+def _has_valid_trace_payload(stage_dir):
+    stage_dir = Path(stage_dir)
+    if not stage_dir.is_dir():
+        return False
+    try:
+        return any(
+            path.is_file()
+            and path.suffix == ".pt"
+            and "final_output" in path.name
+            and path.stat().st_size > 0
+            for path in stage_dir.iterdir()
+        )
+    except OSError:
+        return False
+
+
+def stage_run_is_valid(output_root, records_root, model_name, variant_name, training_name, iteration, max_iterations):
+    del records_root
+    stage_dir = stage_output_dir(output_root, model_name, variant_name, training_name, iteration, max_iterations)
+    return _has_valid_trace_payload(stage_dir)
+
+
+def model_shared_weight_path(output_root, model_name):
+    return Path(output_root) / model_name / "shared_weight.pth"
+
+
+def shared_weight_is_valid(path):
+    path = Path(path)
+    try:
+        return path.is_file() and path.stat().st_size > 0
+    except OSError:
+        return False
+
+
+def build_repair_plan(model_paths, output_root, records_root, max_iterations):
+    plan = {
+        "models": {},
+        "missing_runs": [],
+        "full_models": [],
+        "errors": [],
+    }
+    for model_path in model_paths:
+        model_name = _model_name_from_path(model_path)
+        model_plan = {
+            "shared_weight": str(model_shared_weight_path(output_root, model_name)),
+            "shared_weight_ok": False,
+            "full_model": False,
+            "variants": {},
+        }
+        plan["models"][model_name] = model_plan
+        try:
+            variants = list_model_variants(model_name)
+        except Exception as exc:
+            reason = f"{model_name}: 变体读取失败: {exc}"
+            plan["errors"].append(reason)
+            continue
+        sw_path = model_shared_weight_path(output_root, model_name)
+        model_plan["shared_weight_ok"] = shared_weight_is_valid(sw_path)
+        if not model_plan["shared_weight_ok"]:
+            model_plan["full_model"] = True
+            plan["full_models"].append(model_name)
+        for variant_dir in variants:
+            variant_name = variant_dir.name
+            variant_plan = {}
+            model_plan["variants"][variant_name] = variant_plan
+            for iteration in range(1, max_iterations + 1):
+                iter_plan = {}
+                variant_plan[str(iteration)] = iter_plan
+                for training_name in RUN_TRAININGS:
+                    ok = stage_run_is_valid(output_root, records_root, model_name, variant_name, training_name, iteration, max_iterations)
+                    iter_plan[training_name] = ok
+                    if model_plan["full_model"] or not ok:
+                        plan["missing_runs"].append({
+                            "model": model_name,
+                            "variant": variant_name,
+                            "iteration": iteration,
+                            "training": training_name,
+                            "reason": "shared_weight_missing_full_model" if model_plan["full_model"] else "missing_or_invalid_stage",
+                        })
+    return plan
+
+
+def _format_repair_plan(plan, *, title):
+    lines = [f"[FullNet][补测扫描] {title}"]
+    if plan.get("errors"):
+        lines.append("  变体读取错误:")
+        for item in plan["errors"]:
+            lines.append(f"    - {item}")
+    full_models = plan.get("full_models") or []
+    if full_models:
+        lines.append("  需要整模型完整流程补测（缺 shared_weight.pth）:")
+        for model_name in full_models:
+            lines.append(f"    - {model_name}")
+    grouped = {}
+    for item in plan.get("missing_runs", []):
+        grouped.setdefault(item["model"], {}).setdefault(item["variant"], []).append(item)
+    if not grouped and not full_models and not plan.get("errors"):
+        lines.append("  未发现缺失或无效跑测。")
+    else:
+        lines.append("  缺失/无效跑测:")
+        for model_name in sorted(grouped):
+            lines.append(f"    {model_name}:")
+            for variant_name in sorted(grouped[model_name], key=lambda name: (0 if name == "ancestor" else 1, name)):
+                runs = grouped[model_name][variant_name]
+                labels = [f"iter{run['iteration']}:{run['training']}" for run in runs]
+                lines.append(f"      - {variant_name}: {', '.join(labels)}")
+    return "\n".join(lines)
+
+
+def _print_repair_plan(plan, *, title):
+    message = _format_repair_plan(plan, title=title)
+    print(message, flush=True)
+    for line in message.splitlines():
+        log_info(line)
+
+
+def _stage_label(model_name, variant_name, training_name, iteration):
+    return f"{model_name}/{variant_name}/iter{iteration}/{training_name}"
+
+
+def _format_repaired_runs(repaired_runs):
+    lines = ["[FullNet][补测结果] 本次实际补测完成的跑测:"]
+    if not repaired_runs:
+        lines.append("  无。")
+        return "\n".join(lines)
+    grouped = {}
+    for item in repaired_runs:
+        grouped.setdefault(item["model"], {}).setdefault(item["variant"], []).append(item)
+    for model_name in sorted(grouped):
+        lines.append(f"  {model_name}:")
+        for variant_name in sorted(grouped[model_name], key=lambda name: (0 if name == "ancestor" else 1, name)):
+            labels = [f"iter{item['iteration']}:{item['training']}" for item in grouped[model_name][variant_name]]
+            lines.append(f"    - {variant_name}: {', '.join(labels)}")
+    return "\n".join(lines)
+
+
+def _print_repaired_runs(repaired_runs):
+    message = _format_repaired_runs(repaired_runs)
+    print(message, flush=True)
+    for line in message.splitlines():
+        log_info(line)
+
+
+def _append_repaired_run(repaired_runs, model_name, variant_name, iteration, training_name):
+    item = {
+        "model": model_name,
+        "variant": variant_name,
+        "iteration": iteration,
+        "training": training_name,
+    }
+    if item not in repaired_runs:
+        repaired_runs.append(item)
+
+
 def main(params):
     project_tmp_root = configure_project_tmp_env()
     utils.control.clean.kill_pretraingpt()
@@ -1318,6 +1473,7 @@ def main(params):
     records_root = Path(Config.RECORDS_ROOT).resolve()
     output_root.mkdir(parents=True, exist_ok=True)
     records_root.mkdir(parents=True, exist_ok=True)
+    repair_missing = data_helpers.parse_bool(params.get("REPAIR_MISSING", False))
 
     log_step("整网链路启动")
     log_kv("配置", "迭代次数", max_iterations)
@@ -1333,6 +1489,7 @@ def main(params):
     log_kv("配置", "激活环境", f"PTA={Config.PTA_ENV} | MSA={Config.MSA_ENV}")
     log_kv("配置", "项目临时目录", project_tmp_root)
     log_kv("配置", "共享权重临时目录", Config.SHARED_WEIGHT_TMP_ROOT)
+    log_kv("配置", "补测模式", repair_missing)
     log_kv("配置", "Trace导出", f"{Config.TRACE_ENABLED} | full_weights={Config.TRACE_FULL_WEIGHTS} | perturb_runs={Config.TRACE_PERTURBATION_RUNS}")
     log_kv(
         "配置",
@@ -1340,6 +1497,18 @@ def main(params):
         f"ancestor_required={Config.BASELINE_ALIGNMENT_REQUIRED} | variants_required=False | loss_tolerance={Config.BASELINE_LOSS_TOLERANCE}",
     )
     log_kv("概览", "开始时间", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+    initial_repair_plan = None
+    full_repair_models = set()
+    if repair_missing:
+        initial_repair_plan = build_repair_plan(model_paths, output_root, records_root, max_iterations)
+        full_repair_models = set(initial_repair_plan.get("full_models") or [])
+        _print_repair_plan(initial_repair_plan, title="补测前完整扫描")
+        if not initial_repair_plan.get("missing_runs") and not initial_repair_plan.get("errors"):
+            log_info("补测扫描未发现缺失项，直接结束。")
+            return 0
+        print("[FullNet][补测扫描] 10秒后开始正式补测。", flush=True)
+        time.sleep(10)
 
     init_workspace()
     shared_weight_tmp_run_dir = (
@@ -1354,6 +1523,7 @@ def main(params):
     planned_baseline_runs = 0
     exit_code = 0
     model_results = []
+    repaired_runs = []
 
     try:
         for model_path in model_paths:
@@ -1426,6 +1596,16 @@ def main(params):
                 ).resolve()
                 ancestor_shared_weight.parent.mkdir(parents=True, exist_ok=True)
                 cleanup_shared_weight_file(ancestor_shared_weight)
+                model_requires_full_repair = repair_missing and model_name in full_repair_models
+                if repair_missing and not model_requires_full_repair:
+                    persisted_shared_weight = model_shared_weight_path(output_root, model_name)
+                    if shared_weight_is_valid(persisted_shared_weight):
+                        copy_if_exists(persisted_shared_weight, ancestor_shared_weight)
+                        log_info(f"[{model_name}/iter{i}] 补测复用已有共享权重: {persisted_shared_weight}")
+                    else:
+                        model_requires_full_repair = True
+                        full_repair_models.add(model_name)
+                        log_warn(f"[{model_name}/iter{i}] shared_weight.pth 不存在或无效，退回整模型完整流程补测")
 
                 for variant_dir in variants:
                     if skip_current_model:
@@ -1499,8 +1679,38 @@ def main(params):
                         )
 
                     shared_weight_path = str(ancestor_shared_weight)
+                    stage_needs = {training_name: True for training_name in RUN_TRAININGS}
+                    if repair_missing and not model_requires_full_repair:
+                        stage_needs = {
+                            training_name: not stage_run_is_valid(
+                                output_root,
+                                records_root,
+                                model_name,
+                                variant_name,
+                                training_name,
+                                i,
+                                max_iterations,
+                            )
+                            for training_name in RUN_TRAININGS
+                        }
+                        if not any(stage_needs.values()):
+                            stage_results.update({training_name: "OK" for training_name in RUN_TRAININGS})
+                            stage_results["baseline-align"] = "SKIP"
+                            write_variant_status(
+                                records_root,
+                                model_name,
+                                variant_name,
+                                i,
+                                max_iterations,
+                                "PASS",
+                                "补测跳过：四次跑测均已有效",
+                                **stage_results,
+                            )
+                            record["overall_status"] = "PASS"
+                            record["reason"] = "补测跳过：四次跑测均已有效"
+                            continue
 
-                    if variant_name == "ancestor":
+                    if variant_name == "ancestor" and (not repair_missing or model_requires_full_repair):
                         utils.control.clean.kill_pretraingpt()
                         stage_dir = stage_output_dir(output_root, model_name, variant_name, TRAIN_PREPARE, i, max_iterations)
                         runtime_helpers.clear_path(stage_dir)
@@ -1546,90 +1756,112 @@ def main(params):
                         fail_current("ancestor 共享权重不存在，无法执行后续变体")
                         continue
 
-                    utils.control.clean.kill_pretraingpt()
-                    pta_stage_dir, pta_record_dir = fresh_stage_dirs(output_root, records_root, model_name, variant_name, TRAIN_PTA_BASELINE, i, max_iterations)
-                    pta_files = stage_files(pta_stage_dir, pta_record_dir)
-                    copy_variant_inputs(pta_record_dir, source_json, source_yaml, runtime_json, runtime_yaml)
-                    log_step(f"{model_name}/{variant_name} {TRAIN_PTA_BASELINE}: PTA baseline")
-                    pta_ok = run_pta_verify_stage(
-                        i,
-                        mutate_args_common,
-                        load_path,
-                        pta_files["runtime_log"],
-                        Config.PTA_ENV,
-                        pta_path,
-                        shared_weight_path,
-                        "load",
-                        load_steps,
-                        step_log_csv_path=pta_files["step_csv"],
-                        result_csv_path=pta_files["result_csv"],
-                        trace_dir=pta_files["trace_dir"],
-                        trace_record_dir=pta_files["trace_record_dir"],
-                        trace_run_name=TRAIN_PTA_BASELINE,
-                        script_output_path=pta_files["script"],
-                        runtime_args_list=runtime_args_list,
-                        launcher_overrides=launcher_overrides,
-                        env_overrides=env_overrides,
-                        optimizer_env=optimizer_env,
-                    )
-                    archive_stage_runtime(pta_record_dir, model_name)
-                    if not pta_ok or not csv_iteration_is_valid(pta_files["result_csv"], i):
-                        stage_results[TRAIN_PTA_BASELINE] = "ERROR"
-                        copy_if_exists(ancestor_shared_weight, pta_record_dir / "shared_weight_on_failure.pth")
-                        fail_current(f"{TRAIN_PTA_BASELINE} 失败或结果无效: {pta_files['runtime_log']}")
-                        continue
-                    stage_results[TRAIN_PTA_BASELINE] = "OK"
-                    pta_success_count += 1
-                    model_result["pta_baseline_success"] += 1
-
-                    utils.control.clean.kill_pretraingpt()
-                    msa_stage_dir, msa_record_dir = fresh_stage_dirs(output_root, records_root, model_name, variant_name, TRAIN_MSA_BASELINE, i, max_iterations)
-                    msa_files = stage_files(msa_stage_dir, msa_record_dir)
-                    msa_profile_dir = msa_record_dir / "profiler" / "raw"
-                    msa_profile_report_dir = msa_record_dir / "profiler" / "report"
-                    copy_variant_inputs(msa_record_dir, source_json, source_yaml, runtime_json, runtime_yaml)
-                    reset_msrun_log()
-                    log_step(f"{model_name}/{variant_name} {TRAIN_MSA_BASELINE}: MSA baseline")
-                    msa_ok = run_msa_verify_load(
-                        i,
-                        mutate_args_common,
-                        load_path,
-                        msa_files["runtime_log"],
-                        Config.MSA_ENV,
-                        msa_path,
-                        shared_weight_path,
-                        load_steps,
-                        step_log_csv_path=msa_files["step_csv"],
-                        result_csv_path=msa_files["result_csv"],
-                        profile_output_dir=msa_profile_dir,
-                        trace_dir=msa_files["trace_dir"],
-                        trace_record_dir=msa_files["trace_record_dir"],
-                        trace_run_name=TRAIN_MSA_BASELINE,
-                        script_output_path=msa_files["script"],
-                        runtime_args_list=runtime_args_list,
-                        launcher_overrides=launcher_overrides,
-                        env_overrides=env_overrides,
-                        optimizer_env=optimizer_env,
-                    )
-                    msa_finished = wait_msa_finish_csv(i, msa_files["result_csv"], TRAIN_MSA_BASELINE, monitor_log=msa_monitor_log) if msa_ok else False
-                    archive_stage_runtime(msa_record_dir, model_name, include_msrun=True)
-                    if msa_profile_dir.exists() and any(msa_profile_dir.rglob("*")):
-                        generate_profile_report(
-                            msa_profile_dir,
-                            msa_profile_report_dir,
-                            msa_files["step_csv"],
-                            msa_files["runtime_log"],
-                            f"FullNet-MSA-{model_name}-{variant_name}",
+                    if not stage_needs.get(TRAIN_PTA_BASELINE, True):
+                        pta_stage_dir = stage_output_dir(output_root, model_name, variant_name, TRAIN_PTA_BASELINE, i, max_iterations)
+                        pta_record_dir = stage_record_dir(records_root, model_name, variant_name, TRAIN_PTA_BASELINE, i, max_iterations)
+                        pta_files = stage_files(pta_stage_dir, pta_record_dir)
+                        stage_results[TRAIN_PTA_BASELINE] = "OK"
+                        if repair_missing and stage_needs.get(TRAIN_PTA_BASELINE, False):
+                            _append_repaired_run(repaired_runs, model_name, variant_name, i, TRAIN_PTA_BASELINE)
+                        pta_success_count += 1
+                        model_result["pta_baseline_success"] += 1
+                        log_info(f"[{_stage_label(model_name, variant_name, TRAIN_PTA_BASELINE, i)}] 补测跳过：已有有效插桩结果")
+                    else:
+                        utils.control.clean.kill_pretraingpt()
+                        pta_stage_dir, pta_record_dir = fresh_stage_dirs(output_root, records_root, model_name, variant_name, TRAIN_PTA_BASELINE, i, max_iterations)
+                        pta_files = stage_files(pta_stage_dir, pta_record_dir)
+                        copy_variant_inputs(pta_record_dir, source_json, source_yaml, runtime_json, runtime_yaml)
+                        log_step(f"{model_name}/{variant_name} {TRAIN_PTA_BASELINE}: PTA baseline")
+                        pta_ok = run_pta_verify_stage(
                             i,
+                            mutate_args_common,
+                            load_path,
+                            pta_files["runtime_log"],
+                            Config.PTA_ENV,
+                            pta_path,
+                            shared_weight_path,
+                            "load",
+                            load_steps,
+                            step_log_csv_path=pta_files["step_csv"],
+                            result_csv_path=pta_files["result_csv"],
+                            trace_dir=pta_files["trace_dir"],
+                            trace_record_dir=pta_files["trace_record_dir"],
+                            trace_run_name=TRAIN_PTA_BASELINE,
+                            script_output_path=pta_files["script"],
+                            runtime_args_list=runtime_args_list,
+                            launcher_overrides=launcher_overrides,
+                            env_overrides=env_overrides,
+                            optimizer_env=optimizer_env,
                         )
-                    if not msa_ok or not msa_finished or not csv_iteration_is_valid(msa_files["result_csv"], i):
-                        stage_results[TRAIN_MSA_BASELINE] = "ERROR"
-                        copy_if_exists(ancestor_shared_weight, msa_record_dir / "shared_weight_on_failure.pth")
-                        fail_current(f"{TRAIN_MSA_BASELINE} 失败或结果无效: {msa_files['runtime_log']}")
-                        continue
-                    stage_results[TRAIN_MSA_BASELINE] = "OK"
-                    msa_success_count += 1
-                    model_result["msa_baseline_success"] += 1
+                        archive_stage_runtime(pta_record_dir, model_name)
+                        if not pta_ok or not csv_iteration_is_valid(pta_files["result_csv"], i):
+                            stage_results[TRAIN_PTA_BASELINE] = "ERROR"
+                            copy_if_exists(ancestor_shared_weight, pta_record_dir / "shared_weight_on_failure.pth")
+                            fail_current(f"{TRAIN_PTA_BASELINE} 失败或结果无效: {pta_files['runtime_log']}")
+                            continue
+                        stage_results[TRAIN_PTA_BASELINE] = "OK"
+                        pta_success_count += 1
+                        model_result["pta_baseline_success"] += 1
+
+                    if not stage_needs.get(TRAIN_MSA_BASELINE, True):
+                        msa_stage_dir = stage_output_dir(output_root, model_name, variant_name, TRAIN_MSA_BASELINE, i, max_iterations)
+                        msa_record_dir = stage_record_dir(records_root, model_name, variant_name, TRAIN_MSA_BASELINE, i, max_iterations)
+                        msa_files = stage_files(msa_stage_dir, msa_record_dir)
+                        stage_results[TRAIN_MSA_BASELINE] = "OK"
+                        if repair_missing and stage_needs.get(TRAIN_MSA_BASELINE, False):
+                            _append_repaired_run(repaired_runs, model_name, variant_name, i, TRAIN_MSA_BASELINE)
+                        msa_success_count += 1
+                        model_result["msa_baseline_success"] += 1
+                        log_info(f"[{_stage_label(model_name, variant_name, TRAIN_MSA_BASELINE, i)}] 补测跳过：已有有效插桩结果")
+                    else:
+                        utils.control.clean.kill_pretraingpt()
+                        msa_stage_dir, msa_record_dir = fresh_stage_dirs(output_root, records_root, model_name, variant_name, TRAIN_MSA_BASELINE, i, max_iterations)
+                        msa_files = stage_files(msa_stage_dir, msa_record_dir)
+                        msa_profile_dir = msa_record_dir / "profiler" / "raw"
+                        msa_profile_report_dir = msa_record_dir / "profiler" / "report"
+                        copy_variant_inputs(msa_record_dir, source_json, source_yaml, runtime_json, runtime_yaml)
+                        reset_msrun_log()
+                        log_step(f"{model_name}/{variant_name} {TRAIN_MSA_BASELINE}: MSA baseline")
+                        msa_ok = run_msa_verify_load(
+                            i,
+                            mutate_args_common,
+                            load_path,
+                            msa_files["runtime_log"],
+                            Config.MSA_ENV,
+                            msa_path,
+                            shared_weight_path,
+                            load_steps,
+                            step_log_csv_path=msa_files["step_csv"],
+                            result_csv_path=msa_files["result_csv"],
+                            profile_output_dir=msa_profile_dir,
+                            trace_dir=msa_files["trace_dir"],
+                            trace_record_dir=msa_files["trace_record_dir"],
+                            trace_run_name=TRAIN_MSA_BASELINE,
+                            script_output_path=msa_files["script"],
+                            runtime_args_list=runtime_args_list,
+                            launcher_overrides=launcher_overrides,
+                            env_overrides=env_overrides,
+                            optimizer_env=optimizer_env,
+                        )
+                        msa_finished = wait_msa_finish_csv(i, msa_files["result_csv"], TRAIN_MSA_BASELINE, monitor_log=msa_monitor_log) if msa_ok else False
+                        archive_stage_runtime(msa_record_dir, model_name, include_msrun=True)
+                        if msa_profile_dir.exists() and any(msa_profile_dir.rglob("*")):
+                            generate_profile_report(
+                                msa_profile_dir,
+                                msa_profile_report_dir,
+                                msa_files["step_csv"],
+                                msa_files["runtime_log"],
+                                f"FullNet-MSA-{model_name}-{variant_name}",
+                                i,
+                            )
+                        if not msa_ok or not msa_finished or not csv_iteration_is_valid(msa_files["result_csv"], i):
+                            stage_results[TRAIN_MSA_BASELINE] = "ERROR"
+                            copy_if_exists(ancestor_shared_weight, msa_record_dir / "shared_weight_on_failure.pth")
+                            fail_current(f"{TRAIN_MSA_BASELINE} 失败或结果无效: {msa_files['runtime_log']}")
+                            continue
+                        stage_results[TRAIN_MSA_BASELINE] = "OK"
+                        msa_success_count += 1
+                        model_result["msa_baseline_success"] += 1
 
                     precision_issue = find_preferred_loss_mismatch(
                         pta_files["result_csv"],
@@ -1671,80 +1903,98 @@ def main(params):
                         log_info(f"[{model_name}/{variant_name}/iter{i}] Baseline精度对齐通过: {alignment_report}")
 
                     if Config.TRACE_ENABLED and Config.TRACE_PERTURBATION_RUNS:
-                        utils.control.clean.kill_pretraingpt()
-                        pta_perturb_dir, pta_perturb_record_dir = fresh_stage_dirs(output_root, records_root, model_name, variant_name, TRAIN_PTA_PRETURB, i, max_iterations)
-                        pta_perturb_files = stage_files(pta_perturb_dir, pta_perturb_record_dir)
-                        copy_variant_inputs(pta_perturb_record_dir, source_json, source_yaml, runtime_json, runtime_yaml)
-                        log_step(f"{model_name}/{variant_name} {TRAIN_PTA_PRETURB}: PTA 输入扰动")
-                        pta_perturb_ok = run_pta_verify_stage(
-                            i,
-                            mutate_args_common,
-                            load_path,
-                            pta_perturb_files["runtime_log"],
-                            Config.PTA_ENV,
-                            pta_path,
-                            shared_weight_path,
-                            "load",
-                            load_steps,
-                            step_log_csv_path=pta_perturb_files["step_csv"],
-                            result_csv_path=pta_perturb_files["result_csv"],
-                            trace_dir=pta_perturb_files["trace_dir"],
-                            trace_record_dir=pta_perturb_files["trace_record_dir"],
-                            trace_run_name=TRAIN_PTA_PRETURB,
-                            perturb=True,
-                            perturb_eps=Config.TRACE_PERTURB_EPS,
-                            script_output_path=pta_perturb_files["script"],
-                            runtime_args_list=runtime_args_list,
-                            launcher_overrides=launcher_overrides,
-                            env_overrides=env_overrides,
-                            optimizer_env=optimizer_env,
-                        )
-                        archive_stage_runtime(pta_perturb_record_dir, model_name)
-                        if not pta_perturb_ok or not csv_iteration_is_valid(pta_perturb_files["result_csv"], i):
-                            stage_results[TRAIN_PTA_PRETURB] = "ERROR"
-                            fail_current(f"{TRAIN_PTA_PRETURB} 失败或结果无效: {pta_perturb_files['runtime_log']}")
-                            continue
-                        stage_results[TRAIN_PTA_PRETURB] = "OK"
+                        if not stage_needs.get(TRAIN_PTA_PRETURB, True):
+                            pta_perturb_dir = stage_output_dir(output_root, model_name, variant_name, TRAIN_PTA_PRETURB, i, max_iterations)
+                            pta_perturb_record_dir = stage_record_dir(records_root, model_name, variant_name, TRAIN_PTA_PRETURB, i, max_iterations)
+                            pta_perturb_files = stage_files(pta_perturb_dir, pta_perturb_record_dir)
+                            stage_results[TRAIN_PTA_PRETURB] = "OK"
+                            log_info(f"[{_stage_label(model_name, variant_name, TRAIN_PTA_PRETURB, i)}] 补测跳过：已有有效插桩结果")
+                        else:
+                            utils.control.clean.kill_pretraingpt()
+                            pta_perturb_dir, pta_perturb_record_dir = fresh_stage_dirs(output_root, records_root, model_name, variant_name, TRAIN_PTA_PRETURB, i, max_iterations)
+                            pta_perturb_files = stage_files(pta_perturb_dir, pta_perturb_record_dir)
+                            copy_variant_inputs(pta_perturb_record_dir, source_json, source_yaml, runtime_json, runtime_yaml)
+                            log_step(f"{model_name}/{variant_name} {TRAIN_PTA_PRETURB}: PTA 输入扰动")
+                            pta_perturb_ok = run_pta_verify_stage(
+                                i,
+                                mutate_args_common,
+                                load_path,
+                                pta_perturb_files["runtime_log"],
+                                Config.PTA_ENV,
+                                pta_path,
+                                shared_weight_path,
+                                "load",
+                                load_steps,
+                                step_log_csv_path=pta_perturb_files["step_csv"],
+                                result_csv_path=pta_perturb_files["result_csv"],
+                                trace_dir=pta_perturb_files["trace_dir"],
+                                trace_record_dir=pta_perturb_files["trace_record_dir"],
+                                trace_run_name=TRAIN_PTA_PRETURB,
+                                perturb=True,
+                                perturb_eps=Config.TRACE_PERTURB_EPS,
+                                script_output_path=pta_perturb_files["script"],
+                                runtime_args_list=runtime_args_list,
+                                launcher_overrides=launcher_overrides,
+                                env_overrides=env_overrides,
+                                optimizer_env=optimizer_env,
+                            )
+                            archive_stage_runtime(pta_perturb_record_dir, model_name)
+                            if not pta_perturb_ok or not csv_iteration_is_valid(pta_perturb_files["result_csv"], i):
+                                stage_results[TRAIN_PTA_PRETURB] = "ERROR"
+                                fail_current(f"{TRAIN_PTA_PRETURB} 失败或结果无效: {pta_perturb_files['runtime_log']}")
+                                continue
+                            stage_results[TRAIN_PTA_PRETURB] = "OK"
+                            if repair_missing and stage_needs.get(TRAIN_PTA_PRETURB, False):
+                                _append_repaired_run(repaired_runs, model_name, variant_name, i, TRAIN_PTA_PRETURB)
 
-                        utils.control.clean.kill_pretraingpt()
-                        msa_perturb_dir, msa_perturb_record_dir = fresh_stage_dirs(output_root, records_root, model_name, variant_name, TRAIN_MSA_PRETURB, i, max_iterations)
-                        msa_perturb_files = stage_files(msa_perturb_dir, msa_perturb_record_dir)
-                        copy_variant_inputs(msa_perturb_record_dir, source_json, source_yaml, runtime_json, runtime_yaml)
-                        reset_msrun_log()
-                        log_step(f"{model_name}/{variant_name} {TRAIN_MSA_PRETURB}: MSA 输入扰动")
-                        msa_perturb_ok = run_msa_verify_load(
-                            i,
-                            mutate_args_common,
-                            load_path,
-                            msa_perturb_files["runtime_log"],
-                            Config.MSA_ENV,
-                            msa_path,
-                            shared_weight_path,
-                            load_steps,
-                            step_log_csv_path=msa_perturb_files["step_csv"],
-                            result_csv_path=msa_perturb_files["result_csv"],
-                            trace_dir=msa_perturb_files["trace_dir"],
-                            trace_record_dir=msa_perturb_files["trace_record_dir"],
-                            trace_run_name=TRAIN_MSA_PRETURB,
-                            perturb=True,
-                            perturb_eps=Config.TRACE_PERTURB_EPS,
-                            script_output_path=msa_perturb_files["script"],
-                            runtime_args_list=runtime_args_list,
-                            launcher_overrides=launcher_overrides,
-                            env_overrides=env_overrides,
-                            optimizer_env=optimizer_env,
-                        )
-                        msa_perturb_finished = (
-                            wait_msa_finish_csv(i, msa_perturb_files["result_csv"], TRAIN_MSA_PRETURB, monitor_log=msa_monitor_log)
-                            if msa_perturb_ok
-                            else False
-                        )
-                        archive_stage_runtime(msa_perturb_record_dir, model_name, include_msrun=True)
-                        if not msa_perturb_ok or not msa_perturb_finished or not csv_iteration_is_valid(msa_perturb_files["result_csv"], i):
-                            stage_results[TRAIN_MSA_PRETURB] = "ERROR"
-                            fail_current(f"{TRAIN_MSA_PRETURB} 失败或结果无效: {msa_perturb_files['runtime_log']}")
-                            continue
-                        stage_results[TRAIN_MSA_PRETURB] = "OK"
+                        if not stage_needs.get(TRAIN_MSA_PRETURB, True):
+                            msa_perturb_dir = stage_output_dir(output_root, model_name, variant_name, TRAIN_MSA_PRETURB, i, max_iterations)
+                            msa_perturb_record_dir = stage_record_dir(records_root, model_name, variant_name, TRAIN_MSA_PRETURB, i, max_iterations)
+                            msa_perturb_files = stage_files(msa_perturb_dir, msa_perturb_record_dir)
+                            stage_results[TRAIN_MSA_PRETURB] = "OK"
+                            log_info(f"[{_stage_label(model_name, variant_name, TRAIN_MSA_PRETURB, i)}] 补测跳过：已有有效插桩结果")
+                        else:
+                            utils.control.clean.kill_pretraingpt()
+                            msa_perturb_dir, msa_perturb_record_dir = fresh_stage_dirs(output_root, records_root, model_name, variant_name, TRAIN_MSA_PRETURB, i, max_iterations)
+                            msa_perturb_files = stage_files(msa_perturb_dir, msa_perturb_record_dir)
+                            copy_variant_inputs(msa_perturb_record_dir, source_json, source_yaml, runtime_json, runtime_yaml)
+                            reset_msrun_log()
+                            log_step(f"{model_name}/{variant_name} {TRAIN_MSA_PRETURB}: MSA 输入扰动")
+                            msa_perturb_ok = run_msa_verify_load(
+                                i,
+                                mutate_args_common,
+                                load_path,
+                                msa_perturb_files["runtime_log"],
+                                Config.MSA_ENV,
+                                msa_path,
+                                shared_weight_path,
+                                load_steps,
+                                step_log_csv_path=msa_perturb_files["step_csv"],
+                                result_csv_path=msa_perturb_files["result_csv"],
+                                trace_dir=msa_perturb_files["trace_dir"],
+                                trace_record_dir=msa_perturb_files["trace_record_dir"],
+                                trace_run_name=TRAIN_MSA_PRETURB,
+                                perturb=True,
+                                perturb_eps=Config.TRACE_PERTURB_EPS,
+                                script_output_path=msa_perturb_files["script"],
+                                runtime_args_list=runtime_args_list,
+                                launcher_overrides=launcher_overrides,
+                                env_overrides=env_overrides,
+                                optimizer_env=optimizer_env,
+                            )
+                            msa_perturb_finished = (
+                                wait_msa_finish_csv(i, msa_perturb_files["result_csv"], TRAIN_MSA_PRETURB, monitor_log=msa_monitor_log)
+                                if msa_perturb_ok
+                                else False
+                            )
+                            archive_stage_runtime(msa_perturb_record_dir, model_name, include_msrun=True)
+                            if not msa_perturb_ok or not msa_perturb_finished or not csv_iteration_is_valid(msa_perturb_files["result_csv"], i):
+                                stage_results[TRAIN_MSA_PRETURB] = "ERROR"
+                                fail_current(f"{TRAIN_MSA_PRETURB} 失败或结果无效: {msa_perturb_files['runtime_log']}")
+                                continue
+                            stage_results[TRAIN_MSA_PRETURB] = "OK"
+                            if repair_missing and stage_needs.get(TRAIN_MSA_PRETURB, False):
+                                _append_repaired_run(repaired_runs, model_name, variant_name, i, TRAIN_MSA_PRETURB)
 
                     write_variant_status(
                         records_root,
@@ -1770,6 +2020,13 @@ def main(params):
         shutil.rmtree(shared_weight_tmp_run_dir, ignore_errors=True)
 
     prune_empty_dirs(output_root)
+
+    if repair_missing:
+        _print_repaired_runs(repaired_runs)
+        final_repair_plan = build_repair_plan(model_paths, output_root, records_root, max_iterations)
+        _print_repair_plan(final_repair_plan, title="补测后完整扫描")
+        if final_repair_plan.get("missing_runs") or final_repair_plan.get("errors"):
+            exit_code = 1
 
     if exit_code == 0 and any(item.get("status") != "PASS" for item in model_results):
         exit_code = 1

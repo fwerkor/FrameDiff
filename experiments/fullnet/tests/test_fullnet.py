@@ -56,6 +56,20 @@ class FullNetConfigTests(unittest.TestCase):
 
         self.assertEqual(DEFAULT_CONFIG["fullnet"]["MODELS"], available_models())
 
+    def test_repair_trace_validity_requires_final_output(self) -> None:
+        from utils.task import fullnet
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            stage_dir = Path(temp_dir)
+            self.assertFalse(fullnet._has_valid_trace_payload(stage_dir))
+
+            (stage_dir / "000001_c15_output_layer_output_layer_output_logits.pt").write_bytes(b"x")
+            self.assertFalse(fullnet._has_valid_trace_payload(stage_dir))
+
+            (stage_dir / "000002_c0_full_network_network_output_final_output.pt").write_bytes(b"x")
+            self.assertTrue(fullnet._has_valid_trace_payload(stage_dir))
+
+
     def test_prepare_trace_can_be_forced_off(self) -> None:
         from utils.task import fullnet
 

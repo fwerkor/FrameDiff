@@ -79,6 +79,17 @@ def cmd_run(args: argparse.Namespace) -> int:
     return run_fullnet(config)
 
 
+def cmd_repair(args: argparse.Namespace) -> int:
+    config = _config_from_args(args)
+    config.setdefault("fullnet", {})["REPAIR_MISSING"] = True
+    if args.dry_run:
+        print(json.dumps(config, ensure_ascii=False, indent=2))
+        return 0
+    if args.write_config:
+        write_config(config, CONFIG_PATH)
+    return run_fullnet(config)
+
+
 def _latest_output() -> Path:
     if not OUTPUT_ROOT.exists():
         raise FileNotFoundError(f"未找到可分析 output: {OUTPUT_ROOT}")
@@ -130,6 +141,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     run.add_argument("--dry-run", action="store_true", help="只打印最终配置，不启动训练链路")
     run.add_argument("--write-config", action="store_true", help="运行前同步写回 config.json")
     run.set_defaults(func=cmd_run)
+
+    repair = sub.add_parser("repair", help="扫描 output 并只补测缺失或无效的整网跑测")
+    _add_common_run_args(repair)
+    repair.add_argument("--dry-run", action="store_true", help="只打印最终配置，不启动补测")
+    repair.add_argument("--write-config", action="store_true", help="补测前同步写回 config.json")
+    repair.set_defaults(func=cmd_repair)
 
     analyze = sub.add_parser("analyze", help="重建整网分析报告")
     analyze.add_argument("output", nargs="?", default="", help="output/<id> 或绝对路径")
