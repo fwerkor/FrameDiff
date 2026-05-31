@@ -203,6 +203,9 @@ NAMED_PUBLIC_OUTPUT_TENSORS = {
     "logits",
     "final_norm.output",
     "final_output",
+}
+
+DUPLICATE_FINAL_OUTPUT_TENSORS = {
     "step_final_output",
     "task_final_output",
 }
@@ -220,7 +223,13 @@ def _is_named_public_output(name: Any) -> bool:
     return _normalized_tensor_name(name).lower() in NAMED_PUBLIC_OUTPUT_TENSORS
 
 
+def _is_duplicate_final_output(name: Any) -> bool:
+    return _normalized_tensor_name(name).lower() in DUPLICATE_FINAL_OUTPUT_TENSORS
+
+
 def _is_output_tensor(stage: Any, name: Any) -> bool:
+    if _is_duplicate_final_output(name):
+        return False
     stage_text = _normalized_stage(stage)
     if stage_text.endswith("_input") or stage_text == "module_input":
         return False
