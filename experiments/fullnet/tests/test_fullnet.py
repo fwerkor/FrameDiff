@@ -625,6 +625,8 @@ class FullNetTraceTests(unittest.TestCase):
 
                 set_trace_step(0)
                 skipped_input = trace_tensor(14, "decoder_block", "decoder_1.input", torch.ones(1), stage="decoder_input", node_id=1)
+                module_output = trace_tensor(3, "linear_operator", "decoder_1.layers.0.self_attention.linear_qkv.output", torch.ones(1), stage="module_output", node_id=1)
+                duplicate_module_output = trace_tensor(3, "linear_operator", "decoder_1.layers.0.mlp.linear_fc1.output", torch.ones(1), stage="module_output", node_id=1)
                 decoder_output = trace_tensor(14, "decoder_block", "decoder_1.output", torch.ones(1), stage="decoder_output", node_id=1)
                 duplicate_decoder_output = trace_tensor(14, "decoder_block", "decoder_1.output", torch.ones(1), stage="decoder_output", node_id=1)
                 output_like_input = trace_tensor(15, "output_layer", "lm_head.input", torch.ones(1), stage="output_layer_input")
@@ -642,6 +644,8 @@ class FullNetTraceTests(unittest.TestCase):
                 next_step = trace_tensor(14, "decoder_block", "decoder_1.output", torch.ones(1), stage="decoder_output", node_id=1)
 
                 self.assertIsNone(skipped_input)
+                self.assertIsNotNone(module_output)
+                self.assertIsNone(duplicate_module_output)
                 self.assertIsNotNone(decoder_output)
                 self.assertIsNone(duplicate_decoder_output)
                 self.assertIsNone(output_like_input)

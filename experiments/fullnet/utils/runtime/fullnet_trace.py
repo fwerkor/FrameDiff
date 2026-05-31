@@ -239,6 +239,14 @@ def _is_decoder_output_tensor(name: str) -> bool:
     return re.fullmatch(r"decoder_[0-9]+\.output", name) is not None
 
 
+def _normalized_stage(stage: Any) -> str:
+    return str(stage or "").strip()
+
+
+def _is_module_output_stage(stage: Any) -> bool:
+    return _normalized_stage(stage) == "module_output"
+
+
 def _is_output_tensor(stage: Any, name: Any) -> bool:
     """Return True for tensors exported by the default public output-only mode.
 
@@ -255,6 +263,8 @@ def _is_output_tensor(stage: Any, name: Any) -> bool:
         return False
     if any(tensor_name.startswith(prefix) for prefix in OUTPUT_ONLY_EXCLUDED_PREFIXES):
         return False
+    if _is_module_output_stage(stage):
+        return True
     if tensor_name in OUTPUT_ONLY_EXACT_TENSOR_NAMES:
         return True
     if _is_decoder_output_tensor(tensor_name):
@@ -278,7 +288,7 @@ def _should_emit_tensor(component_id: int, stage: str, name: Any, node_id: Any |
     if not _is_output_tensor(stage, name):
         return False
     ctx = _context()
-    key = (
+    key_parts = [
         "tensor",
         ctx["backend"],
         ctx["run"],
@@ -287,8 +297,14 @@ def _should_emit_tensor(component_id: int, stage: str, name: Any, node_id: Any |
         str(_trace_root()),
         component_id,
         _component_instance_key(component_id, stage, name, node_id),
-        _normalized_tensor_name(name),
-    )
+    ]
+    if not _is_module_output_stage(stage):
+        # Named public graph outputs such as logits/final_output must not be
+        # de-duplicated against each other.  Recursive module outputs, however,
+        # keep the old one-output-per-component-instance behavior to avoid
+        # exploding into full debug traces.
+        key_parts.append(_normalized_tensor_name(name))
+    key = tuple(key_parts)
     with _LOCK:
         if key in _STATE["emitted_records"]:
             return False
