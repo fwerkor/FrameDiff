@@ -597,7 +597,7 @@ class FullNetTraceTests(unittest.TestCase):
                     os.environ[name] = value
 
     @unittest.skipUnless(importlib.util.find_spec("torch") is not None, "torch unavailable")
-    def test_trace_defaults_to_precise_public_output_tensors(self) -> None:
+    def test_trace_defaults_to_one_output_per_component_instance(self) -> None:
         import torch
 
         from utils.runtime.fullnet_trace import set_trace_step, trace_module_weights, trace_tensor
@@ -625,39 +625,31 @@ class FullNetTraceTests(unittest.TestCase):
 
                 set_trace_step(0)
                 skipped_input = trace_tensor(14, "decoder_block", "decoder_1.input", torch.ones(1), stage="decoder_input", node_id=1)
-                module_output = trace_tensor(3, "linear_operator", "decoder_1.layers.0.self_attention.linear_qkv.output", torch.ones(1), stage="module_output", node_id=1)
-                duplicate_module_output = trace_tensor(3, "linear_operator", "decoder_1.layers.0.mlp.linear_fc1.output", torch.ones(1), stage="module_output", node_id=1)
-                decoder_output = trace_tensor(14, "decoder_block", "decoder_1.output", torch.ones(1), stage="decoder_output", node_id=1)
-                duplicate_decoder_output = trace_tensor(14, "decoder_block", "decoder_1.output", torch.ones(1), stage="decoder_output", node_id=1)
-                output_like_input = trace_tensor(15, "output_layer", "lm_head.input", torch.ones(1), stage="output_layer_input")
-                logits = trace_tensor(15, "output_layer", "logits", torch.ones(1), stage="output_layer_output")
+                skipped_output_like_input = trace_tensor(15, "output_layer", "lm_head.input", torch.ones(1), stage="output_layer_input")
+                skipped_block0_input = trace_tensor(2, "normalization_operator", "block0.input_layernorm.output.input", torch.ones(1), stage="block0_hook_input")
+                first = trace_tensor(14, "decoder_block", "decoder_1.output", torch.ones(1), stage="decoder_output", node_id=1)
+                duplicate = trace_tensor(14, "decoder_block", "decoder_1.output_again", torch.ones(1), stage="decoder_output", node_id=1)
+                second_instance = trace_tensor(14, "decoder_block", "decoder_2.output", torch.ones(1), stage="decoder_output", node_id=2)
                 hidden_before_head = trace_tensor(0, "full_network", "hidden_states_before_output_layer", torch.ones(1), stage="network_hidden")
                 final_output = trace_tensor(0, "full_network", "final_output", torch.ones(1), stage="network_output")
                 step_final_output = trace_tensor(0, "full_network", "step_final_output", torch.ones(1), stage="pta_step_output")
-                block0_debug_output = trace_tensor(3, "linear_operator", "block0.mlp.linear_fc1.output", torch.ones(1), stage="block0_hook_output")
-                perturb_delta = trace_tensor(11, "embedding_layer", "embedding_output.delta", torch.ones(1), stage="embedding_output_perturbation")
-                perturb_baseline = trace_tensor(11, "embedding_layer", "embedding_output.baseline", torch.ones(1), stage="embedding_output_perturbation")
-                perturb_perturbed = trace_tensor(11, "embedding_layer", "embedding_output.perturbed", torch.ones(1), stage="embedding_output_perturbation")
-                second_instance = trace_tensor(14, "decoder_block", "decoder_2.output", torch.ones(1), stage="decoder_output", node_id=2)
+                task_final_output = trace_tensor(0, "full_network", "task_final_output", torch.ones(1), stage="task_debug_output")
+                logits = trace_tensor(15, "output_layer", "logits", torch.ones(1), stage="output_layer_output")
                 skipped_weight = trace_module_weights(14, "decoder_block", torch.nn.Linear(1, 1), stage="decoder_weights", node_id=1)
                 set_trace_step(1)
                 next_step = trace_tensor(14, "decoder_block", "decoder_1.output", torch.ones(1), stage="decoder_output", node_id=1)
 
                 self.assertIsNone(skipped_input)
-                self.assertIsNotNone(module_output)
-                self.assertIsNone(duplicate_module_output)
-                self.assertIsNotNone(decoder_output)
-                self.assertIsNone(duplicate_decoder_output)
-                self.assertIsNone(output_like_input)
-                self.assertIsNotNone(logits)
-                self.assertIsNone(hidden_before_head)
+                self.assertIsNone(skipped_output_like_input)
+                self.assertIsNone(skipped_block0_input)
+                self.assertIsNotNone(first)
+                self.assertIsNone(duplicate)
+                self.assertIsNotNone(second_instance)
+                self.assertIsNotNone(hidden_before_head)
                 self.assertIsNotNone(final_output)
                 self.assertIsNotNone(step_final_output)
-                self.assertIsNone(block0_debug_output)
-                self.assertIsNone(perturb_delta)
-                self.assertIsNotNone(perturb_baseline)
-                self.assertIsNotNone(perturb_perturbed)
-                self.assertIsNotNone(second_instance)
+                self.assertIsNotNone(task_final_output)
+                self.assertIsNotNone(logits)
                 self.assertIsNone(skipped_weight)
                 self.assertIsNotNone(next_step)
         finally:
@@ -666,7 +658,6 @@ class FullNetTraceTests(unittest.TestCase):
                     os.environ.pop(name, None)
                 else:
                     os.environ[name] = value
-
 
 
 if __name__ == "__main__":

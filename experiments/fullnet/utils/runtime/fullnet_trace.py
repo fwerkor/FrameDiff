@@ -199,77 +199,33 @@ def _full_trace_enabled() -> bool:
     return mode in {"full", "all", "debug", "layer"} or granularity in {"layer", "node", "full", "all"}
 
 
-OUTPUT_ONLY_EXACT_TENSOR_NAMES = {
-    # Public RQ3 output artifacts.  Keep these names intentionally narrow:
-    # output-only mode must not save input tensors simply because their stage
-    # contains words such as "output_layer_input".
-    "embedding.output_raw",
-    "embedding.output_processed",
-    "embedding.output_processed.baseline",
-    "embedding_output.baseline",
-    "embedding_output.perturbed",
-    "final_norm.output",
+NAMED_PUBLIC_OUTPUT_TENSORS = {
     "logits",
+    "final_norm.output",
     "final_output",
-    "task_final_output",
     "step_final_output",
-    "no_output_layer.output",
+    "task_final_output",
 }
 
-OUTPUT_ONLY_EXCLUDED_TENSOR_NAMES = {
-    "input_ids",
-    "position_ids",
-    "attention_mask",
-    "input_data_seed",
-    "lm_head.input",
-    "hidden_states_before_output_layer",
-    "embedding_output.delta",
-}
 
-OUTPUT_ONLY_EXCLUDED_PREFIXES = (
-    "block0.",
-)
+def _normalized_stage(stage: Any) -> str:
+    return str(stage or "").strip().lower()
 
 
 def _normalized_tensor_name(name: Any) -> str:
     return str(name or "").strip()
 
 
-def _is_decoder_output_tensor(name: str) -> bool:
-    return re.fullmatch(r"decoder_[0-9]+\.output", name) is not None
-
-
-def _normalized_stage(stage: Any) -> str:
-    return str(stage or "").strip()
-
-
-def _is_module_output_stage(stage: Any) -> bool:
-    return _normalized_stage(stage) == "module_output"
+def _is_named_public_output(name: Any) -> bool:
+    return _normalized_tensor_name(name).lower() in NAMED_PUBLIC_OUTPUT_TENSORS
 
 
 def _is_output_tensor(stage: Any, name: Any) -> bool:
-    """Return True for tensors exported by the default public output-only mode.
-
-    The paper artifact only needs output tensors.  The previous implementation
-    matched the word "output" anywhere in ``stage`` or ``name``; this saved
-    pseudo outputs such as ``lm_head.input`` with stage ``output_layer_input``
-    and could then de-duplicate away the real ``logits`` tensor.  Keep this
-    predicate explicit so default runs export semantically useful outputs only.
-    """
-    tensor_name = _normalized_tensor_name(name)
-    if not tensor_name:
+    stage_text = _normalized_stage(stage)
+    if stage_text.endswith("_input") or stage_text == "module_input":
         return False
-    if tensor_name in OUTPUT_ONLY_EXCLUDED_TENSOR_NAMES:
-        return False
-    if any(tensor_name.startswith(prefix) for prefix in OUTPUT_ONLY_EXCLUDED_PREFIXES):
-        return False
-    if _is_module_output_stage(stage):
-        return True
-    if tensor_name in OUTPUT_ONLY_EXACT_TENSOR_NAMES:
-        return True
-    if _is_decoder_output_tensor(tensor_name):
-        return True
-    return False
+    text = f"{stage_text}.{_normalized_tensor_name(name).lower()}"
+    return "output" in text or "logits" in text
 
 
 def _component_instance_key(component_id: int, stage: Any, name: Any, node_id: Any | None) -> str:
@@ -298,12 +254,11 @@ def _should_emit_tensor(component_id: int, stage: str, name: Any, node_id: Any |
         component_id,
         _component_instance_key(component_id, stage, name, node_id),
     ]
-    if not _is_module_output_stage(stage):
-        # Named public graph outputs such as logits/final_output must not be
-        # de-duplicated against each other.  Recursive module outputs, however,
-        # keep the old one-output-per-component-instance behavior to avoid
-        # exploding into full debug traces.
-        key_parts.append(_normalized_tensor_name(name))
+    if _is_named_public_output(name):
+        # Preserve the old one-output-per-component-instance behavior for
+        # recursive module outputs, but do not let earlier component outputs
+        # hide final public tensors such as logits/final_output.
+        key_parts.append(_normalized_tensor_name(name).lower())
     key = tuple(key_parts)
     with _LOCK:
         if key in _STATE["emitted_records"]:
