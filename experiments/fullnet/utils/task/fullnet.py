@@ -428,6 +428,15 @@ def _normalize_runtime_args(runtime_args):
         args.append("--bf16")
         has_low_precision = True
 
+    if _runtime_args_have_option(args, "--recompute-num-layers"):
+        add_option("--recompute-granularity", "full")
+
+    if (
+        _runtime_args_have_option(args, "--recompute-method")
+        and not _runtime_args_have_option(args, "--recompute-granularity")
+    ):
+        add_option("--recompute-granularity", "full")
+
     for index, item in enumerate(args):
         if item == "--recompute-granularity" and index + 1 < len(args) and args[index + 1] == "full":
             add_option("--recompute-method", "uniform")

@@ -214,6 +214,14 @@ class FullNetConfigTests(unittest.TestCase):
             ["--recompute-granularity", "full", "--recompute-method", "uniform"],
         )
         self.assertEqual(
+            fullnet._normalize_runtime_args(["--recompute-num-layers", "1"]),
+            ["--recompute-num-layers", "1", "--recompute-granularity", "full", "--recompute-method", "uniform"],
+        )
+        self.assertEqual(
+            fullnet._normalize_runtime_args(["--recompute-method", "uniform"]),
+            ["--recompute-method", "uniform", "--recompute-granularity", "full"],
+        )
+        self.assertEqual(
             fullnet._normalize_runtime_args(["--fp16", "--reuse-fp32-param"]),
             ["--fp16", "--reuse-fp32-param"],
         )
