@@ -223,6 +223,17 @@ def _assembly_model_paths(model_paths):
     return model_paths
 
 
+def _largest_dividing_tensor_parallel_size(constraints, max_tp):
+    max_tp = max(1, int(max_tp or 1))
+    values = [int(value) for value in (constraints or []) if _parse_optional_positive_int(value) > 0]
+    if not values:
+        return max_tp
+    for candidate in range(max_tp, 0, -1):
+        if all(value % candidate == 0 for value in values):
+            return candidate
+    return 1
+
+
 def _infer_model_aware_tensor_parallel_size(model_paths, visible_cards):
     max_tp = max(1, int(visible_cards))
     if not model_paths:
@@ -236,13 +247,47 @@ def _infer_model_aware_tensor_parallel_size(model_paths, visible_cards):
             if value > 0:
                 constraints.append(value)
 
-    if not constraints:
-        return max_tp
+    return _largest_dividing_tensor_parallel_size(constraints, max_tp)
 
-    for candidate in range(max_tp, 0, -1):
-        if all(value % candidate == 0 for value in constraints):
-            return candidate
-    return 1
+
+def _load_variant_transformer_constraints(yaml_path):
+    try:
+        with Path(yaml_path).open("r", encoding="utf-8") as handle:
+            data = yaml.safe_load(handle) or {}
+    except Exception as exc:
+        log_warn(f"读取变体yaml失败，无法做TP自适应: {yaml_path} | {exc}")
+        return []
+    if not isinstance(data, dict):
+        return []
+    base_config = data.get("base_config") if isinstance(data.get("base_config"), dict) else data
+    cfg = (base_config or {}).get("config", {})
+    if not isinstance(cfg, dict):
+        return []
+    constraints = []
+    for key in ("num_attention_heads", "num_query_groups", "hidden_size", "ffn_hidden_size"):
+        value = _parse_optional_positive_int(cfg.get(key))
+        if value > 0:
+            constraints.append(value)
+    return constraints
+
+
+def apply_variant_tensor_parallel_constraints(launcher_overrides, yaml_path):
+    """Lower TP for config variants whose mutated config cannot be built at current TP."""
+    overrides = dict(launcher_overrides or {})
+    if "TARGET_TENSOR_PARALLEL_SIZE" in overrides:
+        return overrides
+    constraints = _load_variant_transformer_constraints(yaml_path)
+    if not constraints:
+        return overrides
+    current_tp = resolve_distributed_config(overrides)["tp"]
+    adjusted_tp = _largest_dividing_tensor_parallel_size(constraints, current_tp)
+    if adjusted_tp < current_tp:
+        overrides["TARGET_TENSOR_PARALLEL_SIZE"] = adjusted_tp
+        log_warn(
+            f"变体配置不兼容 TP={current_tp}，自动降为 TP={adjusted_tp}: "
+            f"yaml={yaml_path}, constraints={constraints}"
+        )
+    return overrides
 
 
 def _largest_usable_worker_count(visible_cards, parallel_cards):
@@ -1714,7 +1759,10 @@ def main(params):
 
                     variant_runtime = load_variant_runtime_context(source_json)
                     runtime_args_list = variant_runtime["runtime_args"]
-                    launcher_overrides = variant_runtime["launcher"]
+                    launcher_overrides = apply_variant_tensor_parallel_constraints(
+                        variant_runtime["launcher"],
+                        runtime_yaml,
+                    )
                     env_overrides = variant_runtime["env"]
                     optimizer_env = variant_runtime["optimizer_env"]
                     save_steps = _runtime_control_int(variant_runtime, "SAVE_STEPS", Config.SAVE_STEPS)
