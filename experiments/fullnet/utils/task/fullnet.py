@@ -364,6 +364,7 @@ def load_variant_runtime_context(json_path):
         runtime_args = [str(item) for item in runtime_args if str(item).strip()]
     else:
         runtime_args = []
+    runtime_args = _normalize_runtime_args(runtime_args)
 
     def _dict_value(name):
         value = overrides.get(name, {})
@@ -387,6 +388,33 @@ def load_variant_runtime_context(json_path):
         "optimizer_env": _dict_value("optimizer_env"),
         "runtime_control": runtime_control,
     }
+
+
+def _runtime_args_have_option(args, option):
+    return any(str(item) == option for item in (args or []))
+
+
+def _normalize_runtime_args(runtime_args):
+    args = [str(item) for item in (runtime_args or []) if str(item).strip()]
+
+    def add_option(option, *values):
+        if not _runtime_args_have_option(args, option):
+            args.append(option)
+            args.extend(str(value) for value in values)
+
+    has_low_precision = _runtime_args_have_option(args, "--bf16") or _runtime_args_have_option(args, "--fp16")
+    if _runtime_args_have_option(args, "--reuse-fp32-param") and not has_low_precision:
+        args.append("--bf16")
+        has_low_precision = True
+    if _runtime_args_have_option(args, "--fp32-residual-connection") and not has_low_precision:
+        args.append("--bf16")
+        has_low_precision = True
+
+    for index, item in enumerate(args):
+        if item == "--recompute-granularity" and index + 1 < len(args) and args[index + 1] == "full":
+            add_option("--recompute-method", "uniform")
+            break
+    return args
 
 
 def _runtime_control_int(runtime_context, key, default):
@@ -1305,7 +1333,7 @@ def _has_valid_trace_payload(stage_dir):
             and path.suffix == ".pt"
             and "final_output" in path.name
             and path.stat().st_size > 0
-            for path in stage_dir.iterdir()
+            for path in stage_dir.rglob("*final_output*.pt")
         )
     except OSError:
         return False

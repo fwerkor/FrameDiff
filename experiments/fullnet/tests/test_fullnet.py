@@ -66,7 +66,9 @@ class FullNetConfigTests(unittest.TestCase):
             (stage_dir / "000001_c15_output_layer_output_layer_output_logits.pt").write_bytes(b"x")
             self.assertFalse(fullnet._has_valid_trace_payload(stage_dir))
 
-            (stage_dir / "000002_c0_full_network_network_output_final_output.pt").write_bytes(b"x")
+            nested_dir = stage_dir / "nested" / "trace"
+            nested_dir.mkdir(parents=True)
+            (nested_dir / "000002_c0_full_network_network_output_final_output.pt").write_bytes(b"x")
             self.assertTrue(fullnet._has_valid_trace_payload(stage_dir))
 
 
@@ -198,6 +200,23 @@ class FullNetConfigTests(unittest.TestCase):
         self.assertIn("export HCCL_DETERMINISTIC=false", cmd)
         self.assertIn("unset CUDA_DEVICE_MAX_CONNECTIONS", cmd)
         self.assertIn("export LMSV_RQ3_LR=3e-4", cmd)
+
+    def test_runtime_arg_dependencies_are_normalized(self) -> None:
+        from utils.task import fullnet
+
+        self.assertEqual(fullnet._normalize_runtime_args(["--reuse-fp32-param"]), ["--reuse-fp32-param", "--bf16"])
+        self.assertEqual(
+            fullnet._normalize_runtime_args(["--fp32-residual-connection"]),
+            ["--fp32-residual-connection", "--bf16"],
+        )
+        self.assertEqual(
+            fullnet._normalize_runtime_args(["--recompute-granularity", "full"]),
+            ["--recompute-granularity", "full", "--recompute-method", "uniform"],
+        )
+        self.assertEqual(
+            fullnet._normalize_runtime_args(["--fp16", "--reuse-fp32-param"]),
+            ["--fp16", "--reuse-fp32-param"],
+        )
 
     def test_cli_dry_run_outputs_fullnet_config(self) -> None:
         result = subprocess.run(
