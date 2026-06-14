@@ -522,8 +522,31 @@ def _sync_shared_weights(graph: Any) -> None:
     _report_model_param_discovery(graph, "init_before_load")
     state_dict = torch.load(path, map_location="cpu")
     _report_state_dict_discovery(state_dict, "load_file")
-    load_result = graph.load_state_dict(state_dict, strict=False)
-    _report_state_dict_keys(graph, state_dict, load_result, "after_load")
+    target_state = graph.state_dict()
+    compatible_state = {}
+    skipped_mismatched = []
+    for key, value in state_dict.items():
+        target_value = target_state.get(key)
+        if (
+            target_value is not None
+            and hasattr(value, "shape")
+            and hasattr(target_value, "shape")
+            and tuple(value.shape) != tuple(target_value.shape)
+        ):
+            skipped_mismatched.append((key, tuple(value.shape), tuple(target_value.shape)))
+            continue
+        compatible_state[key] = value
+    if skipped_mismatched:
+        preview = ", ".join(
+            f"{key}: {src}->{dst}"
+            for key, src, dst in skipped_mismatched[:8]
+        )
+        _emit(
+            f"weight load skipped shape-mismatched tensors: "
+            f"count={len(skipped_mismatched)} preview=[{preview}]"
+        )
+    load_result = graph.load_state_dict(compatible_state, strict=False)
+    _report_state_dict_keys(graph, compatible_state, load_result, "after_load")
     _snapshot_embedding(graph, "after_load")
     _report_embedding_change(graph, "init_before_load", "after_load")
     _report_tie_state(graph, "after_load")

@@ -831,7 +831,7 @@ if __name__ == "__main__":
 
         error_traceback = traceback.format_exc()
         print("错误信息:", error_traceback)
-        print("pass")
+        mutating_record["success"] = False
 
         # loss.backward()
     # optimizer.step()
@@ -861,7 +861,7 @@ if __name__ == "__main__":
     torch.npu.reset_peak_memory_stats()
     if not os.path.exists(res_dir):
         os.makedirs(res_dir)
-    if args.rank == 0:
+    if args.rank == 0 and successes:
         if not os.path.exists(csv_path):
              with open(csv_path, mode='w', newline='') as csv_file:
                 writer = csv.writer(csv_file)
