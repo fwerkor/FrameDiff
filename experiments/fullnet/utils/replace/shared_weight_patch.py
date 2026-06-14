@@ -458,6 +458,57 @@ def _shared_timeout_s() -> int:
         return 300
 
 
+def _adapt_legacy_tensor_to_shape(value: Any, target_value: Any) -> Any | None:
+    """Adapt a legacy rank0 shard to the current local shard shape.
+
+    The existing fullnet artifacts intentionally use one shared_weight.pth file.
+    When a parallel variant changes TP/PP/EP/CP, local parameter shapes may differ
+    from that file.  In that case, treat the file as a deterministic single shard:
+    repeat whole blocks when the target dimension is larger, or take the leading
+    slice when the target dimension is smaller.  This keeps prepare unchanged and
+    avoids silently replacing the old shared weight with a newly prepared one.
+    """
+    try:
+        import torch
+
+        if not isinstance(value, torch.Tensor) or not isinstance(target_value, torch.Tensor):
+            return None
+        src_shape = tuple(value.shape)
+        dst_shape = tuple(target_value.shape)
+        if src_shape == dst_shape:
+            return value
+        if len(src_shape) != len(dst_shape):
+            if value.numel() == target_value.numel():
+                return value.reshape(dst_shape).to(dtype=target_value.dtype)
+            return None
+        adapted = value.detach().cpu()
+        for dim, (src, dst) in enumerate(zip(src_shape, dst_shape)):
+            src = int(src)
+            dst = int(dst)
+            if src == dst:
+                continue
+            if src <= 0 or dst <= 0:
+                return None
+            if dst > src:
+                if dst % src != 0:
+                    return None
+                reps = [1] * adapted.dim()
+                reps[dim] = dst // src
+                adapted = adapted.repeat(*reps)
+            else:
+                if src % dst != 0:
+                    return None
+                index = [slice(None)] * adapted.dim()
+                index[dim] = slice(0, dst)
+                adapted = adapted[tuple(index)].contiguous()
+        if tuple(adapted.shape) != dst_shape:
+            return None
+        return adapted.to(dtype=target_value.dtype)
+    except Exception as exc:
+        _emit(f"legacy shared weight shape adaptation failed: {exc}")
+        return None
+
+
 def _barrier() -> None:
     try:
         import torch.distributed as dist
@@ -524,6 +575,7 @@ def _sync_shared_weights(graph: Any) -> None:
     _report_state_dict_discovery(state_dict, "load_file")
     target_state = graph.state_dict()
     compatible_state = {}
+    adapted_mismatched = []
     skipped_mismatched = []
     for key, value in state_dict.items():
         target_value = target_state.get(key)
@@ -533,9 +585,23 @@ def _sync_shared_weights(graph: Any) -> None:
             and hasattr(target_value, "shape")
             and tuple(value.shape) != tuple(target_value.shape)
         ):
-            skipped_mismatched.append((key, tuple(value.shape), tuple(target_value.shape)))
+            adapted = _adapt_legacy_tensor_to_shape(value, target_value)
+            if adapted is None:
+                skipped_mismatched.append((key, tuple(value.shape), tuple(target_value.shape)))
+                continue
+            compatible_state[key] = adapted
+            adapted_mismatched.append((key, tuple(value.shape), tuple(target_value.shape)))
             continue
         compatible_state[key] = value
+    if adapted_mismatched:
+        preview = ", ".join(
+            f"{key}: {src}->{dst}"
+            for key, src, dst in adapted_mismatched[:8]
+        )
+        _emit(
+            f"legacy shared weight adapted shape-mismatched tensors: "
+            f"count={len(adapted_mismatched)} preview=[{preview}]"
+        )
     if skipped_mismatched:
         preview = ", ".join(
             f"{key}: {src}->{dst}"

@@ -262,10 +262,28 @@ def _override_value(overrides, key, default):
 
 def resolve_distributed_config(launcher_overrides=None):
     inferred_cards = _infer_visible_device_count()
-    tp = _parse_optional_positive_int(_override_value(launcher_overrides, "TARGET_TENSOR_PARALLEL_SIZE", Config.TARGET_TENSOR_PARALLEL_SIZE))
-    pp = _parse_optional_positive_int(_override_value(launcher_overrides, "TARGET_PIPELINE_PARALLEL_SIZE", Config.TARGET_PIPELINE_PARALLEL_SIZE))
-    ep = _parse_optional_positive_int(_override_value(launcher_overrides, "TARGET_EXPERT_PARALLEL_SIZE", Config.TARGET_EXPERT_PARALLEL_SIZE))
-    cp = _parse_optional_positive_int(_override_value(launcher_overrides, "TARGET_CONTEXT_PARALLEL_SIZE", Config.TARGET_CONTEXT_PARALLEL_SIZE))
+    launcher_overrides = launcher_overrides if isinstance(launcher_overrides, dict) else {}
+    has_topology_override = any(
+        key in launcher_overrides
+        for key in (
+            "TARGET_TENSOR_PARALLEL_SIZE",
+            "TARGET_PIPELINE_PARALLEL_SIZE",
+            "TARGET_EXPERT_PARALLEL_SIZE",
+            "TARGET_CONTEXT_PARALLEL_SIZE",
+        )
+    )
+    if has_topology_override:
+        tp_default = pp_default = ep_default = cp_default = 1
+    else:
+        tp_default = Config.TARGET_TENSOR_PARALLEL_SIZE
+        pp_default = Config.TARGET_PIPELINE_PARALLEL_SIZE
+        ep_default = Config.TARGET_EXPERT_PARALLEL_SIZE
+        cp_default = Config.TARGET_CONTEXT_PARALLEL_SIZE
+
+    tp = _parse_optional_positive_int(_override_value(launcher_overrides, "TARGET_TENSOR_PARALLEL_SIZE", tp_default))
+    pp = _parse_optional_positive_int(_override_value(launcher_overrides, "TARGET_PIPELINE_PARALLEL_SIZE", pp_default))
+    ep = _parse_optional_positive_int(_override_value(launcher_overrides, "TARGET_EXPERT_PARALLEL_SIZE", ep_default))
+    cp = _parse_optional_positive_int(_override_value(launcher_overrides, "TARGET_CONTEXT_PARALLEL_SIZE", cp_default))
 
     if tp <= 0 and pp <= 0 and ep <= 0 and cp <= 0:
         tp = inferred_cards
