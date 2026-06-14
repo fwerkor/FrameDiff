@@ -255,7 +255,7 @@ def _load_variant_transformer_constraints(yaml_path):
         with Path(yaml_path).open("r", encoding="utf-8") as handle:
             data = yaml.safe_load(handle) or {}
     except Exception as exc:
-        log_warn(f"读取变体yaml失败，无法做TP自适应: {yaml_path} | {exc}")
+        log_info(f"读取变体yaml失败，无法做TP自适应: {yaml_path} | {exc}")
         return []
     if not isinstance(data, dict):
         return []
@@ -283,8 +283,8 @@ def apply_variant_tensor_parallel_constraints(launcher_overrides, yaml_path):
     adjusted_tp = _largest_dividing_tensor_parallel_size(constraints, current_tp)
     if adjusted_tp < current_tp:
         overrides["TARGET_TENSOR_PARALLEL_SIZE"] = adjusted_tp
-        log_warn(
-            f"变体配置不兼容 TP={current_tp}，自动降为 TP={adjusted_tp}: "
+        log_info(
+            f"变体配置与当前 TP={current_tp} 不匹配，使用 TP={adjusted_tp}: "
             f"yaml={yaml_path}, constraints={constraints}"
         )
     return overrides
