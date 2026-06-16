@@ -2326,7 +2326,7 @@ def main(params):
 
     if repair_missing:
         _print_repaired_runs(repaired_runs)
-        final_repair_plan = build_repair_plan(model_paths, output_root, records_root, max_iterations)
+        final_repair_plan = build_repair_plan(model_paths, output_root, records_root, max_iterations, repair_skip_variants)
         _print_repair_plan(final_repair_plan, title="补测后完整扫描")
         if final_repair_plan.get("missing_runs") or final_repair_plan.get("errors"):
             exit_code = 1
