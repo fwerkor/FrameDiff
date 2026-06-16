@@ -1584,13 +1584,39 @@ def shared_weight_is_valid(path):
         return False
 
 
-def build_repair_plan(model_paths, output_root, records_root, max_iterations):
+def parse_repair_skip_variants(params=None):
+    values = []
+    params = params or {}
+    for key in ("REPAIR_"+"SKIP_VARIANTS", "SKIP_"+"VARIANTS"):
+        value = params.get(key)
+        if value:
+            values.append(value)
+    for key in ("FRAMEDIFF_FULLNET_"+"SKIP_VARIANTS", "LMSV_FULLNET_"+"SKIP_VARIANTS"):
+        value = os.environ.get(key)
+        if value:
+            values.append(value)
+    skipped = set()
+    for value in values:
+        if isinstance(value, (list, tuple, set)):
+            parts = value
+        else:
+            parts = str(value).replace(";", ",").split(",")
+        for part in parts:
+            item = str(part).strip()
+            if item:
+                skipped.add(item)
+    return skipped
+
+
+def build_repair_plan(model_paths, output_root, records_root, max_iterations, skip_variants=None):
     plan = {
         "models": {},
         "missing_runs": [],
         "full_models": [],
         "errors": [],
+        "skipped_variants": [],
     }
+    skip_variants = set(skip_variants or [])
     for model_path in model_paths:
         model_name = _model_name_from_path(model_path)
         model_plan = {
@@ -1613,6 +1639,10 @@ def build_repair_plan(model_paths, output_root, records_root, max_iterations):
             plan["full_models"].append(model_name)
         for variant_dir in variants:
             variant_name = variant_dir.name
+            if variant_name in skip_variants:
+                model_plan["variants"][variant_name] = {"skipped": True}
+                plan["skipped_variants"].append({"model": model_name, "variant": variant_name})
+                continue
             variant_plan = {}
             model_plan["variants"][variant_name] = variant_plan
             for iteration in range(1, max_iterations + 1):
@@ -1643,6 +1673,15 @@ def _format_repair_plan(plan, *, title):
         lines.append("  需要整模型完整流程补测（缺 shared_weight.pth）:")
         for model_name in full_models:
             lines.append(f"    - {model_name}")
+    skipped = plan.get("skipped_variants") or []
+    if skipped:
+        grouped_skips = {}
+        for item in skipped:
+            grouped_skips.setdefault(item["model"], []).append(item["variant"])
+        lines.append("  补测跳过变体（已判定为框架/通信侧或手动排除）:")
+        for model_name in sorted(grouped_skips):
+            names = sorted(set(grouped_skips[model_name]))
+            lines.append(f"    {model_name}: {', '.join(names)}")
     grouped = {}
     for item in plan.get("missing_runs", []):
         grouped.setdefault(item["model"], {}).setdefault(item["variant"], []).append(item)
@@ -1729,6 +1768,7 @@ def main(params):
     output_root.mkdir(parents=True, exist_ok=True)
     records_root.mkdir(parents=True, exist_ok=True)
     repair_missing = data_helpers.parse_bool(params.get("REPAIR_MISSING", False))
+    repair_skip_variants = parse_repair_skip_variants(params)
 
     log_step("整网链路启动")
     log_kv("配置", "迭代次数", max_iterations)
@@ -1745,6 +1785,8 @@ def main(params):
     log_kv("配置", "项目临时目录", project_tmp_root)
     log_kv("配置", "共享权重临时目录", Config.SHARED_WEIGHT_TMP_ROOT)
     log_kv("配置", "补测模式", repair_missing)
+    if repair_skip_variants:
+        log_kv("配置", "补测跳过变体", sorted(repair_skip_variants))
     log_kv("配置", "Trace导出", f"{Config.TRACE_ENABLED} | full_weights={Config.TRACE_FULL_WEIGHTS} | perturb_runs={Config.TRACE_PERTURBATION_RUNS}")
     log_kv(
         "配置",
@@ -1756,7 +1798,7 @@ def main(params):
     initial_repair_plan = None
     full_repair_models = set()
     if repair_missing:
-        initial_repair_plan = build_repair_plan(model_paths, output_root, records_root, max_iterations)
+        initial_repair_plan = build_repair_plan(model_paths, output_root, records_root, max_iterations, repair_skip_variants)
         full_repair_models = set(initial_repair_plan.get("full_models") or [])
         _print_repair_plan(initial_repair_plan, title="补测前完整扫描")
         if not initial_repair_plan.get("missing_runs") and not initial_repair_plan.get("errors"):
@@ -1866,6 +1908,9 @@ def main(params):
                     if skip_current_model:
                         break
                     variant_name = variant_dir.name
+                    if repair_missing and variant_name in repair_skip_variants:
+                        log_info(f"[{model_name}/{variant_name}/iter{i}] 补测跳过：变体在 REPAIR_SKIP_VARIANTS/FRAMEDIFF_FULLNET_SKIP_VARIANTS 中")
+                        continue
                     stage_results = {
                         TRAIN_PREPARE: "SKIP",
                         TRAIN_PTA_BASELINE: "SKIP",
