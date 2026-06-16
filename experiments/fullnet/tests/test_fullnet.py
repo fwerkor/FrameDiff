@@ -211,7 +211,7 @@ class FullNetConfigTests(unittest.TestCase):
         )
         self.assertEqual(
             fullnet._normalize_runtime_args(["--recompute-granularity", "full"]),
-            ["--recompute-granularity", "full", "--recompute-method", "uniform"],
+            ["--recompute-granularity", "full", "--recompute-method", "uniform", "--recompute-num-layers", "1"],
         )
         self.assertEqual(
             fullnet._normalize_runtime_args(["--recompute-num-layers", "1"]),
@@ -219,12 +219,21 @@ class FullNetConfigTests(unittest.TestCase):
         )
         self.assertEqual(
             fullnet._normalize_runtime_args(["--recompute-method", "uniform"]),
-            ["--recompute-method", "uniform", "--recompute-granularity", "full"],
+            ["--recompute-method", "uniform", "--recompute-granularity", "full", "--recompute-num-layers", "1"],
         )
         self.assertEqual(
             fullnet._normalize_runtime_args(["--fp16", "--reuse-fp32-param"]),
             ["--fp16", "--reuse-fp32-param"],
         )
+
+    def test_expert_parallel_args_include_num_experts(self) -> None:
+        from utils.task import fullnet
+
+        args = fullnet._build_expert_parallel_args_block(
+            {"ep": 2},
+            "-c model_config -r 1 --mutnm 0 -n 8 -m experiments/model_config/mixtral.yaml",
+        )
+        self.assertEqual(args, "--num-experts 4")
 
     def test_cli_dry_run_outputs_fullnet_config(self) -> None:
         result = subprocess.run(

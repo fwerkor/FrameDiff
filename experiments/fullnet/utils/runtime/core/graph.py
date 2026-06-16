@@ -75,8 +75,7 @@ def _extract_node_transformer_config(config_data):
     cfg = model_helpers.extract_graph_transformer_config_from_yaml(config_data)
     valid_fields = set(TransformerConfig.__dataclass_fields__.keys())
     filtered = {k: v for k, v in cfg.items() if k in valid_fields}
-    _normalize_init_method(filtered)
-    _normalize_torch_dtype_fields(filtered)
+    _prepare_transformer_config_dict(filtered)
     return filtered
 
 
@@ -109,6 +108,98 @@ def _normalize_torch_dtype_fields(config: dict) -> None:
         value = config.get(key)
         if isinstance(value, str) and value in dtype_map:
             config[key] = dtype_map[value]
+
+
+def _safe_int(value, default=0) -> int:
+    try:
+        if value is None:
+            return default
+        return int(value)
+    except Exception:
+        return default
+
+
+def _normalize_context_parallel_fields(config: dict) -> None:
+    if not isinstance(config, dict):
+        return
+    cp = _safe_int(config.get("context_parallel_size", 1), 1)
+    num_layers = _safe_int(config.get("num_layers", 0), 0)
+    if cp <= 1 or num_layers <= 0:
+        return
+    value = config.get("cp_comm_type")
+    if value is None or value == "":
+        config["cp_comm_type"] = ["p2p"] * num_layers
+    elif isinstance(value, str):
+        config["cp_comm_type"] = [value] * num_layers
+    elif isinstance(value, (list, tuple)) and len(value) == 1 and num_layers > 1:
+        config["cp_comm_type"] = list(value) * num_layers
+
+
+def _maybe_get_parallel_world_size(func_name: str) -> int | None:
+    try:
+        func = getattr(parallel_state, func_name, None)
+        if func is None:
+            return None
+        value = int(func())
+        return value if value > 0 else None
+    except Exception:
+        return None
+
+
+def _sync_runtime_parallel_fields(config: dict) -> None:
+    if not isinstance(config, dict):
+        return
+    mapping = {
+        "tensor_model_parallel_size": "get_tensor_model_parallel_world_size",
+        "pipeline_model_parallel_size": "get_pipeline_model_parallel_world_size",
+        "context_parallel_size": "get_context_parallel_world_size",
+        "expert_model_parallel_size": "get_expert_model_parallel_world_size",
+    }
+    for key, func_name in mapping.items():
+        value = _maybe_get_parallel_world_size(func_name)
+        if value is not None:
+            config[key] = value
+
+
+def _stabilize_unsupported_moe_bias(config: dict) -> None:
+    if not isinstance(config, dict):
+        return
+    has_moe = any(
+        _safe_int(config.get(key, 0), 0) > 0
+        for key in ("num_moe_experts", "num_experts", "moe_ffn_hidden_size")
+    ) or bool(config.get("moe_grouped_gemm"))
+    if has_moe and bool(config.get("add_bias_linear", False)):
+        # MindSpeed/Megatron rejects add_bias_linear=True for MoE layers.
+        # Keep the run executable and make the linear-bias variant a no-op for MoE models.
+        config["add_bias_linear"] = False
+
+
+def _normalize_feature_dependencies(config: dict) -> None:
+    if not isinstance(config, dict):
+        return
+    has_low_precision = bool(config.get('bf16')) or bool(config.get('fp16'))
+    needs_low_precision = bool(config.get('reuse_fp32_param')) or bool(config.get('fp32_residual_connection'))
+    if needs_low_precision and not has_low_precision:
+        config['bf16'] = True
+    if config.get('recompute_num_layers') not in (None, '') and not config.get('recompute_granularity'):
+        config['recompute_granularity'] = 'full'
+    if config.get('recompute_granularity') == 'full':
+        if not config.get('recompute_method'):
+            config['recompute_method'] = 'uniform'
+        if config.get('recompute_num_layers') in (None, '', 0):
+            config['recompute_num_layers'] = 1
+
+def _prepare_transformer_config_dict(config: dict, *, sync_parallel: bool = True) -> dict:
+    if not isinstance(config, dict):
+        return config
+    if sync_parallel:
+        _sync_runtime_parallel_fields(config)
+    _normalize_init_method(config)
+    _normalize_torch_dtype_fields(config)
+    _normalize_feature_dependencies(config)
+    _stabilize_unsupported_moe_bias(config)
+    _normalize_context_parallel_fields(config)
+    return config
 
 
 def reshape_tensor_nd(
@@ -178,18 +269,21 @@ class Graph(LanguageModule):
             # 使用配置字典初始化
             model_config = config_dict
             if 'config' in model_config:
-                _normalize_init_method(model_config['config'])
+                _prepare_transformer_config_dict(model_config['config'])
         elif config_path is not None:
             # 使用配置文件路径初始化
             config_path = model_helpers.resolve_repo_path(config_path)
             yaml = YAML()
             with open(config_path, 'r', encoding='utf-8') as file:
                 model_config = yaml.load(file)
-                _normalize_init_method(model_config['config'])
+                _prepare_transformer_config_dict(model_config['config'])
         else:
             raise ValueError("必须提供 config_path 或 config_dict 中的一个")
 
-        transformerblock_config = TransformerConfig(**model_config["config"])
+        valid_fields = set(TransformerConfig.__dataclass_fields__.keys())
+        cfg_dict = {k: v for k, v in model_config["config"].items() if k in valid_fields}
+        _prepare_transformer_config_dict(cfg_dict)
+        transformerblock_config = TransformerConfig(**cfg_dict)
         model_config["config"] = transformerblock_config
         self.total_config = model_config
         config = dict()
@@ -474,6 +568,40 @@ class Graph(LanguageModule):
                     if tensor is not None:
                         return tensor
             return None
+
+        def _first_floating_parameter_dtype(module):
+            if module is None or not hasattr(module, "parameters"):
+                return None
+            for param in module.parameters():
+                dtype = getattr(param, "dtype", None)
+                if dtype in (torch.float16, torch.float32, torch.float64, torch.bfloat16):
+                    return dtype
+                dtype_text = str(dtype)
+                if dtype_text in {"Float16", "Float32", "Float64", "BFloat16", "torch.float16", "torch.float32", "torch.float64", "torch.bfloat16"}:
+                    return dtype
+            return None
+
+        def _cast_floating_tensor_to_dtype(tensor, target_dtype):
+            if tensor is None or target_dtype is None:
+                return tensor
+            try:
+                is_floating = bool(getattr(tensor, "is_floating_point", lambda: False)())
+            except Exception:
+                is_floating = str(getattr(tensor, "dtype", "")).lower() in {
+                    "float16", "float32", "float64", "bfloat16",
+                    "torch.float16", "torch.float32", "torch.float64", "torch.bfloat16",
+                    "float16", "float32", "float64", "bfloat16",
+                }
+            if not is_floating:
+                return tensor
+            if getattr(tensor, "dtype", None) == target_dtype:
+                return tensor
+            try:
+                return tensor.to(dtype=target_dtype)
+            except TypeError:
+                return tensor.to(target_dtype)
+            except Exception:
+                return tensor
 
         def _component_for_module(module_name, module):
             return classify_fullnet_component(module_name, module)
@@ -1251,6 +1379,9 @@ class Graph(LanguageModule):
                         # 真正调用 decoder block
                         print(f"\ndecoder block {cur_node.id}: \n", cur_block)
 
+                        decoder_param_dtype = _first_floating_parameter_dtype(cur_block)
+                        input_data = _cast_floating_tensor_to_dtype(input_data, decoder_param_dtype)
+
                         _analyze_decoder_internals(cur_block, input_data, attention_mask, cur_node.id, "logs/decoder_info.log")
 
                         attention_mask_ready = _ensure_tensor_ready(attention_mask, "attention_mask")
@@ -1468,8 +1599,7 @@ class Graph(LanguageModule):
             graph_structure = loaded_config['graph_structure']
 
             # 重新初始化Graph的配置
-            _normalize_init_method(base_config['config'])
-            _normalize_torch_dtype_fields(base_config['config'])
+            _prepare_transformer_config_dict(base_config['config'])
 
             # ------------------------------------------------------------------
             # 一些历史生成的 yaml 中会包含 TransformerConfig 当前版本并不支持的字段，
@@ -1486,6 +1616,7 @@ class Graph(LanguageModule):
                     f"  检测到未识别的 TransformerConfig 字段，已忽略: {sorted(list(unknown_keys))}"
                 )
 
+            _prepare_transformer_config_dict(filtered_cfg_dict)
             transformerblock_config = TransformerConfig(**filtered_cfg_dict)
             self._stabilize_decoder_mlp_config(transformerblock_config)
 
@@ -1561,6 +1692,7 @@ class Graph(LanguageModule):
                         # 提取 TransformerConfig/MLATransformerConfig 配置
                         mutated_transformer_config = _extract_node_transformer_config(mutated_yaml_config)
                         if mutated_transformer_config:
+                            _prepare_transformer_config_dict(mutated_transformer_config)
                             mutated_config = TransformerConfig(**mutated_transformer_config)
                             self._stabilize_decoder_mlp_config(mutated_config)
                             node.config = mutated_config
@@ -1600,6 +1732,7 @@ class Graph(LanguageModule):
                         raise KeyError(
                             f"missing TransformerConfig/MLATransformerConfig for node {node_id - 1}"
                         )
+                    _prepare_transformer_config_dict(node_transformer_config)
                     node.config = TransformerConfig(**node_transformer_config)
                     self._stabilize_decoder_mlp_config(node.config)
                 

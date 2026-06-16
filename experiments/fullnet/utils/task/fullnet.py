@@ -485,6 +485,7 @@ def _normalize_runtime_args(runtime_args):
     for index, item in enumerate(args):
         if item == "--recompute-granularity" and index + 1 < len(args) and args[index + 1] == "full":
             add_option("--recompute-method", "uniform")
+            add_option("--recompute-num-layers", "1")
             break
     return args
 
@@ -496,6 +497,68 @@ def _runtime_control_int(runtime_context, key, default):
 
 def _build_runtime_args_block(runtime_args_list):
     return " ".join(shlex.quote(str(arg)) for arg in (runtime_args_list or []) if str(arg).strip())
+
+
+def _extract_model_config_path_from_mutate_args(mutate_args):
+    try:
+        tokens = shlex.split(str(mutate_args or ""))
+    except ValueError:
+        return None
+    for index, token in enumerate(tokens):
+        if token in {"-m", "--model-config", "--model_config"} and index + 1 < len(tokens):
+            return Path(tokens[index + 1])
+        if token.startswith("--model-config="):
+            return Path(token.split("=", 1)[1])
+        if token.startswith("--model_config="):
+            return Path(token.split("=", 1)[1])
+    return None
+
+
+def _infer_num_experts_from_mutate_args(mutate_args):
+    model_path = _extract_model_config_path_from_mutate_args(mutate_args)
+    if model_path is None:
+        return None
+    candidates = [model_path]
+    if not model_path.is_absolute():
+        candidates.append((LMSV_ROOT / model_path).resolve())
+        candidates.append((MODEL_CONFIG_DIR / model_path.name).resolve())
+    for candidate in candidates:
+        try:
+            if not candidate.exists():
+                continue
+            data = yaml.safe_load(candidate.read_text(encoding="utf-8")) or {}
+        except Exception:
+            continue
+        if not isinstance(data, dict):
+            continue
+        config_sections = [
+            data.get("config", {}),
+            data.get("TransformerConfig", {}),
+            data.get("get_gpt_layer_local_spec", {}),
+            data,
+        ]
+        for cfg in config_sections:
+            if not isinstance(cfg, dict):
+                continue
+            for key in ("num_experts", "num_moe_experts"):
+                try:
+                    value = int(cfg.get(key, 0) or 0)
+                except Exception:
+                    value = 0
+                if value > 0:
+                    return value
+    return None
+
+
+def _build_expert_parallel_args_block(dist_cfg, mutate_args, runtime_args_list=None):
+    if int((dist_cfg or {}).get("ep", 1) or 1) <= 1:
+        return ""
+    if _runtime_args_have_option(runtime_args_list, "--num-experts"):
+        return ""
+    num_experts = _infer_num_experts_from_mutate_args(mutate_args)
+    if not num_experts:
+        return ""
+    return f"--num-experts {num_experts}"
 
 
 def _format_env_value(value):
@@ -699,6 +762,7 @@ def build_pta_verify_stage_cmd(
     train_iters = int(train_iters)
     dist_cfg = resolve_distributed_config(launcher_overrides)
     runtime_args_block = _build_runtime_args_block(runtime_args_list)
+    expert_parallel_args_block = _build_expert_parallel_args_block(dist_cfg, mutate_args, runtime_args_list)
     variant_env_block = _build_variant_env_override_block(env_overrides, optimizer_env)
     context_parallel_arg = f"--context-parallel-size {dist_cfg['cp']}" if int(dist_cfg.get("cp", 1)) > 1 else ""
     if step_log_csv_path:
@@ -752,6 +816,7 @@ def build_pta_verify_stage_cmd(
         --pipeline-model-parallel-size {dist_cfg["pp"]} \
         --expert-model-parallel-size {dist_cfg["ep"]} \
         {context_parallel_arg} \
+        {expert_parallel_args_block} \
         --num-layers 16 \
         --hidden-size 928 \
         --ffn-hidden-size 1712 \
@@ -869,6 +934,7 @@ def build_msa_verify_load_cmd(
     train_iters = int(train_iters)
     dist_cfg = resolve_distributed_config(launcher_overrides)
     runtime_args_block = _build_runtime_args_block(runtime_args_list)
+    expert_parallel_args_block = _build_expert_parallel_args_block(dist_cfg, mutate_args, runtime_args_list)
     variant_env_block = _build_variant_env_override_block(env_overrides, optimizer_env)
     context_parallel_arg = f"--context-parallel-size {dist_cfg['cp']}" if int(dist_cfg.get("cp", 1)) > 1 else ""
     if step_log_csv_path:
@@ -929,6 +995,7 @@ def build_msa_verify_load_cmd(
         --pipeline-model-parallel-size {dist_cfg["pp"]} \
         --expert-model-parallel-size {dist_cfg["ep"]} \
         {context_parallel_arg} \
+        {expert_parallel_args_block} \
         --num-layers 16 \
         --hidden-size 928 \
         --ffn-hidden-size 1712 \
