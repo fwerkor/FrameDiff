@@ -499,6 +499,39 @@ def _build_runtime_args_block(runtime_args_list):
     return " ".join(shlex.quote(str(arg)) for arg in (runtime_args_list or []) if str(arg).strip())
 
 
+def _load_model_config_candidates(model_path):
+    if model_path is None:
+        return []
+    model_text = str(model_path).split(",", 1)[0].strip()
+    if not model_text:
+        return []
+    model_path = Path(model_text)
+    candidates = [model_path]
+    if not model_path.is_absolute():
+        candidates.append((LMSV_ROOT / model_path).resolve())
+        candidates.append((LMSV_ROOT.parent.parent / model_path).resolve())
+        candidates.append((MODEL_CONFIG_DIR / model_path.name).resolve())
+    return candidates
+
+
+def _walk_config_dicts(data):
+    if not isinstance(data, dict):
+        return []
+    candidates = [data]
+    for key in (
+        "base_config",
+        "config",
+        "TransformerConfig",
+        "MLATransformerConfig",
+        "get_gpt_layer_local_spec",
+        "production_config",
+    ):
+        value = data.get(key)
+        if isinstance(value, dict):
+            candidates.extend(_walk_config_dicts(value))
+    return candidates
+
+
 def _extract_model_config_path_from_mutate_args(mutate_args):
     try:
         tokens = shlex.split(str(mutate_args or ""))
@@ -506,48 +539,55 @@ def _extract_model_config_path_from_mutate_args(mutate_args):
         return None
     for index, token in enumerate(tokens):
         if token in {"-m", "--model-config", "--model_config"} and index + 1 < len(tokens):
-            return Path(tokens[index + 1])
+            return Path(tokens[index + 1].split(",", 1)[0].strip())
         if token.startswith("--model-config="):
-            return Path(token.split("=", 1)[1])
+            return Path(token.split("=", 1)[1].split(",", 1)[0].strip())
         if token.startswith("--model_config="):
-            return Path(token.split("=", 1)[1])
+            return Path(token.split("=", 1)[1].split(",", 1)[0].strip())
     return None
 
 
-def _infer_num_experts_from_mutate_args(mutate_args):
+def _read_model_config_dicts_from_mutate_args(mutate_args):
     model_path = _extract_model_config_path_from_mutate_args(mutate_args)
-    if model_path is None:
-        return None
-    candidates = [model_path]
-    if not model_path.is_absolute():
-        candidates.append((LMSV_ROOT / model_path).resolve())
-        candidates.append((MODEL_CONFIG_DIR / model_path.name).resolve())
-    for candidate in candidates:
+    for candidate in _load_model_config_candidates(model_path):
         try:
             if not candidate.exists():
                 continue
             data = yaml.safe_load(candidate.read_text(encoding="utf-8")) or {}
         except Exception:
             continue
-        if not isinstance(data, dict):
-            continue
-        config_sections = [
-            data.get("config", {}),
-            data.get("TransformerConfig", {}),
-            data.get("get_gpt_layer_local_spec", {}),
-            data,
-        ]
-        for cfg in config_sections:
-            if not isinstance(cfg, dict):
-                continue
-            for key in ("num_experts", "num_moe_experts"):
-                try:
-                    value = int(cfg.get(key, 0) or 0)
-                except Exception:
-                    value = 0
-                if value > 0:
-                    return value
+        if isinstance(data, dict):
+            return _walk_config_dicts(data)
+    return []
+
+
+def _infer_num_layers_from_mutate_args(mutate_args):
+    for cfg in _read_model_config_dicts_from_mutate_args(mutate_args):
+        value = _parse_optional_positive_int(cfg.get("num_layers"))
+        if value > 0:
+            return value
     return None
+
+
+def _infer_num_experts_from_mutate_args(mutate_args):
+    for cfg in _read_model_config_dicts_from_mutate_args(mutate_args):
+        for key in ("num_experts", "num_moe_experts"):
+            value = _parse_optional_positive_int(cfg.get(key))
+            if value > 0:
+                return value
+    return None
+
+
+def _build_context_parallel_args_block(dist_cfg, mutate_args, runtime_args_list=None):
+    cp = int((dist_cfg or {}).get("cp", 1) or 1)
+    if cp <= 1:
+        return ""
+    args = ["--context-parallel-size", str(cp)]
+    if not _runtime_args_have_option(runtime_args_list, "--cp-comm-type"):
+        num_layers = _infer_num_layers_from_mutate_args(mutate_args) or 16
+        args.append("--cp-comm-type")
+        args.extend(["p2p"] * max(1, int(num_layers)))
+    return " ".join(shlex.quote(str(arg)) for arg in args)
 
 
 def _build_expert_parallel_args_block(dist_cfg, mutate_args, runtime_args_list=None):
@@ -764,7 +804,7 @@ def build_pta_verify_stage_cmd(
     runtime_args_block = _build_runtime_args_block(runtime_args_list)
     expert_parallel_args_block = _build_expert_parallel_args_block(dist_cfg, mutate_args, runtime_args_list)
     variant_env_block = _build_variant_env_override_block(env_overrides, optimizer_env)
-    context_parallel_arg = f"--context-parallel-size {dist_cfg['cp']}" if int(dist_cfg.get("cp", 1)) > 1 else ""
+    context_parallel_arg = _build_context_parallel_args_block(dist_cfg, mutate_args, runtime_args_list)
     if step_log_csv_path:
         step_log_block = f"export LMSV_TRAINING_LOG_CSV={shlex.quote(str(Path(step_log_csv_path).resolve()))}"
     else:
@@ -936,7 +976,7 @@ def build_msa_verify_load_cmd(
     runtime_args_block = _build_runtime_args_block(runtime_args_list)
     expert_parallel_args_block = _build_expert_parallel_args_block(dist_cfg, mutate_args, runtime_args_list)
     variant_env_block = _build_variant_env_override_block(env_overrides, optimizer_env)
-    context_parallel_arg = f"--context-parallel-size {dist_cfg['cp']}" if int(dist_cfg.get("cp", 1)) > 1 else ""
+    context_parallel_arg = _build_context_parallel_args_block(dist_cfg, mutate_args, runtime_args_list)
     if step_log_csv_path:
         step_log_block = f"export LMSV_TRAINING_LOG_CSV={shlex.quote(str(Path(step_log_csv_path).resolve()))}"
     else:

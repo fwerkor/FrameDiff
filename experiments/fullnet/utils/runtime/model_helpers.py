@@ -272,11 +272,26 @@ def extract_transformer_config_from_yaml(yaml_config: dict) -> dict:
     elif "MLATransformerConfig" in yaml_config:
         # Support DeepSeekV3 MLA configuration
         base_config = yaml_config["MLATransformerConfig"].copy()
+    elif isinstance(yaml_config.get("base_config"), dict) and isinstance(
+        yaml_config["base_config"].get("config"), dict
+    ):
+        # RQ3 mutated_config.yaml stores the actual TransformerConfig under
+        # base_config.config. Falling back to DEFAULT_TRANSFORMER_CONFIG here
+        # silently creates a 24-layer config and breaks CP cp_comm_type checks.
+        base_config = yaml_config["base_config"]["config"].copy()
+    elif isinstance(yaml_config.get("config"), dict):
+        base_config = yaml_config["config"].copy()
     else:
         base_config = DEFAULT_TRANSFORMER_CONFIG.copy()
 
     for field, default_value in REQUIRED_TRANSFORMER_FIELDS.items():
         base_config.setdefault(field, default_value)
+
+    cp_comm_type = base_config.get("cp_comm_type")
+    if cp_comm_type in (None, ""):
+        base_config["cp_comm_type"] = "p2p"
+    elif isinstance(cp_comm_type, (list, tuple)) and len(cp_comm_type) == 1:
+        base_config["cp_comm_type"] = cp_comm_type[0]
 
     for field in PROBLEMATIC_TRANSFORMER_FIELDS:
         base_config.pop(field, None)

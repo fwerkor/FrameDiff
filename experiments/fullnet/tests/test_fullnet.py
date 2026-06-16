@@ -196,6 +196,8 @@ class FullNetConfigTests(unittest.TestCase):
         self.assertIn("--bf16", cmd)
         self.assertIn("--sequence-parallel", cmd)
         self.assertIn("--context-parallel-size 2", cmd)
+        self.assertIn("--cp-comm-type", cmd)
+        self.assertEqual(cmd.split().count("p2p"), 16)
         self.assertIn("NPUS_PER_NODE=4", cmd)
         self.assertIn("export HCCL_DETERMINISTIC=false", cmd)
         self.assertIn("unset CUDA_DEVICE_MAX_CONNECTIONS", cmd)
@@ -234,6 +236,34 @@ class FullNetConfigTests(unittest.TestCase):
             "-c model_config -r 1 --mutnm 0 -n 8 -m experiments/model_config/mixtral.yaml",
         )
         self.assertEqual(args, "--num-experts 4")
+
+    def test_context_parallel_args_expand_cp_comm_type_to_model_layers(self) -> None:
+        from utils.task import fullnet
+
+        args = fullnet._build_context_parallel_args_block(
+            {"cp": 2},
+            "-c model_config -r 1 --mutnm 0 -n 1 -m experiments/model_config/chatglm3.yaml",
+        )
+        tokens = args.split()
+        self.assertEqual(tokens[:3], ["--context-parallel-size", "2", "--cp-comm-type"])
+        self.assertEqual(tokens.count("p2p"), 16)
+
+        args = fullnet._build_context_parallel_args_block(
+            {"cp": 2},
+            "-c model_config -r 1 --mutnm 0 -n 1 -m experiments/mutated_config/baichuan2/parallel_context_parallel_2/mutated_config.yaml",
+        )
+        self.assertEqual(args.split().count("p2p"), 8)
+
+    def test_graph_model_helper_reads_mutated_base_config(self) -> None:
+        import yaml
+        from utils.runtime import model_helpers
+
+        config_path = PROJECT_ROOT.parent / "mutated_config" / "baichuan2" / "parallel_context_parallel_2" / "mutated_config.yaml"
+        data = yaml.safe_load(config_path.read_text())
+        config = model_helpers.extract_graph_transformer_config_from_yaml(data)
+        self.assertEqual(config["num_layers"], 8)
+        self.assertEqual(config["hidden_size"], 1024)
+        self.assertEqual(config["cp_comm_type"], "p2p")
 
     def test_cli_dry_run_outputs_fullnet_config(self) -> None:
         result = subprocess.run(
