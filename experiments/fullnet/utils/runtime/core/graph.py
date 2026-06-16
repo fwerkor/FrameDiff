@@ -135,6 +135,33 @@ def _normalize_context_parallel_fields(config: dict) -> None:
         config["cp_comm_type"] = list(value) * num_layers
 
 
+def _pad_context_parallel_config_for_layer_numbering(config) -> None:
+    if config is None:
+        return
+    cp = _safe_int(getattr(config, "context_parallel_size", 1), 1)
+    if cp <= 1:
+        return
+    value = getattr(config, "cp_comm_type", None)
+    num_layers = _safe_int(getattr(config, "num_layers", 0), 0)
+    if num_layers <= 0:
+        return
+    if value is None or value == "":
+        value = ["p2p"] * num_layers
+    elif isinstance(value, str):
+        value = [value] * num_layers
+    elif isinstance(value, tuple):
+        value = list(value)
+    elif isinstance(value, list):
+        value = list(value)
+    else:
+        return
+    if len(value) == 0:
+        value = ["p2p"] * num_layers
+    while len(value) <= num_layers:
+        value.append(value[-1])
+    config.cp_comm_type = value
+
+
 def _maybe_get_parallel_world_size(func_name: str) -> int | None:
     try:
         func = getattr(parallel_state, func_name, None)
@@ -284,6 +311,7 @@ class Graph(LanguageModule):
         cfg_dict = {k: v for k, v in model_config["config"].items() if k in valid_fields}
         _prepare_transformer_config_dict(cfg_dict)
         transformerblock_config = TransformerConfig(**cfg_dict)
+        _pad_context_parallel_config_for_layer_numbering(transformerblock_config)
         model_config["config"] = transformerblock_config
         self.total_config = model_config
         config = dict()
@@ -291,20 +319,11 @@ class Graph(LanguageModule):
             if key != "config":
                 config[key] = value
         super().__init__(config=transformerblock_config)
-        init_config = TransformerConfig(
-            tensor_model_parallel_size=1,
-            pipeline_model_parallel_size=1,
-            num_layers=24,
-            hidden_size=896,
-            ffn_hidden_size=4864,
-            num_attention_heads=14,
-            num_query_groups=2,
-            attention_dropout=0.0,
-            init_method_std=0.01,
-            hidden_dropout=0.0,
-            normalization="RMSNorm",
-            layernorm_epsilon=1e-6
-        )
+        # Use the already-normalized model TransformerConfig for placeholder nodes.
+        # Creating a second hard-coded TransformerConfig here allows MindSpeed's
+        # global argument wrapper to inject CP args (for example cp_comm_type)
+        # into a mismatched 24-layer config before Graph.load runs.
+        init_config = transformerblock_config
         # nums.append(nums[-1]+1)
         self.nodes = dict(zip([id for id in nums], [Node(config=init_config, index=id) for id in nums]))  # ǰ���һ����
 
@@ -1618,6 +1637,7 @@ class Graph(LanguageModule):
 
             _prepare_transformer_config_dict(filtered_cfg_dict)
             transformerblock_config = TransformerConfig(**filtered_cfg_dict)
+            _pad_context_parallel_config_for_layer_numbering(transformerblock_config)
             self._stabilize_decoder_mlp_config(transformerblock_config)
 
             # 将过滤后的配置对象写回，保持 total_config 的完整性
@@ -1642,21 +1662,10 @@ class Graph(LanguageModule):
             self.nodes.clear()
             self.mutated_nodes.clear()
 
-            # 创建默认的TransformerConfig用于节点初始化
-            init_config = TransformerConfig(
-                tensor_model_parallel_size=1,
-                pipeline_model_parallel_size=1,
-                num_layers=24,
-                hidden_size=896,
-                ffn_hidden_size=4864,
-                num_attention_heads=14,
-                num_query_groups=2,
-                attention_dropout=0.0,
-                init_method_std=0.01,
-                hidden_dropout=0.0,
-                normalization="RMSNorm",
-                layernorm_epsilon=1e-6
-            )
+            # Reuse the already-normalized model TransformerConfig for node
+            # initialization. A second hard-coded 24-layer config can receive
+            # MindSpeed global CP args and fail cp_comm_type validation.
+            init_config = transformerblock_config
 
             # 重建节点
             for node_id, layer_config in layer_configs.items():
@@ -1734,6 +1743,7 @@ class Graph(LanguageModule):
                         )
                     _prepare_transformer_config_dict(node_transformer_config)
                     node.config = TransformerConfig(**node_transformer_config)
+                    _pad_context_parallel_config_for_layer_numbering(node.config)
                     self._stabilize_decoder_mlp_config(node.config)
                 
                 if node.str_op.lower() == "embedding":

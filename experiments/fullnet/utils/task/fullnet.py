@@ -250,19 +250,22 @@ def _infer_model_aware_tensor_parallel_size(model_paths, visible_cards):
     return _largest_dividing_tensor_parallel_size(constraints, max_tp)
 
 
-def _load_variant_transformer_constraints(yaml_path):
+def _load_variant_transformer_config(yaml_path):
     try:
         with Path(yaml_path).open("r", encoding="utf-8") as handle:
             data = yaml.safe_load(handle) or {}
     except Exception as exc:
         log_info(f"读取变体yaml失败，无法做TP自适应: {yaml_path} | {exc}")
-        return []
+        return {}
     if not isinstance(data, dict):
-        return []
+        return {}
     base_config = data.get("base_config") if isinstance(data.get("base_config"), dict) else data
     cfg = (base_config or {}).get("config", {})
-    if not isinstance(cfg, dict):
-        return []
+    return cfg if isinstance(cfg, dict) else {}
+
+
+def _load_variant_transformer_constraints(yaml_path):
+    cfg = _load_variant_transformer_config(yaml_path)
     constraints = []
     for key in ("num_attention_heads", "num_query_groups", "hidden_size", "ffn_hidden_size"):
         value = _parse_optional_positive_int(cfg.get(key))
@@ -274,9 +277,17 @@ def _load_variant_transformer_constraints(yaml_path):
 def apply_variant_tensor_parallel_constraints(launcher_overrides, yaml_path):
     """Lower TP for config variants whose mutated config cannot be built at current TP."""
     overrides = dict(launcher_overrides or {})
+    cfg = _load_variant_transformer_config(yaml_path)
+    num_query_groups = _parse_optional_positive_int(cfg.get("num_query_groups"))
+    if num_query_groups > 0 and "TARGET_NUM_QUERY_GROUPS" not in overrides:
+        overrides["TARGET_NUM_QUERY_GROUPS"] = num_query_groups
     if "TARGET_TENSOR_PARALLEL_SIZE" in overrides:
         return overrides
-    constraints = _load_variant_transformer_constraints(yaml_path)
+    constraints = []
+    for key in ("num_attention_heads", "num_query_groups", "hidden_size", "ffn_hidden_size"):
+        value = _parse_optional_positive_int(cfg.get(key))
+        if value > 0:
+            constraints.append(value)
     if not constraints:
         return overrides
     current_tp = resolve_distributed_config(overrides)["tp"]
@@ -569,6 +580,35 @@ def _infer_num_layers_from_mutate_args(mutate_args):
     return None
 
 
+def _infer_num_query_groups_from_mutate_args(mutate_args):
+    for cfg in _read_model_config_dicts_from_mutate_args(mutate_args):
+        value = _parse_optional_positive_int(cfg.get("num_query_groups"))
+        if value > 0:
+            return value
+    return None
+
+
+def _build_num_query_groups_args_block(launcher_overrides=None, mutate_args=None, runtime_args_list=None):
+    if _runtime_args_have_option(runtime_args_list, "--num-query-groups"):
+        return ""
+    num_query_groups = _parse_optional_positive_int((launcher_overrides or {}).get("TARGET_NUM_QUERY_GROUPS"))
+    if num_query_groups <= 0:
+        num_query_groups = _infer_num_query_groups_from_mutate_args(mutate_args)
+    if not num_query_groups:
+        return ""
+    return f"--num-query-groups {num_query_groups}"
+
+
+def _build_precision_dependency_args_block(runtime_args_list=None):
+    args = [str(arg) for arg in (runtime_args_list or [])]
+    has_low_precision = _runtime_args_have_option(args, "--bf16") or _runtime_args_have_option(args, "--fp16")
+    needs_low_precision = (
+        _runtime_args_have_option(args, "--reuse-fp32-param")
+        or _runtime_args_have_option(args, "--fp32-residual-connection")
+    )
+    return "--bf16" if needs_low_precision and not has_low_precision else ""
+
+
 def _infer_num_experts_from_mutate_args(mutate_args):
     for cfg in _read_model_config_dicts_from_mutate_args(mutate_args):
         for key in ("num_experts", "num_moe_experts"):
@@ -803,6 +843,8 @@ def build_pta_verify_stage_cmd(
     dist_cfg = resolve_distributed_config(launcher_overrides)
     runtime_args_block = _build_runtime_args_block(runtime_args_list)
     expert_parallel_args_block = _build_expert_parallel_args_block(dist_cfg, mutate_args, runtime_args_list)
+    num_query_groups_args_block = _build_num_query_groups_args_block(launcher_overrides, mutate_args, runtime_args_list)
+    precision_dependency_args_block = _build_precision_dependency_args_block(runtime_args_list)
     variant_env_block = _build_variant_env_override_block(env_overrides, optimizer_env)
     context_parallel_arg = _build_context_parallel_args_block(dist_cfg, mutate_args, runtime_args_list)
     if step_log_csv_path:
@@ -857,6 +899,8 @@ def build_pta_verify_stage_cmd(
         --expert-model-parallel-size {dist_cfg["ep"]} \
         {context_parallel_arg} \
         {expert_parallel_args_block} \
+        {num_query_groups_args_block} \
+        {precision_dependency_args_block} \
         --num-layers 16 \
         --hidden-size 928 \
         --ffn-hidden-size 1712 \
@@ -975,6 +1019,8 @@ def build_msa_verify_load_cmd(
     dist_cfg = resolve_distributed_config(launcher_overrides)
     runtime_args_block = _build_runtime_args_block(runtime_args_list)
     expert_parallel_args_block = _build_expert_parallel_args_block(dist_cfg, mutate_args, runtime_args_list)
+    num_query_groups_args_block = _build_num_query_groups_args_block(launcher_overrides, mutate_args, runtime_args_list)
+    precision_dependency_args_block = _build_precision_dependency_args_block(runtime_args_list)
     variant_env_block = _build_variant_env_override_block(env_overrides, optimizer_env)
     context_parallel_arg = _build_context_parallel_args_block(dist_cfg, mutate_args, runtime_args_list)
     if step_log_csv_path:
@@ -1036,6 +1082,8 @@ def build_msa_verify_load_cmd(
         --expert-model-parallel-size {dist_cfg["ep"]} \
         {context_parallel_arg} \
         {expert_parallel_args_block} \
+        {num_query_groups_args_block} \
+        {precision_dependency_args_block} \
         --num-layers 16 \
         --hidden-size 928 \
         --ffn-hidden-size 1712 \
