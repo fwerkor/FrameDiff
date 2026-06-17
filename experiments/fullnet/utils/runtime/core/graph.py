@@ -220,10 +220,28 @@ def _sync_runtime_precision_fields(config: dict) -> None:
             config[key] = True
 
 
+def _sync_runtime_moe_fields(config: dict) -> None:
+    if not isinstance(config, dict):
+        return
+    try:
+        from megatron.training import get_args
+        args = get_args()
+    except Exception:
+        return
+    for source_key in ('num_moe_experts', 'num_experts'):
+        if hasattr(args, source_key):
+            value = getattr(args, source_key)
+            if value not in (None, '', 0):
+                config['num_moe_experts'] = value
+                config.setdefault('num_experts', value)
+                break
+
+
 def _normalize_feature_dependencies(config: dict) -> None:
     if not isinstance(config, dict):
         return
     _sync_runtime_precision_fields(config)
+    _sync_runtime_moe_fields(config)
     has_low_precision = _config_bool(config.get('bf16')) or _config_bool(config.get('fp16'))
     needs_low_precision = _config_bool(config.get('reuse_fp32_param')) or _config_bool(config.get('fp32_residual_connection'))
     if needs_low_precision and not has_low_precision:
