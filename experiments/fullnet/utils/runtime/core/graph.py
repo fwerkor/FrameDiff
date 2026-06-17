@@ -244,11 +244,38 @@ def _sync_runtime_moe_fields(config: dict) -> None:
                 break
 
 
+def _sync_runtime_pipeline_dtype(config: dict) -> None:
+    if not isinstance(config, dict):
+        return
+    if _safe_int(config.get('pipeline_model_parallel_size', 1), 1) <= 1:
+        return
+    value = config.get('pipeline_dtype')
+    if value not in (None, ''):
+        return
+    try:
+        from megatron.training import get_args
+        args = get_args()
+    except Exception:
+        args = None
+    if args is not None and hasattr(args, 'pipeline_dtype') and getattr(args, 'pipeline_dtype') is not None:
+        dtype = getattr(args, 'pipeline_dtype')
+    elif _config_bool(config.get('bf16')):
+        dtype = torch.bfloat16
+    elif _config_bool(config.get('fp16')):
+        dtype = torch.float16
+    else:
+        dtype = torch.float32
+    config['pipeline_dtype'] = dtype
+    if args is not None and hasattr(args, 'pipeline_dtype'):
+        args.pipeline_dtype = dtype
+
+
 def _normalize_feature_dependencies(config: dict) -> None:
     if not isinstance(config, dict):
         return
     _sync_runtime_precision_fields(config)
     _sync_runtime_moe_fields(config)
+    _sync_runtime_pipeline_dtype(config)
     has_low_precision = _config_bool(config.get('bf16')) or _config_bool(config.get('fp16'))
     needs_low_precision = _config_bool(config.get('reuse_fp32_param')) or _config_bool(config.get('fp32_residual_connection'))
     if needs_low_precision and not has_low_precision:
@@ -1209,8 +1236,21 @@ class Graph(LanguageModule):
             values = [[5032], [39706], [24761], [14473],
                     [35428], [1358], [20794], [6819]]
             input_ids = torch.tensor(values, dtype=torch.int64, device=device)
+
+        sequence_parallel = _config_bool(getattr(self.config, "sequence_parallel", False))
+        tensor_parallel_size = _safe_int(getattr(self.config, "tensor_model_parallel_size", 1), 1)
+        if (
+            sequence_parallel
+            and tensor_parallel_size > 1
+            and isinstance(input_ids, torch.Tensor)
+            and input_ids.dim() == 2
+            and input_ids.size(1) % tensor_parallel_size != 0
+            and input_ids.size(0) % tensor_parallel_size == 0
+        ):
+            input_ids = input_ids.transpose(0, 1).contiguous()
+
         if position_ids is None:
-            position_ids = torch.arange(1, device=device).expand(8, 1)
+            position_ids = torch.arange(input_ids.size(1), device=device).unsqueeze(0).expand(input_ids.size(0), -1)
         if attention_mask is None:
             seq_length = position_ids.size(1)
             attention_mask = torch.zeros(1, 1, seq_length, seq_length,
@@ -1445,6 +1485,17 @@ class Graph(LanguageModule):
 
                         decoder_param_dtype = _first_floating_parameter_dtype(cur_block)
                         input_data = _cast_floating_tensor_to_dtype(input_data, decoder_param_dtype)
+
+                        seq_len = input_data.size(0) if isinstance(input_data, torch.Tensor) and input_data.dim() >= 1 else None
+                        mask_seq_len = seq_len
+                        if seq_len is not None and _config_bool(getattr(self.config, "sequence_parallel", False)):
+                            mask_seq_len = seq_len * max(1, _safe_int(getattr(self.config, "tensor_model_parallel_size", 1), 1))
+                        if mask_seq_len is not None and (
+                            attention_mask is None
+                            or attention_mask.size(-1) != mask_seq_len
+                            or attention_mask.size(-2) != mask_seq_len
+                        ):
+                            attention_mask = torch.zeros(1, 1, mask_seq_len, mask_seq_len, dtype=torch.bool, device=input_data.device)
 
                         _analyze_decoder_internals(cur_block, input_data, attention_mask, cur_node.id, "logs/decoder_info.log")
 
