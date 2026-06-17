@@ -222,7 +222,7 @@ def _sync_runtime_precision_fields(config: dict) -> None:
         args = get_args()
     except Exception:
         return
-    for key in ('bf16', 'fp16', 'reuse_fp32_param', 'fp32_residual_connection'):
+    for key in ('bf16', 'fp16', 'reuse_fp32_param', 'fp32_residual_connection', 'sequence_parallel'):
         if hasattr(args, key) and _config_bool(getattr(args, key)):
             config[key] = True
 
