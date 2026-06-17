@@ -201,11 +201,17 @@ def _stabilize_unsupported_moe_bias(config: dict) -> None:
         config["add_bias_linear"] = False
 
 
+def _config_bool(value) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+    return bool(value)
+
+
 def _normalize_feature_dependencies(config: dict) -> None:
     if not isinstance(config, dict):
         return
-    has_low_precision = bool(config.get('bf16')) or bool(config.get('fp16'))
-    needs_low_precision = bool(config.get('reuse_fp32_param')) or bool(config.get('fp32_residual_connection'))
+    has_low_precision = _config_bool(config.get('bf16')) or _config_bool(config.get('fp16'))
+    needs_low_precision = _config_bool(config.get('reuse_fp32_param')) or _config_bool(config.get('fp32_residual_connection'))
     if needs_low_precision and not has_low_precision:
         config['bf16'] = True
     if config.get('recompute_num_layers') not in (None, '') and not config.get('recompute_granularity'):
