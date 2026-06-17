@@ -207,9 +207,23 @@ def _config_bool(value) -> bool:
     return bool(value)
 
 
+def _sync_runtime_precision_fields(config: dict) -> None:
+    if not isinstance(config, dict):
+        return
+    try:
+        from megatron.training import get_args
+        args = get_args()
+    except Exception:
+        return
+    for key in ('bf16', 'fp16', 'reuse_fp32_param', 'fp32_residual_connection'):
+        if hasattr(args, key) and _config_bool(getattr(args, key)):
+            config[key] = True
+
+
 def _normalize_feature_dependencies(config: dict) -> None:
     if not isinstance(config, dict):
         return
+    _sync_runtime_precision_fields(config)
     has_low_precision = _config_bool(config.get('bf16')) or _config_bool(config.get('fp16'))
     needs_low_precision = _config_bool(config.get('reuse_fp32_param')) or _config_bool(config.get('fp32_residual_connection'))
     if needs_low_precision and not has_low_precision:
