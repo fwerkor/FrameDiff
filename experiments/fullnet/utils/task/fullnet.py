@@ -2023,8 +2023,12 @@ def main(params):
                     def fail_current(reason):
                         nonlocal variant_failure_count
                         log_error(f"[{model_name}/{variant_name}/iter{i}] {reason}")
+                        first_failure = record["overall_status"] != "FAILED"
                         record["overall_status"] = "FAILED"
-                        record["reason"] = reason
+                        if record["reason"]:
+                            record["reason"] = f"{record['reason']}; {reason}"
+                        else:
+                            record["reason"] = reason
                         write_variant_status(
                             records_root,
                             model_name,
@@ -2032,11 +2036,12 @@ def main(params):
                             i,
                             max_iterations,
                             "FAILED",
-                            reason,
+                            record["reason"],
                             **stage_results,
                         )
-                        variant_failure_count += 1
-                        model_result["failed_variant_runs"] += 1
+                        if first_failure:
+                            variant_failure_count += 1
+                            model_result["failed_variant_runs"] += 1
 
                     try:
                         load_path, runtime_json, runtime_yaml, source_json, source_yaml = materialize_variant_for_runtime(
@@ -2202,10 +2207,10 @@ def main(params):
                             stage_results[TRAIN_PTA_BASELINE] = "ERROR"
                             copy_if_exists(ancestor_shared_weight, pta_record_dir / "shared_weight_on_failure.pth")
                             fail_current(f"{TRAIN_PTA_BASELINE} 失败或结果无效: {pta_files['runtime_log']}")
-                            continue
-                        stage_results[TRAIN_PTA_BASELINE] = "OK"
-                        pta_success_count += 1
-                        model_result["pta_baseline_success"] += 1
+                        else:
+                            stage_results[TRAIN_PTA_BASELINE] = "OK"
+                            pta_success_count += 1
+                            model_result["pta_baseline_success"] += 1
 
                     if not stage_needs.get(TRAIN_MSA_BASELINE, True):
                         msa_stage_dir = stage_output_dir(output_root, model_name, variant_name, TRAIN_MSA_BASELINE, i, max_iterations)
@@ -2262,49 +2267,61 @@ def main(params):
                             stage_results[TRAIN_MSA_BASELINE] = "ERROR"
                             copy_if_exists(ancestor_shared_weight, msa_record_dir / "shared_weight_on_failure.pth")
                             fail_current(f"{TRAIN_MSA_BASELINE} 失败或结果无效: {msa_files['runtime_log']}")
-                            continue
-                        stage_results[TRAIN_MSA_BASELINE] = "OK"
-                        msa_success_count += 1
-                        model_result["msa_baseline_success"] += 1
+                        else:
+                            stage_results[TRAIN_MSA_BASELINE] = "OK"
+                            msa_success_count += 1
+                            model_result["msa_baseline_success"] += 1
 
-                    precision_issue = find_preferred_loss_mismatch(
-                        pta_files["result_csv"],
-                        msa_files["result_csv"],
-                        iteration=i,
-                        tolerance=Config.BASELINE_LOSS_TOLERANCE,
-                        pta_step_csv_path=pta_files["step_csv"],
-                        msa_step_csv_path=msa_files["step_csv"],
+                    baseline_ready = (
+                        stage_results[TRAIN_PTA_BASELINE] == "OK"
+                        and stage_results[TRAIN_MSA_BASELINE] == "OK"
                     )
-                    alignment_required = Config.BASELINE_ALIGNMENT_REQUIRED and variant_name == "ancestor"
-                    alignment_report, alignment_path = write_alignment_report_new(
-                        records_root,
-                        model_name,
-                        variant_name,
-                        i,
-                        max_iterations,
-                        issue=precision_issue,
-                        tolerance=Config.BASELINE_LOSS_TOLERANCE,
-                        required=alignment_required,
-                        pta_csv=pta_files["result_csv"],
-                        msa_csv=msa_files["result_csv"],
-                        pta_step_csv=pta_files["step_csv"],
-                        msa_step_csv=msa_files["step_csv"],
-                    )
-                    stage_results["baseline-align"] = (
-                        "OK" if precision_issue is None else ("ERROR" if alignment_required else "WARN")
-                    )
-                    if precision_issue:
-                        log_warn(f"[{model_name}/{variant_name}/iter{i}] Baseline未对齐: {precision_issue}")
-                        if alignment_required:
-                            copy_if_exists(ancestor_shared_weight, msa_record_dir / "shared_weight_on_alignment_failure.pth")
-                            fail_current("Baseline精度未对齐，跳过当前模型")
-                            exit_code = 1
-                            model_result["status"] = "FAILED"
-                            model_result["reason"] = "ancestor baseline 精度未对齐"
-                            skip_current_model = True
-                            break
+                    if baseline_ready:
+                        precision_issue = find_preferred_loss_mismatch(
+                            pta_files["result_csv"],
+                            msa_files["result_csv"],
+                            iteration=i,
+                            tolerance=Config.BASELINE_LOSS_TOLERANCE,
+                            pta_step_csv_path=pta_files["step_csv"],
+                            msa_step_csv_path=msa_files["step_csv"],
+                        )
+                        alignment_required = Config.BASELINE_ALIGNMENT_REQUIRED and variant_name == "ancestor"
+                        alignment_report, alignment_path = write_alignment_report_new(
+                            records_root,
+                            model_name,
+                            variant_name,
+                            i,
+                            max_iterations,
+                            issue=precision_issue,
+                            tolerance=Config.BASELINE_LOSS_TOLERANCE,
+                            required=alignment_required,
+                            pta_csv=pta_files["result_csv"],
+                            msa_csv=msa_files["result_csv"],
+                            pta_step_csv=pta_files["step_csv"],
+                            msa_step_csv=msa_files["step_csv"],
+                        )
+                        stage_results["baseline-align"] = (
+                            "OK" if precision_issue is None else ("ERROR" if alignment_required else "WARN")
+                        )
+                        if precision_issue:
+                            log_warn(f"[{model_name}/{variant_name}/iter{i}] Baseline未对齐: {precision_issue}")
+                            if alignment_required:
+                                copy_if_exists(ancestor_shared_weight, msa_record_dir / "shared_weight_on_alignment_failure.pth")
+                                fail_current("Baseline精度未对齐，跳过当前模型")
+                                exit_code = 1
+                                model_result["status"] = "FAILED"
+                                model_result["reason"] = "ancestor baseline 精度未对齐"
+                                skip_current_model = True
+                                break
+                        else:
+                            log_info(f"[{model_name}/{variant_name}/iter{i}] Baseline精度对齐通过: {alignment_report}")
                     else:
-                        log_info(f"[{model_name}/{variant_name}/iter{i}] Baseline精度对齐通过: {alignment_report}")
+                        stage_results["baseline-align"] = "SKIP"
+                        log_info(
+                            f"[{model_name}/{variant_name}/iter{i}] Baseline精度对齐跳过："
+                            f"{TRAIN_PTA_BASELINE}={stage_results[TRAIN_PTA_BASELINE]}, "
+                            f"{TRAIN_MSA_BASELINE}={stage_results[TRAIN_MSA_BASELINE]}"
+                        )
 
                     if Config.TRACE_ENABLED and Config.TRACE_PERTURBATION_RUNS:
                         if not stage_needs.get(TRAIN_PTA_PRETURB, True):
@@ -2346,10 +2363,10 @@ def main(params):
                             if not pta_perturb_ok or not csv_iteration_is_valid(pta_perturb_files["result_csv"], i):
                                 stage_results[TRAIN_PTA_PRETURB] = "ERROR"
                                 fail_current(f"{TRAIN_PTA_PRETURB} 失败或结果无效: {pta_perturb_files['runtime_log']}")
-                                continue
-                            stage_results[TRAIN_PTA_PRETURB] = "OK"
-                            if repair_missing and stage_needs.get(TRAIN_PTA_PRETURB, False):
-                                _append_repaired_run(repaired_runs, model_name, variant_name, i, TRAIN_PTA_PRETURB)
+                            else:
+                                stage_results[TRAIN_PTA_PRETURB] = "OK"
+                                if repair_missing and stage_needs.get(TRAIN_PTA_PRETURB, False):
+                                    _append_repaired_run(repaired_runs, model_name, variant_name, i, TRAIN_PTA_PRETURB)
 
                         if not stage_needs.get(TRAIN_MSA_PRETURB, True):
                             msa_perturb_dir = stage_output_dir(output_root, model_name, variant_name, TRAIN_MSA_PRETURB, i, max_iterations)
@@ -2395,23 +2412,25 @@ def main(params):
                             if not msa_perturb_ok or not msa_perturb_finished or not csv_iteration_is_valid(msa_perturb_files["result_csv"], i):
                                 stage_results[TRAIN_MSA_PRETURB] = "ERROR"
                                 fail_current(f"{TRAIN_MSA_PRETURB} 失败或结果无效: {msa_perturb_files['runtime_log']}")
-                                continue
-                            stage_results[TRAIN_MSA_PRETURB] = "OK"
-                            if repair_missing and stage_needs.get(TRAIN_MSA_PRETURB, False):
-                                _append_repaired_run(repaired_runs, model_name, variant_name, i, TRAIN_MSA_PRETURB)
+                            else:
+                                stage_results[TRAIN_MSA_PRETURB] = "OK"
+                                if repair_missing and stage_needs.get(TRAIN_MSA_PRETURB, False):
+                                    _append_repaired_run(repaired_runs, model_name, variant_name, i, TRAIN_MSA_PRETURB)
 
+                    final_status = "FAILED" if record["overall_status"] == "FAILED" else "PASS"
+                    final_reason = record["reason"] if final_status == "FAILED" else "变体执行完成"
                     write_variant_status(
                         records_root,
                         model_name,
                         variant_name,
                         i,
                         max_iterations,
-                        "PASS",
-                        "变体执行完成",
+                        final_status,
+                        final_reason,
                         **stage_results,
                     )
-                    record["overall_status"] = "PASS"
-                    record["reason"] = "变体执行完成"
+                    record["overall_status"] = final_status
+                    record["reason"] = final_reason
                     utils.control.clean.kill_pretraingpt()
             if model_result["status"] == "RUNNING":
                 if model_result["failed_variant_runs"]:
