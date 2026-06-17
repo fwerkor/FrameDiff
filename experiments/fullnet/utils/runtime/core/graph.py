@@ -194,11 +194,18 @@ def _stabilize_unsupported_moe_bias(config: dict) -> None:
     has_moe = any(
         _safe_int(config.get(key, 0), 0) > 0
         for key in ("num_moe_experts", "num_experts", "moe_ffn_hidden_size")
-    ) or bool(config.get("moe_grouped_gemm"))
-    if has_moe and bool(config.get("add_bias_linear", False)):
+    ) or _config_bool(config.get("moe_grouped_gemm"))
+    if has_moe:
         # MindSpeed/Megatron rejects add_bias_linear=True for MoE layers.
         # Keep the run executable and make the linear-bias variant a no-op for MoE models.
         config["add_bias_linear"] = False
+        try:
+            from megatron.training import get_args
+            args = get_args()
+            if hasattr(args, "add_bias_linear"):
+                args.add_bias_linear = False
+        except Exception:
+            pass
 
 
 def _config_bool(value) -> bool:
