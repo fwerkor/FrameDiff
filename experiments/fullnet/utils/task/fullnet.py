@@ -1584,6 +1584,18 @@ def shared_weight_is_valid(path):
         return False
 
 
+def _split_repair_list_values(values):
+    for value in values:
+        if isinstance(value, (list, tuple, set)):
+            parts = value
+        else:
+            parts = str(value).replace(";", ",").split(",")
+        for part in parts:
+            item = str(part).strip()
+            if item:
+                yield item
+
+
 def parse_repair_skip_variants(params=None):
     values = []
     params = params or {}
@@ -1595,28 +1607,84 @@ def parse_repair_skip_variants(params=None):
         value = os.environ.get(key)
         if value:
             values.append(value)
-    skipped = set()
-    for value in values:
-        if isinstance(value, (list, tuple, set)):
-            parts = value
+    return set(_split_repair_list_values(values))
+
+
+def _expand_repair_training_selector(selector):
+    selector = str(selector or "*").strip()
+    if not selector:
+        selector = "*"
+    expanded = set()
+    for part in re.split(r"[+|]", selector):
+        item = part.strip()
+        if not item or item in {"*", "all"}:
+            expanded.update(RUN_TRAININGS)
+        elif item in {"pta", "pta-*"}:
+            expanded.update((TRAIN_PTA_BASELINE, TRAIN_PTA_PRETURB))
+        elif item in {"msa", "msa-*"}:
+            expanded.update((TRAIN_MSA_BASELINE, TRAIN_MSA_PRETURB))
+        elif item in {"baseline", "*-baseline"}:
+            expanded.update((TRAIN_PTA_BASELINE, TRAIN_MSA_BASELINE))
+        elif item in {"preturb", "perturb", "*-preturb"}:
+            expanded.update((TRAIN_PTA_PRETURB, TRAIN_MSA_PRETURB))
         else:
-            parts = str(value).replace(";", ",").split(",")
-        for part in parts:
-            item = str(part).strip()
-            if item:
-                skipped.add(item)
-    return skipped
+            expanded.add(item)
+    return expanded
 
 
-def build_repair_plan(model_paths, output_root, records_root, max_iterations, skip_variants=None):
+def parse_repair_skip_runs(params=None):
+    values = []
+    params = params or {}
+    for key in ("REPAIR_"+"SKIP_RUNS", "SKIP_"+"RUNS"):
+        value = params.get(key)
+        if value:
+            values.append(value)
+    for key in ("FRAMEDIFF_FULLNET_"+"SKIP_RUNS", "LMSV_FULLNET_"+"SKIP_RUNS"):
+        value = os.environ.get(key)
+        if value:
+            values.append(value)
+    rules = []
+    for item in _split_repair_list_values(values):
+        target, sep, selector = item.partition(":")
+        if not target:
+            continue
+        model_name = None
+        variant_name = target
+        if "/" in target:
+            model_name, variant_name = target.split("/", 1)
+        rules.append({
+            "model": model_name or None,
+            "variant": variant_name,
+            "trainings": _expand_repair_training_selector(selector if sep else "*"),
+            "raw": item,
+        })
+    return rules
+
+
+def repair_run_is_skipped(skip_runs, model_name, variant_name, training_name):
+    for rule in skip_runs or []:
+        rule_model = rule.get("model")
+        rule_variant = rule.get("variant")
+        if rule_model and rule_model not in {"*", model_name}:
+            continue
+        if rule_variant not in {"*", variant_name}:
+            continue
+        if training_name in rule.get("trainings", set()):
+            return True
+    return False
+
+
+def build_repair_plan(model_paths, output_root, records_root, max_iterations, skip_variants=None, skip_runs=None):
     plan = {
         "models": {},
         "missing_runs": [],
         "full_models": [],
         "errors": [],
         "skipped_variants": [],
+        "skipped_runs": [],
     }
     skip_variants = set(skip_variants or [])
+    skip_runs = list(skip_runs or [])
     for model_path in model_paths:
         model_name = _model_name_from_path(model_path)
         model_plan = {
@@ -1649,6 +1717,15 @@ def build_repair_plan(model_paths, output_root, records_root, max_iterations, sk
                 iter_plan = {}
                 variant_plan[str(iteration)] = iter_plan
                 for training_name in RUN_TRAININGS:
+                    if repair_run_is_skipped(skip_runs, model_name, variant_name, training_name):
+                        iter_plan[training_name] = "SKIP"
+                        plan["skipped_runs"].append({
+                            "model": model_name,
+                            "variant": variant_name,
+                            "iteration": iteration,
+                            "training": training_name,
+                        })
+                        continue
                     ok = stage_run_is_valid(output_root, records_root, model_name, variant_name, training_name, iteration, max_iterations)
                     iter_plan[training_name] = ok
                     if model_plan["full_model"] or not ok:
@@ -1682,6 +1759,17 @@ def _format_repair_plan(plan, *, title):
         for model_name in sorted(grouped_skips):
             names = sorted(set(grouped_skips[model_name]))
             lines.append(f"    {model_name}: {', '.join(names)}")
+    skipped_runs = plan.get("skipped_runs") or []
+    if skipped_runs:
+        grouped_run_skips = {}
+        for item in skipped_runs:
+            grouped_run_skips.setdefault(item["model"], {}).setdefault(item["variant"], []).append(item)
+        lines.append("  补测跳过 run（已判定为框架/通信侧或手动排除）:")
+        for model_name in sorted(grouped_run_skips):
+            lines.append(f"    {model_name}:")
+            for variant_name in sorted(grouped_run_skips[model_name], key=lambda name: (0 if name == "ancestor" else 1, name)):
+                labels = [f"iter{run['iteration']}:{run['training']}" for run in grouped_run_skips[model_name][variant_name]]
+                lines.append(f"      - {variant_name}: {', '.join(labels)}")
     grouped = {}
     for item in plan.get("missing_runs", []):
         grouped.setdefault(item["model"], {}).setdefault(item["variant"], []).append(item)
@@ -1769,6 +1857,7 @@ def main(params):
     records_root.mkdir(parents=True, exist_ok=True)
     repair_missing = data_helpers.parse_bool(params.get("REPAIR_MISSING", False))
     repair_skip_variants = parse_repair_skip_variants(params)
+    repair_skip_runs = parse_repair_skip_runs(params)
 
     log_step("整网链路启动")
     log_kv("配置", "迭代次数", max_iterations)
@@ -1787,6 +1876,8 @@ def main(params):
     log_kv("配置", "补测模式", repair_missing)
     if repair_skip_variants:
         log_kv("配置", "补测跳过变体", sorted(repair_skip_variants))
+    if repair_skip_runs:
+        log_kv("配置", "补测跳过run", [rule.get("raw") for rule in repair_skip_runs])
     log_kv("配置", "Trace导出", f"{Config.TRACE_ENABLED} | full_weights={Config.TRACE_FULL_WEIGHTS} | perturb_runs={Config.TRACE_PERTURBATION_RUNS}")
     log_kv(
         "配置",
@@ -1798,7 +1889,7 @@ def main(params):
     initial_repair_plan = None
     full_repair_models = set()
     if repair_missing:
-        initial_repair_plan = build_repair_plan(model_paths, output_root, records_root, max_iterations, repair_skip_variants)
+        initial_repair_plan = build_repair_plan(model_paths, output_root, records_root, max_iterations, repair_skip_variants, repair_skip_runs)
         full_repair_models = set(initial_repair_plan.get("full_models") or [])
         _print_repair_plan(initial_repair_plan, title="补测前完整扫描")
         if not initial_repair_plan.get("missing_runs") and not initial_repair_plan.get("errors"):
@@ -1982,22 +2073,32 @@ def main(params):
                         )
 
                     shared_weight_path = str(ancestor_shared_weight)
+                    stage_skips = {
+                        training_name: repair_run_is_skipped(repair_skip_runs, model_name, variant_name, training_name)
+                        for training_name in RUN_TRAININGS
+                    }
                     stage_needs = {training_name: True for training_name in RUN_TRAININGS}
                     if repair_missing and not model_requires_full_repair:
                         stage_needs = {
-                            training_name: not stage_run_is_valid(
-                                output_root,
-                                records_root,
-                                model_name,
-                                variant_name,
-                                training_name,
-                                i,
-                                max_iterations,
+                            training_name: (
+                                not stage_skips[training_name]
+                                and not stage_run_is_valid(
+                                    output_root,
+                                    records_root,
+                                    model_name,
+                                    variant_name,
+                                    training_name,
+                                    i,
+                                    max_iterations,
+                                )
                             )
                             for training_name in RUN_TRAININGS
                         }
                         if not any(stage_needs.values()):
-                            stage_results.update({training_name: "OK" for training_name in RUN_TRAININGS})
+                            stage_results.update({
+                                training_name: ("SKIP" if stage_skips[training_name] else "OK")
+                                for training_name in RUN_TRAININGS
+                            })
                             stage_results["baseline-align"] = "SKIP"
                             write_variant_status(
                                 records_root,
@@ -2326,7 +2427,7 @@ def main(params):
 
     if repair_missing:
         _print_repaired_runs(repaired_runs)
-        final_repair_plan = build_repair_plan(model_paths, output_root, records_root, max_iterations, repair_skip_variants)
+        final_repair_plan = build_repair_plan(model_paths, output_root, records_root, max_iterations, repair_skip_variants, repair_skip_runs)
         _print_repair_plan(final_repair_plan, title="补测后完整扫描")
         if final_repair_plan.get("missing_runs") or final_repair_plan.get("errors"):
             exit_code = 1
