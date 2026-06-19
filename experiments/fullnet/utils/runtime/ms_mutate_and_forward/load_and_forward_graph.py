@@ -112,6 +112,66 @@ def seed_all(seed=42):
     model_helpers.seed_all(seed, np_module=np, torch_module=torch, torch_npu_module=torch_npu)
 
 
+def _patch_msa_rng_tracker_cpu_state_check():
+    """Avoid MSAdapter/MindSpore LazyCopy failures in Megatron RNG fork cleanup.
+
+    Megatron checks whether the CPU RNG state changed by evaluating
+    ``torch.all(cpu_rng_state == torch.get_rng_state()).item()`` when leaving
+    the CUDA/NPU RNG fork context.  Under MSAdapter this comparison can create
+    a MindSpore tensor and trigger an Ascend CPU->device LazyCopy even though
+    the check is only a warning.  Some valid graph-forward variants then fail
+    after attention with ``Lazy Async copy failed``.  Skip only this warning
+    check for MSA fullnet runs; keep state save/restore unchanged.
+    """
+    raw = os.getenv("LMSV_MSA_SKIP_CPU_RNG_STATE_CHECK", "1").strip().lower()
+    if raw not in {"1", "true", "yes", "on"}:
+        return
+    try:
+        import contextlib
+        from megatron.core.tensor_parallel import random as tp_random
+        from megatron.core import tensor_parallel
+
+        tracker = tensor_parallel.get_cuda_rng_tracker()
+        tracker_cls = type(tracker)
+        if getattr(tracker_cls.fork, "_lmsv_msa_no_cpu_rng_check", False):
+            return
+
+        @contextlib.contextmanager
+        def fork_without_cpu_rng_check(self, name=None):
+            if name is None:
+                name = getattr(tp_random, "_MODEL_PARALLEL_RNG_TRACKER_NAME", "model-parallel-rng")
+            if name not in self.states_:
+                raise Exception("cuda rng state {} is not added".format(name))
+            orig_cuda_rng_state = tp_random._get_cuda_rng_state(
+                graph_safe=getattr(self, "use_cudagraphable_rng", False)
+            )
+            tp_random._set_cuda_rng_state(
+                self.states_[name],
+                graph_safe=getattr(self, "use_cudagraphable_rng", False),
+            )
+            try:
+                yield
+            finally:
+                self.states_[name] = tp_random._get_cuda_rng_state(
+                    graph_safe=getattr(self, "use_cudagraphable_rng", False)
+                )
+                tp_random._set_cuda_rng_state(
+                    orig_cuda_rng_state,
+                    graph_safe=getattr(self, "use_cudagraphable_rng", False),
+                )
+
+        fork_without_cpu_rng_check._lmsv_msa_no_cpu_rng_check = True
+        tracker_cls.fork = fork_without_cpu_rng_check
+        if getattr(args, "rank", 0) == 0:
+            print("[RQ3] patched MSA tensor_parallel RNG fork CPU-state check")
+    except Exception as exc:
+        if getattr(args, "rank", 0) == 0:
+            print(f"[RQ3] failed to patch MSA RNG fork CPU-state check: {exc}")
+
+
+_patch_msa_rng_tracker_cpu_state_check()
+
+
 yaml = YAML()
 TEMPLATE_CONFIG_PATH = model_helpers.resolve_repo_path("assets/runtime/configs/template_config.yaml")
 STRUCTURE_CONFIG_PATH = model_helpers.resolve_repo_path("assets/runtime/configs/structure_config.yaml")

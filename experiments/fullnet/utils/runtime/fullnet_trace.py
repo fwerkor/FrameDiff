@@ -667,9 +667,16 @@ def _to_scalar(value: Any) -> float | int | str | None:
             return float(array.astype("float32").mean())
         if isinstance(value, (int, float)):
             return value
-    except Exception:
-        pass
-    return repr(value) if value is not None else None
+    except Exception as exc:
+        if value is None:
+            return None
+        return f"<scalar-unavailable type={type(value).__name__} error={type(exc).__name__}>"
+    if value is None:
+        return None
+    try:
+        return repr(value)
+    except Exception as exc:
+        return f"<repr-unavailable type={type(value).__name__} error={type(exc).__name__}>"
 
 
 def trace_loss(name: str, value: Any, *, extra: dict[str, Any] | None = None) -> None:
