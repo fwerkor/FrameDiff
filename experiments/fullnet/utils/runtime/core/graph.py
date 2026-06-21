@@ -1239,6 +1239,8 @@ class Graph(LanguageModule):
 
         sequence_parallel = _config_bool(getattr(self.config, "sequence_parallel", False))
         tensor_parallel_size = _safe_int(getattr(self.config, "tensor_model_parallel_size", 1), 1)
+        context_parallel_size = _safe_int(getattr(self.config, "context_parallel_size", 1), 1)
+        context_parallel = context_parallel_size > 1
         if (
             sequence_parallel
             and tensor_parallel_size > 1
@@ -1486,21 +1488,30 @@ class Graph(LanguageModule):
                         decoder_param_dtype = _first_floating_parameter_dtype(cur_block)
                         input_data = _cast_floating_tensor_to_dtype(input_data, decoder_param_dtype)
 
-                        seq_len = input_data.size(0) if isinstance(input_data, torch.Tensor) and input_data.dim() >= 1 else None
-                        mask_seq_len = seq_len
-                        if seq_len is not None and _config_bool(getattr(self.config, "sequence_parallel", False)):
-                            mask_seq_len = seq_len * max(1, _safe_int(getattr(self.config, "tensor_model_parallel_size", 1), 1))
-                        if mask_seq_len is not None and (
-                            attention_mask is None
-                            or attention_mask.size(-1) != mask_seq_len
-                            or attention_mask.size(-2) != mask_seq_len
-                        ):
-                            attention_mask = torch.zeros(1, 1, mask_seq_len, mask_seq_len, dtype=torch.bool, device=input_data.device)
+                        if context_parallel:
+                            # Context parallel attention in MindSpeed/PTA and MSAdapter uses its
+                            # own causal sparse path when no explicit mask is provided. Passing
+                            # the short instrumentation mask here can make FlashAttentionScore
+                            # enter attenmask-compression mode and reject the shape.
+                            block_attention_mask = None
+                        else:
+                            seq_len = input_data.size(0) if isinstance(input_data, torch.Tensor) and input_data.dim() >= 1 else None
+                            mask_seq_len = seq_len
+                            if seq_len is not None and sequence_parallel:
+                                mask_seq_len = seq_len * max(1, tensor_parallel_size)
+                            if mask_seq_len is not None and (
+                                attention_mask is None
+                                or attention_mask.size(-1) != mask_seq_len
+                                or attention_mask.size(-2) != mask_seq_len
+                            ):
+                                attention_mask = torch.zeros(1, 1, mask_seq_len, mask_seq_len, dtype=torch.bool, device=input_data.device)
+                            block_attention_mask = attention_mask
 
-                        _analyze_decoder_internals(cur_block, input_data, attention_mask, cur_node.id, "logs/decoder_info.log")
+                        _analyze_decoder_internals(cur_block, input_data, block_attention_mask, cur_node.id, "logs/decoder_info.log")
 
-                        attention_mask_ready = _ensure_tensor_ready(attention_mask, "attention_mask")
-                        attention_mask_ready = attention_mask_ready.npu() if torch.npu.is_available() else attention_mask_ready
+                        attention_mask_ready = _ensure_tensor_ready(block_attention_mask, "attention_mask")
+                        if attention_mask_ready is not None and torch.npu.is_available():
+                            attention_mask_ready = attention_mask_ready.npu()
                         compare_hooks = _register_block0_compare_hooks(cur_block) if decoder_index == 0 else []
                         decoder_input_for_residual = input_data
                         
