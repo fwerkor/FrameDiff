@@ -51,6 +51,21 @@ def _apply_patch() -> None:
         sys.stderr.flush()
         raise
 
+    target_script = os.getenv("LMSV_SUBMODULE_TARGET_SCRIPT", "")
+    trace_backend = os.getenv("LMSV_FULLNET_TRACE_BACKEND", "")
+    if "ms_mutate_and_forward" in target_script or trace_backend.strip().lower() == "msa":
+        os.environ["LMSV_ENABLE_MSA_LINEAR_DTYPE_PATCH"] = "1"
+        try:
+            from msa_linear_dtype_patch import apply_msa_linear_dtype_patch
+
+            if apply_msa_linear_dtype_patch():
+                sys.stderr.write("[LMSV_PATCH] MSA linear dtype patch active\n")
+                sys.stderr.flush()
+        except Exception as exc:
+            sys.stderr.write(f"[LMSV_PATCH] failed to apply MSA linear dtype patch: {exc}\n")
+            sys.stderr.flush()
+            raise
+
 
 def main() -> None:
     _apply_patch()
