@@ -4,19 +4,11 @@
 
 export ASCEND_TOOLKIT_HOME=${ASCEND_TOOLKIT_HOME:-/usr/local/Ascend/ascend-toolkit/latest}
 
-# After CANN run-package upgrades/rollbacks, MindSpore may need the NNRT
-# runtime root to resolve Ascend runtime symbols, while OPP/opp_kernel still
-# come from the full toolkit installation.
-if [ -d /usr/local/Ascend/nnrt/latest/lib64 ]; then
-  export ASCEND_HOME_PATH=/usr/local/Ascend/nnrt/latest
-  export ASCEND_AICPU_PATH=/usr/local/Ascend/nnrt/latest
-  export LD_LIBRARY_PATH=/usr/local/Ascend/nnrt/latest/lib64:${LD_LIBRARY_PATH}
+if [ -d "${ASCEND_TOOLKIT_HOME}/opp" ]; then
+  export ASCEND_OPP_PATH="${ASCEND_TOOLKIT_HOME}/opp"
 fi
-if [ -d /usr/local/Ascend/ascend-toolkit/latest/opp ]; then
-  export ASCEND_OPP_PATH=/usr/local/Ascend/ascend-toolkit/latest/opp
-fi
-if [ -d /usr/local/Ascend/ascend-toolkit/latest/opp_kernel ]; then
-  export ASCEND_OPP_KERNEL_PATH=/usr/local/Ascend/ascend-toolkit/latest/opp_kernel
+if [ -d "${ASCEND_TOOLKIT_HOME}/opp_kernel" ]; then
+  export ASCEND_OPP_KERNEL_PATH="${ASCEND_TOOLKIT_HOME}/opp_kernel"
 fi
 
 MSA_ROOT="${MSAPATH}"
