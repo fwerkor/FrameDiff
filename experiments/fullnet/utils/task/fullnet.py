@@ -1080,6 +1080,7 @@ def build_msa_verify_load_cmd(
         --tensor-model-parallel-size {dist_cfg["tp"]} \
         --pipeline-model-parallel-size {dist_cfg["pp"]} \
         --expert-model-parallel-size {dist_cfg["ep"]} \
+        --ai-framework mindspore \
         {context_parallel_arg} \
         {expert_parallel_args_block} \
         {num_query_groups_args_block} \
